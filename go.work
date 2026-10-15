@@ -1,0 +1,11 @@
+go 1.22
+
+use (
+	./gateway
+	./pkg
+	./services/benefits-service
+	./services/booking-service
+	./services/members-service
+	./services/notification-worker
+	./services/training-service
+)

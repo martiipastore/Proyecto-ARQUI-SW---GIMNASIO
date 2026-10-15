@@ -1,0 +1,10 @@
+# Normaliza finales de línea. Los scripts que corren dentro de contenedores Linux
+# deben quedar con LF aunque se editen en Windows.
+* text=auto
+*.sh text eol=lf
+*.js text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf
+*.docx binary
+*.go text eol=lf

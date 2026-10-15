@@ -1,0 +1,1088 @@
+openapi: 3.1.0
+
+info:
+  title: Club de Beneficios — API de fidelización para partners
+  version: 1.0.0
+  summary: Acreditar, debitar y canjear puntos de fidelización y consultar saldo, movimientos y catálogo.
+  description: |
+    API pública del **Club de Beneficios** del Sistema de Gestión de Gimnasio (TPI Arquitectura de Software, UCC).
+
+    Permite que un sistema externo (**partner**) integre puntos de fidelización en su propio flujo:
+    por ejemplo, acreditar puntos cuando un cliente hace una compra o cumple un turno, debitarlos
+    cuando los usa en el negocio del partner, o canjearlos por beneficios del catálogo del gimnasio.
+
+    ## Conceptos
+
+    - **Partner:** sistema autorizado. Se autentica con una API key propia (header `X-API-Key`).
+    - **Cuenta:** cada cuenta de puntos se identifica por el par **(partner, externalUserId)**. El
+      `externalUserId` es el identificador del usuario **en el sistema del partner**. Un partner solo
+      ve y opera las cuentas vinculadas a él; para cualquier otra recibe `404 ACCOUNT_NOT_FOUND`.
+    - **Movimiento:** registro inmutable de puntos acreditados (+) o debitados (−). Nunca se edita ni se borra.
+    - **Saldo:** suma de los movimientos de la cuenta. Nunca es negativo.
+
+    ## Idempotencia
+
+    Toda operación de escritura (`credits`, `debits`, `redemptions`) **exige** el header `Idempotency-Key`.
+
+    - Misma key + mismo body → se devuelve **la respuesta original** (mismo status y body) con el
+      header `Idempotent-Replayed: true`, sin volver a aplicar el efecto.
+    - Misma key + body distinto → `409 IDEMPOTENCY_CONFLICT`.
+    - Misma key mientras la primera solicitud se está procesando → `409 IDEMPOTENCY_IN_PROGRESS` (reintentable).
+    - Las keys son únicas **por partner** y se conservan **30 días**. Las respuestas de error también se
+      guardan: reintentar una operación rechazada con la misma key devuelve el mismo rechazo.
+
+    ## Errores
+
+    Todos los errores usan **RFC 7807** (`application/problem+json`) con un campo `code` estable.
+    La guía para consumidores (`docs/contracts/README.md`) indica cuáles se reintentan.
+  contact:
+    name: Equipo TPI Gimnasio — Arquitectura de Software (UCC)
+  license:
+    name: Uso académico
+
+servers:
+  - url: http://localhost:4010
+    description: Mock local (Prism). Responde con los ejemplos de este contrato.
+  - url: https://{host}/partner-api
+    description: Producción (placeholder hasta definir el proveedor de nube).
+    variables:
+      host:
+        default: gimnasio.example.com
+        description: Dominio público del api-gateway.
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Accounts
+    description: Acreditaciones, débitos y saldo de una cuenta.
+  - name: Movements
+    description: Historial de movimientos de una cuenta.
+  - name: Benefits
+    description: Catálogo de beneficios canjeables.
+  - name: Redemptions
+    description: Canjes de beneficios.
+
+paths:
+  /v1/accounts/{externalUserId}/credits:
+    post:
+      operationId: creditPoints
+      tags: [Accounts]
+      summary: Acreditar puntos
+      description: |
+        Suma `points` a la cuenta. Usalo cuando el usuario hace algo que el partner quiere premiar
+        (una compra, un turno cumplido). `reference` es el identificador de ese hecho en el sistema
+        del partner y queda registrado en el movimiento.
+      parameters:
+        - $ref: '#/components/parameters/ExternalUserId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointsOperationRequest'
+            examples:
+              compra:
+                summary: Puntos por una compra
+                value:
+                  points: 150
+                  reason: Compra en tienda online
+                  reference: ORDER-A-7781
+              turno:
+                summary: Puntos por un turno cumplido
+                value:
+                  points: 50
+                  reason: Turno de kinesiología cumplido
+                  reference: TURNO-2026-10-07-0931
+      responses:
+        '201':
+          description: Puntos acreditados (o respuesta original si es una repetición con la misma Idempotency-Key).
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+            X-Correlation-Id:
+              $ref: '#/components/headers/XCorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResult'
+              examples:
+                acreditado:
+                  summary: Acreditación aplicada
+                  value:
+                    movementId: 7d0c4a8e-2f4b-4c51-9e0e-3c2b8f1a9d10
+                    externalUserId: cli-10045
+                    type: CREDIT
+                    points: 150
+                    reason: Compra en tienda online
+                    reference: ORDER-A-7781
+                    occurredAt: '2026-10-07T18:42:10Z'
+                    balance: 1270
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AccountNotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /v1/accounts/{externalUserId}/debits:
+    post:
+      operationId: debitPoints
+      tags: [Accounts]
+      summary: Debitar puntos
+      description: |
+        Resta `points` de la cuenta, por ejemplo cuando el usuario los usa como descuento en el negocio
+        del partner. Falla con `422 INSUFFICIENT_BALANCE` si el saldo no alcanza; en ese caso no se
+        aplica ningún cambio.
+      parameters:
+        - $ref: '#/components/parameters/ExternalUserId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointsOperationRequest'
+            examples:
+              descuento:
+                summary: Uso de puntos como descuento
+                value:
+                  points: 500
+                  reason: Descuento aplicado en compra
+                  reference: ORDER-A-7790
+      responses:
+        '201':
+          description: Puntos debitados (o respuesta original si es una repetición con la misma Idempotency-Key).
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+            X-Correlation-Id:
+              $ref: '#/components/headers/XCorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResult'
+              examples:
+                debitado:
+                  summary: Débito aplicado
+                  value:
+                    movementId: 1f9a2c33-6b7e-4d8a-a0c1-55e2d7f4b812
+                    externalUserId: cli-10045
+                    type: DEBIT
+                    points: -500
+                    reason: Descuento aplicado en compra
+                    reference: ORDER-A-7790
+                    occurredAt: '2026-10-07T19:05:44Z'
+                    balance: 770
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AccountNotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/InsufficientBalance'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /v1/accounts/{externalUserId}/balance:
+    get:
+      operationId: getBalance
+      tags: [Accounts]
+      summary: Consultar saldo
+      description: Devuelve el saldo actual de la cuenta (total, incluye puntos de todos los orígenes).
+      parameters:
+        - $ref: '#/components/parameters/ExternalUserId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Saldo actual.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/XCorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+              examples:
+                saldo:
+                  summary: Saldo de una cuenta
+                  value:
+                    externalUserId: cli-10045
+                    balance: 1270
+                    updatedAt: '2026-10-07T18:42:10Z'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AccountNotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /v1/accounts/{externalUserId}/movements:
+    get:
+      operationId: listMovements
+      tags: [Movements]
+      summary: Listar movimientos
+      description: |
+        Movimientos de la cuenta **originados por el partner que consulta** (créditos, débitos, canjes y
+        reversiones de esos movimientos), ordenados por fecha descendente y paginados.
+        Los movimientos generados por el gimnasio (por ejemplo, puntos por asistencia) no se incluyen,
+        aunque sí suman al saldo.
+      parameters:
+        - $ref: '#/components/parameters/ExternalUserId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Página de movimientos.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/XCorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementPage'
+              examples:
+                pagina:
+                  summary: Primera página
+                  value:
+                    items:
+                      - id: 4b6e0f21-9c3d-4a7b-8e15-0d2c6a9f7e33
+                        type: REDEMPTION
+                        points: -300
+                        reason: 'Canje: Botella térmica'
+                        reference: CANJE-POS-118
+                        status: CONFIRMED
+                        occurredAt: '2026-10-07T19:20:03Z'
+                      - id: 1f9a2c33-6b7e-4d8a-a0c1-55e2d7f4b812
+                        type: DEBIT
+                        points: -500
+                        reason: Descuento aplicado en compra
+                        reference: ORDER-A-7790
+                        status: CONFIRMED
+                        occurredAt: '2026-10-07T19:05:44Z'
+                      - id: 7d0c4a8e-2f4b-4c51-9e0e-3c2b8f1a9d10
+                        type: CREDIT
+                        points: 150
+                        reason: Compra en tienda online
+                        reference: ORDER-A-7781
+                        status: CONFIRMED
+                        occurredAt: '2026-10-07T18:42:10Z'
+                    page: 1
+                    size: 20
+                    totalItems: 3
+                    totalPages: 1
+                vacia:
+                  summary: Cuenta sin movimientos del partner
+                  value:
+                    items: []
+                    page: 1
+                    size: 20
+                    totalItems: 0
+                    totalPages: 0
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AccountNotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /v1/benefits:
+    get:
+      operationId: listBenefits
+      tags: [Benefits]
+      summary: Listar beneficios canjeables
+      description: |
+        Catálogo de beneficios **activos, vigentes y habilitados para partners**. Los beneficios no tienen
+        stock: mientras aparezcan en el catálogo, se pueden canjear. El gimnasio puede cambiar el catálogo
+        y los costos en cualquier momento; consultalo antes de ofrecer un canje.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Catálogo vigente.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/XCorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitList'
+              examples:
+                catalogo:
+                  summary: Catálogo con dos beneficios
+                  value:
+                    items:
+                      - id: 0e5f6a7b-8c9d-4e1f-a2b3-c4d5e6f70812
+                        name: Botella térmica
+                        description: Botella térmica de 750 ml con logo del gimnasio.
+                        pointsCost: 300
+                        validFrom: '2026-10-01'
+                        validUntil: '2026-12-31'
+                      - id: 5a1b2c3d-4e5f-4061-8723-94a5b6c7d8e9
+                        name: Clase de prueba gratis
+                        description: Una clase de Funcional, GAP, Strong Nation o Zumba sin cargo.
+                        pointsCost: 500
+                        validFrom: '2026-10-01'
+                        validUntil: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /v1/accounts/{externalUserId}/redemptions:
+    post:
+      operationId: redeemBenefit
+      tags: [Redemptions]
+      summary: Canjear un beneficio
+      description: |
+        Canjea un beneficio del catálogo para la cuenta. Debita el costo vigente del beneficio en una
+        sola operación: o se crean el canje y el débito, o no se crea nada.
+      parameters:
+        - $ref: '#/components/parameters/ExternalUserId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionRequest'
+            examples:
+              botella:
+                summary: Canje de la botella térmica
+                value:
+                  benefitId: 0e5f6a7b-8c9d-4e1f-a2b3-c4d5e6f70812
+                  reference: CANJE-POS-118
+      responses:
+        '201':
+          description: Canje confirmado (o respuesta original si es una repetición con la misma Idempotency-Key).
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+            X-Correlation-Id:
+              $ref: '#/components/headers/XCorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redemption'
+              examples:
+                canjeado:
+                  summary: Canje confirmado
+                  value:
+                    redemptionId: c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f
+                    externalUserId: cli-10045
+                    benefitId: 0e5f6a7b-8c9d-4e1f-a2b3-c4d5e6f70812
+                    benefitName: Botella térmica
+                    pointsDebited: 300
+                    movementId: 4b6e0f21-9c3d-4a7b-8e15-0d2c6a9f7e33
+                    reference: CANJE-POS-118
+                    status: CONFIRMED
+                    redeemedAt: '2026-10-07T19:20:03Z'
+                    balance: 470
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AccountOrBenefitNotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/RedemptionRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Una API key por partner, entregada por el administrador del gimnasio. Se muestra una sola vez;
+        guardala como secreto. Si se compromete, pedí su revocación y una nueva.
+
+  parameters:
+    ExternalUserId:
+      name: externalUserId
+      in: path
+      required: true
+      description: Identificador del usuario en el sistema del partner. Junto con el partner identifica la cuenta.
+      schema:
+        $ref: '#/components/schemas/ExternalUserId'
+      example: cli-10045
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Clave única por operación lógica, generada por el partner (se recomienda un UUID v4).
+        Reusala solo para reintentar **la misma** operación. Retención: 30 días.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: '^[A-Za-z0-9._:-]{8,128}$'
+      example: 9f1b6c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      description: Identificador para correlacionar la solicitud en los logs de ambos sistemas. Si no se envía, se genera uno y se devuelve en la respuesta.
+      schema:
+        type: string
+        format: uuid
+      example: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Número de página, empezando en 1.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100000
+        default: 1
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      description: Cantidad de elementos por página.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+
+  headers:
+    IdempotentReplayed:
+      description: '`true` si la respuesta es la original de una solicitud anterior con la misma Idempotency-Key.'
+      schema:
+        type: boolean
+      example: false
+    XCorrelationId:
+      description: Identificador de correlación de la solicitud.
+      schema:
+        type: string
+        format: uuid
+      example: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    RetryAfter:
+      description: Segundos que hay que esperar antes de reintentar.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 3600
+      example: 2
+
+  schemas:
+    ExternalUserId:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: '^[A-Za-z0-9._:@-]{1,64}$'
+      description: Identificador del usuario en el sistema del partner.
+      examples: [cli-10045]
+
+    PointsOperationRequest:
+      type: object
+      additionalProperties: false
+      required: [points, reason, reference]
+      properties:
+        points:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1000000
+          description: Cantidad de puntos (entero positivo).
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Motivo legible; aparece en el historial del usuario.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Identificador del hecho de origen en el sistema del partner (compra, turno, etc.).
+
+    OperationResult:
+      type: object
+      additionalProperties: false
+      required: [movementId, externalUserId, type, points, reason, reference, occurredAt, balance]
+      properties:
+        movementId:
+          type: string
+          format: uuid
+        externalUserId:
+          $ref: '#/components/schemas/ExternalUserId'
+        type:
+          type: string
+          enum: [CREDIT, DEBIT]
+        points:
+          type: integer
+          format: int32
+          minimum: -1000000
+          maximum: 1000000
+          description: Puntos con signo (+ acreditados, − debitados).
+        reason:
+          type: string
+          maxLength: 200
+        reference:
+          type: string
+          maxLength: 100
+        occurredAt:
+          type: string
+          format: date-time
+        balance:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Saldo de la cuenta después de aplicar la operación.
+
+    Balance:
+      type: object
+      additionalProperties: false
+      required: [externalUserId, balance, updatedAt]
+      properties:
+        externalUserId:
+          $ref: '#/components/schemas/ExternalUserId'
+        balance:
+          type: integer
+          format: int64
+          minimum: 0
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha del último movimiento de la cuenta.
+
+    Movement:
+      type: object
+      additionalProperties: false
+      required: [id, type, points, reason, status, occurredAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [CREDIT, DEBIT, REDEMPTION, REVERSAL]
+          description: |
+            `CREDIT` acreditación · `DEBIT` débito · `REDEMPTION` débito por canje ·
+            `REVERSAL` movimiento compensatorio de una corrección hecha por el gimnasio.
+        points:
+          type: integer
+          format: int32
+          minimum: -1000000
+          maximum: 1000000
+          description: Puntos con signo (+ acreditados, − debitados).
+        reason:
+          type: string
+          maxLength: 200
+        reference:
+          type: [string, 'null']
+          maxLength: 100
+        status:
+          type: string
+          enum: [CONFIRMED, REVERTED]
+          description: '`REVERTED` si el gimnasio anuló este movimiento (existe un `REVERSAL` asociado).'
+        occurredAt:
+          type: string
+          format: date-time
+
+    MovementPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, size, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Movement'
+        page:
+          type: integer
+          format: int32
+          minimum: 1
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        totalItems:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int32
+          minimum: 0
+
+    Benefit:
+      type: object
+      additionalProperties: false
+      required: [id, name, pointsCost, validFrom]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        pointsCost:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1000000
+        validFrom:
+          type: string
+          format: date
+        validUntil:
+          type: [string, 'null']
+          format: date
+          description: '`null` si no tiene fecha de fin.'
+
+    BenefitList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/Benefit'
+
+    RedemptionRequest:
+      type: object
+      additionalProperties: false
+      required: [benefitId]
+      properties:
+        benefitId:
+          type: string
+          format: uuid
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Identificador opcional del canje en el sistema del partner.
+
+    Redemption:
+      type: object
+      additionalProperties: false
+      required: [redemptionId, externalUserId, benefitId, benefitName, pointsDebited, movementId, status, redeemedAt, balance]
+      properties:
+        redemptionId:
+          type: string
+          format: uuid
+        externalUserId:
+          $ref: '#/components/schemas/ExternalUserId'
+        benefitId:
+          type: string
+          format: uuid
+        benefitName:
+          type: string
+          maxLength: 100
+        pointsDebited:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1000000
+          description: Costo del beneficio al momento del canje.
+        movementId:
+          type: string
+          format: uuid
+        reference:
+          type: [string, 'null']
+          maxLength: 100
+        status:
+          type: string
+          enum: [CONFIRMED, CANCELLED]
+        redeemedAt:
+          type: string
+          format: date-time
+        balance:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Saldo después del canje.
+
+    Problem:
+      type: object
+      description: Error en formato RFC 7807.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI que identifica el tipo de problema.
+        title:
+          type: string
+          maxLength: 200
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          maxLength: 1000
+        instance:
+          type: string
+          maxLength: 500
+          description: Ruta de la solicitud que falló.
+        code:
+          type: string
+          enum:
+            - INVALID_REQUEST
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - ACCOUNT_NOT_FOUND
+            - BENEFIT_NOT_FOUND
+            - IDEMPOTENCY_CONFLICT
+            - IDEMPOTENCY_IN_PROGRESS
+            - INSUFFICIENT_BALANCE
+            - BENEFIT_NOT_AVAILABLE
+            - RATE_LIMITED
+            - INTERNAL
+            - UNAVAILABLE
+          description: Código estable para manejar el error por programa.
+        correlationId:
+          type: string
+          format: uuid
+        errors:
+          type: array
+          maxItems: 50
+          description: Detalle por campo (solo en INVALID_REQUEST).
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, message]
+            properties:
+              field:
+                type: string
+                maxLength: 100
+              message:
+                type: string
+                maxLength: 300
+
+  responses:
+    InvalidRequest:
+      description: Solicitud inválida (formato, tipos, rangos o header faltante). No reintentar sin corregirla.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            invalidRequest:
+              summary: Puntos fuera de rango y falta Idempotency-Key
+              value:
+                type: https://gimnasio.example.com/problems/invalid-request
+                title: Solicitud inválida
+                status: 400
+                detail: La solicitud tiene 2 errores de validación.
+                instance: /v1/accounts/cli-10045/credits
+                code: INVALID_REQUEST
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+                errors:
+                  - field: points
+                    message: debe ser un entero entre 1 y 1000000
+                  - field: Idempotency-Key
+                    message: header obligatorio
+    Unauthorized:
+      description: API key ausente o inválida. No reintentar sin corregir la credencial.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            unauthorized:
+              summary: API key inválida
+              value:
+                type: https://gimnasio.example.com/problems/unauthorized
+                title: No autenticado
+                status: 401
+                detail: La API key no es válida o fue revocada.
+                instance: /v1/accounts/cli-10045/balance
+                code: UNAUTHORIZED
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    Forbidden:
+      description: El partner está suspendido o no tiene permiso para esta operación. No reintentar.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            forbidden:
+              summary: Partner suspendido
+              value:
+                type: https://gimnasio.example.com/problems/forbidden
+                title: Acceso denegado
+                status: 403
+                detail: El partner está suspendido. Contactá al administrador del gimnasio.
+                instance: /v1/accounts/cli-10045/credits
+                code: FORBIDDEN
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    AccountNotFound:
+      description: No existe una cuenta vinculada a este partner con ese externalUserId. No reintentar.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            accountNotFound:
+              summary: Cuenta no vinculada
+              value:
+                type: https://gimnasio.example.com/problems/account-not-found
+                title: Cuenta no encontrada
+                status: 404
+                detail: No hay una cuenta vinculada al usuario externo cli-99999.
+                instance: /v1/accounts/cli-99999/balance
+                code: ACCOUNT_NOT_FOUND
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    AccountOrBenefitNotFound:
+      description: La cuenta no está vinculada a este partner o el beneficio no existe. No reintentar.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            accountNotFound:
+              summary: Cuenta no vinculada
+              value:
+                type: https://gimnasio.example.com/problems/account-not-found
+                title: Cuenta no encontrada
+                status: 404
+                detail: No hay una cuenta vinculada al usuario externo cli-99999.
+                instance: /v1/accounts/cli-99999/redemptions
+                code: ACCOUNT_NOT_FOUND
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+            benefitNotFound:
+              summary: Beneficio inexistente
+              value:
+                type: https://gimnasio.example.com/problems/benefit-not-found
+                title: Beneficio no encontrado
+                status: 404
+                detail: El beneficio 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d no existe.
+                instance: /v1/accounts/cli-10045/redemptions
+                code: BENEFIT_NOT_FOUND
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    IdempotencyConflict:
+      description: |
+        Conflicto de idempotencia. `IDEMPOTENCY_CONFLICT`: la key ya se usó con otro body (no reintentar;
+        generá una key nueva si es otra operación). `IDEMPOTENCY_IN_PROGRESS`: la operación original
+        todavía se está procesando (reintentar con la misma key).
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            idempotencyConflict:
+              summary: Key reutilizada con otro body
+              value:
+                type: https://gimnasio.example.com/problems/idempotency-conflict
+                title: Conflicto de idempotencia
+                status: 409
+                detail: La Idempotency-Key 9f1b6c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b ya se usó con un body distinto.
+                instance: /v1/accounts/cli-10045/credits
+                code: IDEMPOTENCY_CONFLICT
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+            idempotencyInProgress:
+              summary: Operación original en curso
+              value:
+                type: https://gimnasio.example.com/problems/idempotency-in-progress
+                title: Operación en curso
+                status: 409
+                detail: Hay una solicitud con la misma Idempotency-Key en proceso. Reintentá en unos segundos.
+                instance: /v1/accounts/cli-10045/credits
+                code: IDEMPOTENCY_IN_PROGRESS
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    InsufficientBalance:
+      description: El saldo no alcanza. No se aplicó ningún cambio. No reintentar con la misma key.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            insufficientBalance:
+              summary: Débito mayor que el saldo
+              value:
+                type: https://gimnasio.example.com/problems/insufficient-balance
+                title: Saldo insuficiente
+                status: 422
+                detail: Se pidieron 5000 puntos y el saldo disponible es 770.
+                instance: /v1/accounts/cli-10045/debits
+                code: INSUFFICIENT_BALANCE
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    RedemptionRejected:
+      description: El canje no se puede hacer (saldo insuficiente o beneficio no disponible). No se aplicó ningún cambio.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            insufficientBalance:
+              summary: Saldo menor que el costo del beneficio
+              value:
+                type: https://gimnasio.example.com/problems/insufficient-balance
+                title: Saldo insuficiente
+                status: 422
+                detail: El beneficio cuesta 500 puntos y el saldo disponible es 470.
+                instance: /v1/accounts/cli-10045/redemptions
+                code: INSUFFICIENT_BALANCE
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+            benefitNotAvailable:
+              summary: Beneficio vencido, inactivo o no habilitado para partners
+              value:
+                type: https://gimnasio.example.com/problems/benefit-not-available
+                title: Beneficio no disponible
+                status: 422
+                detail: El beneficio venció el 2026-09-30.
+                instance: /v1/accounts/cli-10045/redemptions
+                code: BENEFIT_NOT_AVAILABLE
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    RateLimited:
+      description: Se superó el límite de solicitudes. Reintentar después de `Retry-After` segundos.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            rateLimited:
+              summary: Límite por API key superado
+              value:
+                type: https://gimnasio.example.com/problems/rate-limited
+                title: Demasiadas solicitudes
+                status: 429
+                detail: Límite de 20 solicitudes por segundo superado. Reintentá en 2 segundos.
+                instance: /v1/accounts/cli-10045/credits
+                code: RATE_LIMITED
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    Internal:
+      description: Error inesperado. Reintentar con backoff y la misma Idempotency-Key.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            internal:
+              summary: Error interno
+              value:
+                type: https://gimnasio.example.com/problems/internal
+                title: Error interno
+                status: 500
+                detail: Ocurrió un error inesperado. Informá el correlationId si persiste.
+                instance: /v1/accounts/cli-10045/credits
+                code: INTERNAL
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+    Unavailable:
+      description: Servicio no disponible temporalmente. Reintentar después de `Retry-After` con la misma Idempotency-Key.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            unavailable:
+              summary: Mantenimiento o dependencia caída
+              value:
+                type: https://gimnasio.example.com/problems/unavailable
+                title: Servicio no disponible
+                status: 503
+                detail: El Club de Beneficios no está disponible temporalmente.
+                instance: /v1/accounts/cli-10045/credits
+                code: UNAVAILABLE
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d

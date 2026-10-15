@@ -1,0 +1,54 @@
+name: contract
+
+on:
+  pull_request:
+    paths:
+      - 'docs/contracts/**'
+      - 'deploy/docker-compose.mock.yml'
+      - '.github/workflows/contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/contracts/**'
+
+jobs:
+  lint:
+    name: Lint del contrato (Spectral)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Spectral
+        run: make contract-lint
+
+  mock-smoke:
+    name: Mock (Prism) responde según el contrato
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Levantar mock
+        run: make mock-up
+      - name: Esperar a Prism
+        run: |
+          for i in $(seq 1 30); do
+            curl -s -o /dev/null http://localhost:4010/v1/benefits -H "X-API-Key: ci" && exit 0
+            sleep 2
+          done
+          docker compose -f deploy/docker-compose.mock.yml logs
+          exit 1
+      - name: Ejemplos de la guía
+        run: |
+          set -euo pipefail
+          BASE=http://localhost:4010
+          check() { local expected=$1; shift; local got; got=$(curl -s -o /dev/null -w '%{http_code}' "$@"); echo "esperado $expected, obtenido $got: $*"; [ "$got" = "$expected" ]; }
+          check 200 "$BASE/v1/benefits" -H "X-API-Key: ci"
+          check 201 -X POST "$BASE/v1/accounts/cli-10045/credits" -H "X-API-Key: ci" -H "Idempotency-Key: 9f1b6c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b" -H "Content-Type: application/json" -d '{"points":150,"reason":"Compra en tienda online","reference":"ORDER-A-7781"}'
+          check 200 "$BASE/v1/accounts/cli-10045/balance" -H "X-API-Key: ci"
+          check 201 -X POST "$BASE/v1/accounts/cli-10045/debits" -H "X-API-Key: ci" -H "Idempotency-Key: 2b7d4e91-0c6a-4f3e-9b8d-7a1c5e2f0d34" -H "Content-Type: application/json" -d '{"points":500,"reason":"Descuento aplicado en compra","reference":"ORDER-A-7790"}'
+          check 422 -X POST "$BASE/v1/accounts/cli-10045/debits" -H "X-API-Key: ci" -H "Idempotency-Key: 5e8a1f20-7b3c-4d9e-a6f1-2c0b9d8e7a65" -H "Content-Type: application/json" -H "Prefer: code=422" -d '{"points":5000,"reason":"Descuento aplicado en compra","reference":"ORDER-A-7795"}'
+          check 201 -X POST "$BASE/v1/accounts/cli-10045/redemptions" -H "X-API-Key: ci" -H "Idempotency-Key: a4c9e2f7-1b8d-4a6e-9c3f-5d2b7e0a1f86" -H "Content-Type: application/json" -d '{"benefitId":"0e5f6a7b-8c9d-4e1f-a2b3-c4d5e6f70812","reference":"CANJE-POS-118"}'
+          check 200 "$BASE/v1/accounts/cli-10045/movements?page=1&size=20" -H "X-API-Key: ci"
+          check 401 "$BASE/v1/benefits"
+      - name: Bajar mock
+        if: always()
+        run: make mock-down

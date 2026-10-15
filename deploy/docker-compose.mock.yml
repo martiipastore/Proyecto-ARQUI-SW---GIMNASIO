@@ -1,0 +1,25 @@
+# Mock ejecutable del contrato público del Club de Beneficios (API v1 para partners).
+# Sirve docs/contracts/benefits-api.v1.yaml con Prism en http://localhost:4010.
+#
+# Levantar:  docker compose -f deploy/docker-compose.mock.yml up -d
+# Bajar:     docker compose -f deploy/docker-compose.mock.yml down
+# Logs:      docker compose -f deploy/docker-compose.mock.yml logs -f benefits-mock
+
+name: gym-contract-mock
+
+services:
+  benefits-mock:
+    image: stoplight/prism:5.15.10
+    container_name: benefits-mock
+    # --multiprocess false: en 5.15.x el modo multiproceso falla al arrancar (cluster de Node).
+    command: >
+      mock
+      --host 0.0.0.0
+      --port 4010
+      --multiprocess false
+      /contracts/benefits-api.v1.yaml
+    volumes:
+      - ../docs/contracts:/contracts:ro
+    ports:
+      - "4010:4010"
+    restart: unless-stopped

@@ -1,0 +1,14 @@
+# Contexto de build de las imágenes Go (raíz del repo): solo hace falta pkg/, gateway/ y services/.
+.git
+.github
+.env
+.env.*
+docs
+deploy
+web
+tests
+*.docx
+*.md
+go.work
+go.work.sum
+**/*_test.go

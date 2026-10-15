@@ -1,0 +1,81 @@
+# Reglas de validación de los contratos públicos (Spectral).
+# Uso: ver docs/contracts/README.md, sección "Validar el contrato".
+extends:
+  - spectral:oas
+
+rules:
+  # Las reglas base de spectral:oas quedan activas; estas agregan las convenciones del proyecto.
+
+  operation-operationId: error
+  operation-description: error
+  operation-tags: error
+  oas3-valid-media-example: error
+  oas3-valid-schema-example: error
+
+  gym-write-requires-idempotency-key:
+    description: Toda operación POST debe declarar el header Idempotency-Key obligatorio.
+    severity: error
+    given: $.paths[*].post
+    then:
+      field: parameters
+      function: schema
+      functionOptions:
+        schema:
+          type: array
+          contains:
+            type: object
+            required: [name, in, required]
+            properties:
+              name: { const: Idempotency-Key }
+              in: { const: header }
+              required: { const: true }
+
+  gym-errors-use-problem-json:
+    description: Las respuestas 4xx y 5xx deben usar application/problem+json (RFC 7807).
+    severity: error
+    given: $.paths[*][*].responses[?(@property.match(/^[45]\d\d$/))].content
+    then:
+      field: application/problem+json
+      function: truthy
+
+  gym-responses-have-examples:
+    description: Toda respuesta con cuerpo debe tener ejemplos.
+    severity: error
+    given: $.paths[*][*].responses[*].content[*]
+    then:
+      field: examples
+      function: truthy
+
+  gym-requests-have-examples:
+    description: Todo request body debe tener ejemplos.
+    severity: error
+    given: $.paths[*][*].requestBody.content[*]
+    then:
+      field: examples
+      function: truthy
+
+  gym-rate-limited-has-retry-after:
+    description: Las respuestas 429 y 503 deben declarar el header Retry-After.
+    severity: error
+    given: $.paths[*][*].responses[?(@property == '429' || @property == '503')].headers
+    then:
+      field: Retry-After
+      function: truthy
+
+  gym-paths-are-versioned:
+    description: Toda ruta pública empieza con la versión mayor (/v1/...).
+    severity: error
+    given: $.paths
+    then:
+      field: '@key'
+      function: pattern
+      functionOptions:
+        match: '^/v[0-9]+/'
+
+  gym-schemas-closed:
+    description: Los esquemas de objetos de request deben cerrar propiedades adicionales.
+    severity: warn
+    given: $.components.schemas[?(@.type == 'object' && @property.match(/Request$/))]
+    then:
+      field: additionalProperties
+      function: falsy

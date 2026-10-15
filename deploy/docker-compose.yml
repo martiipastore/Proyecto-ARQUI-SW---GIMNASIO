@@ -1,0 +1,267 @@
+# Stack local completo. Desde la raíz del repo:
+#   cp .env.example .env && make up
+# (equivale a: docker compose --env-file .env -f deploy/docker-compose.yml up -d --build --wait)
+#
+# Solo el gateway (8080) y el web (5173) son puntos de entrada. Los puertos de los
+# servicios y de la infraestructura se publican en 127.0.0.1 para depurar.
+
+name: gym
+
+x-go-service: &go-service
+  restart: unless-stopped
+  environment: &go-env
+    LOG_LEVEL: ${LOG_LEVEL:-info}
+    SHUTDOWN_TIMEOUT: ${SHUTDOWN_TIMEOUT:-10s}
+    HEALTH_CHECK_TIMEOUT: ${HEALTH_CHECK_TIMEOUT:-2s}
+
+x-healthcheck: &healthcheck
+  interval: 5s
+  timeout: 3s
+  retries: 12
+  start_period: 10s
+
+services:
+  # ---------------------------------------------------------------- infraestructura
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Definí POSTGRES_SUPERUSER_PASSWORD en .env}
+      MEMBERS_DB_PASSWORD: ${MEMBERS_DB_PASSWORD:?Definí MEMBERS_DB_PASSWORD en .env}
+      BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD:?Definí BOOKING_DB_PASSWORD en .env}
+      BENEFITS_DB_PASSWORD: ${BENEFITS_DB_PASSWORD:?Definí BENEFITS_DB_PASSWORD en .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Definí MONGO_ROOT_PASSWORD en .env}
+      TRAINING_DB_PASSWORD: ${TRAINING_DB_PASSWORD:?Definí TRAINING_DB_PASSWORD en .env}
+      NOTIFICATIONS_DB_PASSWORD: ${NOTIFICATIONS_DB_PASSWORD:?Definí NOTIFICATIONS_DB_PASSWORD en .env}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:27017:27017"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Definí REDIS_PASSWORD en .env}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "redis-cli", "ping"]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-gym}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Definí RABBITMQ_PASSWORD en .env}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    healthcheck:
+      <<: *healthcheck
+      start_period: 20s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+
+  # Mock del contrato público de partners (docs/contracts/benefits-api.v1.yaml).
+  benefits-mock:
+    extends:
+      file: docker-compose.mock.yml
+      service: benefits-mock
+    container_name: gym-benefits-mock
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4010/v1/benefits',{headers:{'X-API-Key':'healthcheck'}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  # ---------------------------------------------------------------- servicios Go
+  members-service:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: services/members-service/Dockerfile
+    environment:
+      <<: *go-env
+      MEMBERS_HTTP_ADDR: ":8081"
+      MEMBERS_DB_DSN: postgres://members_user:${MEMBERS_DB_PASSWORD}@postgres:5432/members_db?sslmode=disable
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/health/ready"]
+
+  booking-service:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: services/booking-service/Dockerfile
+    environment:
+      <<: *go-env
+      BOOKING_HTTP_ADDR: ":8082"
+      BOOKING_DB_DSN: postgres://booking_user:${BOOKING_DB_PASSWORD}@postgres:5432/booking_db?sslmode=disable
+    ports:
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8082/health/ready"]
+
+  booking-indexer:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: services/booking-service/Dockerfile
+    entrypoint: ["/app/booking-indexer"]
+    environment:
+      <<: *go-env
+      BOOKING_INDEXER_HTTP_ADDR: ":8086"
+      BOOKING_DB_DSN: postgres://booking_user:${BOOKING_DB_PASSWORD}@postgres:5432/booking_db?sslmode=disable
+    ports:
+      - "127.0.0.1:8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8086/health/ready"]
+
+  benefits-service:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: services/benefits-service/Dockerfile
+    environment:
+      <<: *go-env
+      BENEFITS_HTTP_ADDR: ":8083"
+      BENEFITS_DB_DSN: postgres://benefits_user:${BENEFITS_DB_PASSWORD}@postgres:5432/benefits_db?sslmode=disable
+    ports:
+      - "127.0.0.1:8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8083/health/ready"]
+
+  training-service:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: services/training-service/Dockerfile
+    environment:
+      <<: *go-env
+      TRAINING_HTTP_ADDR: ":8084"
+      TRAINING_MONGO_URI: mongodb://training_user:${TRAINING_DB_PASSWORD}@mongo:27017/training_db?authSource=training_db
+      TRAINING_MONGO_DB: training_db
+    ports:
+      - "127.0.0.1:8084:8084"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8084/health/ready"]
+
+  notification-worker:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: services/notification-worker/Dockerfile
+    environment:
+      <<: *go-env
+      NOTIFICATION_HTTP_ADDR: ":8085"
+      NOTIFICATION_MONGO_URI: mongodb://notifications_user:${NOTIFICATIONS_DB_PASSWORD}@mongo:27017/notifications_db?authSource=notifications_db
+      NOTIFICATION_MONGO_DB: notifications_db
+    ports:
+      - "127.0.0.1:8085:8085"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8085/health/ready"]
+
+  api-gateway:
+    <<: *go-service
+    build:
+      context: ..
+      dockerfile: gateway/Dockerfile
+    environment:
+      <<: *go-env
+      GATEWAY_HTTP_ADDR: ":8080"
+      GATEWAY_MEMBERS_URL: http://members-service:8081
+      GATEWAY_BOOKING_URL: http://booking-service:8082
+      GATEWAY_BOOKING_INDEXER_URL: http://booking-indexer:8086
+      GATEWAY_BENEFITS_URL: http://benefits-service:8083
+      GATEWAY_TRAINING_URL: http://training-service:8084
+      GATEWAY_NOTIFICATION_URL: http://notification-worker:8085
+      GATEWAY_TIMEOUT_DEFAULT: ${GATEWAY_TIMEOUT_DEFAULT:-3s}
+      GATEWAY_TIMEOUT_BOOKINGS: ${GATEWAY_TIMEOUT_BOOKINGS:-5s}
+      GATEWAY_TIMEOUT_PARTNER_API: ${GATEWAY_TIMEOUT_PARTNER_API:-5s}
+      GATEWAY_STATUS_TIMEOUT: ${GATEWAY_STATUS_TIMEOUT:-2s}
+      GATEWAY_CORS_ORIGINS: ${GATEWAY_CORS_ORIGINS:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+    depends_on:
+      members-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+      booking-indexer:
+        condition: service_healthy
+      benefits-service:
+        condition: service_healthy
+      training-service:
+        condition: service_healthy
+      notification-worker:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health/ready"]
+
+  # ---------------------------------------------------------------- frontend
+  web:
+    build:
+      context: ../web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/healthz"]
+
+volumes:
+  postgres-data:
+  mongo-data:
+  rabbitmq-data:
