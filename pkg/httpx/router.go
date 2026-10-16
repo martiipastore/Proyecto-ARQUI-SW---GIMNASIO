@@ -46,9 +46,13 @@ func AccessLog(log *slog.Logger) gin.HandlerFunc {
 		case c.Writer.Status() >= http.StatusBadRequest:
 			level = slog.LevelWarn
 		}
+		logPath := c.FullPath()
+		if logPath == "" {
+			logPath = SafeLogPath(c.Request.URL.Path)
+		}
 		log.Log(c.Request.Context(), level, "solicitud HTTP",
 			slog.String("method", c.Request.Method),
-			slog.String("path", c.Request.URL.Path),
+			slog.String("path", logPath),
 			slog.Int("status", c.Writer.Status()),
 			slog.Int64("latency_ms", time.Since(start).Milliseconds()),
 		)
@@ -61,10 +65,18 @@ func Recovery(log *slog.Logger) gin.HandlerFunc {
 		defer func() {
 			if rec := recover(); rec != nil {
 				log.ErrorContext(c.Request.Context(), "pánico recuperado", slog.Any("panic", rec),
-					slog.String("path", c.Request.URL.Path))
+					slog.String("path", SafeLogPath(c.Request.URL.Path)))
 				problem.Write(c, problem.Internal())
 			}
 		}()
 		c.Next()
 	}
+}
+
+// SafeLogPath evita registrar identificadores sensibles en URLs sin ruta Gin.
+func SafeLogPath(path string) string {
+	if strings.HasPrefix(path, "/partner-api/v1/") {
+		return "/partner-api/v1/*"
+	}
+	return "unmatched"
 }

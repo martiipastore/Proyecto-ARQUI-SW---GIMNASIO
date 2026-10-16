@@ -12,8 +12,8 @@ import (
 
 const (
 	allowedMethods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-	allowedHeaders = "Authorization, Content-Type, Idempotency-Key, " + correlation.Header
-	exposedHeaders = correlation.Header + ", Retry-After"
+	allowedHeaders = "Authorization, Content-Type, X-API-Key, Idempotency-Key, " + correlation.Header
+	exposedHeaders = correlation.Header + ", Retry-After, Idempotent-Replayed"
 )
 
 // CORS permite que el frontend (otro origen, ej. http://localhost:5173) llame al gateway.

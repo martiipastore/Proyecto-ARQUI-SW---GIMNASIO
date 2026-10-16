@@ -14,6 +14,8 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
 	benefitshttp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/config"
 )
 
@@ -41,8 +43,14 @@ func run(cfg config.Config, log *slog.Logger) error {
 		return err
 	}
 	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		return err
+	}
 
 	router := benefitshttp.NewRouter(log, cfg.HealthTimeout, health.Check{Name: "postgres", Fn: db.Ping})
+	benefitshttp.RegisterPartners(router, application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{}), application.NewAuthenticator(db))
+	router.NoRoute(benefitshttp.PartnerFallback)
+	router.NoMethod(benefitshttp.PartnerFallback)
 	return httpserver.Run(ctx, log, httpserver.Options{
 		Addr:            cfg.HTTPAddr,
 		Handler:         router,

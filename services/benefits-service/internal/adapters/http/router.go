@@ -1,7 +1,6 @@
-// Package http es el adaptador de entrada HTTP (Gin) de benefits-service. Servirá
-// la API interna (/api/v1/benefits…) y la API pública de partners
-// (/partner-api/v1, contrato docs/contracts/benefits-api.v1.yaml). Traduce
-// solicitudes a los puertos de entrada de internal/application y errores a RFC 7807.
+// Package http implementa los adaptadores de entrada HTTP de Benefits.
+// La API de partners recibe /v1; el gateway publica /partner-api/v1.
+// NewRouter registra salud; RegisterPartners conecta los casos de uso.
 package http
 
 import (

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net"
 	"time"
 
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
@@ -17,12 +19,15 @@ type transaction struct{ tx pgx.Tx }
 
 // snapshot pertenece al adaptador: el dominio no conoce JSON ni pgx.
 type snapshot struct {
-	Movimiento domain.DatosMovimiento `json:"movimiento"`
-	Saldo      int64                  `json:"saldo"`
-	Rechazo    string                 `json:"rechazo,omitempty"`
+	Representacion []byte                 `json:"representacion,omitempty"`
+	Correlacion    string                 `json:"correlacion,omitempty"`
+	Movimiento     domain.DatosMovimiento `json:"movimiento"`
+	Saldo          int64                  `json:"saldo"`
+	Rechazo        string                 `json:"rechazo,omitempty"`
 }
 
-func (d *DB) EnTransaccion(ctx context.Context, fn func(ports.Transaction) error) error {
+func (d *DB) EnTransaccion(ctx context.Context, fn func(ports.Transaction) error) (err error) {
+	defer func() { err = storageError(err) }()
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -44,6 +49,13 @@ func (t *transaction) PartnerActivo(ctx context.Context, id string) (bool, error
 }
 
 func (t *transaction) TomarOperacion(ctx context.Context, partner, clave, huella string, ahora time.Time) (ports.OperacionGuardada, error) {
+	var obtenida bool
+	if err := t.tx.QueryRow(ctx, `SELECT pg_try_advisory_xact_lock(hashtextextended($1,0))`, partner+":"+clave).Scan(&obtenida); err != nil {
+		return ports.OperacionGuardada{}, err
+	}
+	if !obtenida {
+		return ports.OperacionGuardada{}, domain.ErrOperacionEnCurso
+	}
 	tag, err := t.tx.Exec(ctx, `INSERT INTO operaciones_partner(partner_id,clave,huella,creada_en,conservar_hasta) VALUES ($1,$2,$3,$4,$4::timestamptz+interval '30 days') ON CONFLICT DO NOTHING`, partner, clave, huella, ahora)
 	if err != nil {
 		return ports.OperacionGuardada{}, err
@@ -61,6 +73,8 @@ func (t *transaction) TomarOperacion(ctx context.Context, partner, clave, huella
 	if err = json.Unmarshal(contenido, &s); err != nil {
 		return guardada, err
 	}
+	guardada.Representacion = s.Representacion
+	guardada.Correlacion = s.Correlacion
 	guardada.Resultado = domain.ResultadoOperacion{Saldo: s.Saldo, Rechazo: s.Rechazo}
 	if s.Rechazo == "" {
 		m, err := domain.NuevoMovimiento(s.Movimiento)
@@ -95,8 +109,8 @@ func (t *transaction) GuardarMovimiento(ctx context.Context, cuenta domain.Cuent
 	return err
 }
 
-func (t *transaction) CompletarOperacion(ctx context.Context, partner, clave string, resultado domain.ResultadoOperacion) error {
-	contents, err := json.Marshal(snapshot{Movimiento: resultado.Movimiento.Datos(), Saldo: resultado.Saldo, Rechazo: resultado.Rechazo})
+func (t *transaction) CompletarOperacion(ctx context.Context, partner, clave string, resultado domain.ResultadoOperacion, correlacion string, representacion []byte) error {
+	contents, err := json.Marshal(snapshot{Representacion: representacion, Correlacion: correlacion, Movimiento: resultado.Movimiento.Datos(), Saldo: resultado.Saldo, Rechazo: resultado.Rechazo})
 	if err != nil {
 		return err
 	}
@@ -116,7 +130,7 @@ func (d *DB) ConsultarSaldo(ctx context.Context, partner, usuario string) (ports
 		if !activo {
 			return nil
 		}
-		err = t.tx.QueryRow(ctx, `SELECT c.saldo FROM cuentas c JOIN vinculaciones v ON v.cuenta_id=c.id WHERE v.partner_id=$1 AND v.external_user_id=$2`, partner, usuario).Scan(&r.Saldo)
+		err = t.tx.QueryRow(ctx, `SELECT c.saldo,COALESCE((SELECT max(aplicado_en) FROM movimientos_puntos WHERE cuenta_id=c.id),c.creada_en) FROM cuentas c JOIN vinculaciones v ON v.cuenta_id=c.id WHERE v.partner_id=$1 AND v.external_user_id=$2`, partner, usuario).Scan(&r.Saldo, &r.ActualizadoEn)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
@@ -126,7 +140,8 @@ func (d *DB) ConsultarSaldo(ctx context.Context, partner, usuario string) (ports
 	return r, err
 }
 
-func (d *DB) ListarMovimientos(ctx context.Context, partner, usuario string, pagina, tamanio int) (ports.MovimientosConsultados, error) {
+func (d *DB) ListarMovimientos(ctx context.Context, partner, usuario string, pagina, tamanio int) (result ports.MovimientosConsultados, err error) {
+	defer func() { err = storageError(err) }()
 	r := ports.MovimientosConsultados{Pagina: domain.PaginaMovimientos{Movimientos: []domain.MovimientoPuntos{}}}
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
 	if err != nil {
@@ -173,4 +188,21 @@ func (d *DB) ListarMovimientos(ctx context.Context, partner, usuario string, pag
 		return r, err
 	}
 	return r, tx.Commit(ctx)
+}
+
+func storageError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var network net.Error
+	var database interface{ SQLState() string }
+	unavailable := errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.As(err, &network)
+	if errors.As(err, &database) {
+		code := database.SQLState()
+		unavailable = unavailable || len(code) >= 2 && code[:2] == "08" || code == "57P01" || code == "57P02" || code == "57P03" || code == "53300"
+	}
+	if unavailable {
+		return fmt.Errorf("%w: %w", ports.ErrAlmacenNoDisponible, err)
+	}
+	return err
 }

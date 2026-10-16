@@ -2,18 +2,30 @@ package ports
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
 )
 
+var ErrAlmacenNoDisponible = errors.New("almacenamiento no disponible")
+
 type Clock interface{ Now() time.Time }
 type IDGenerator interface{ NewID() (string, error) }
+type Partners interface {
+	BuscarPartner(context.Context, [32]byte) (domain.Partner, error)
+}
+
+type ResultadoEncoder interface {
+	Representar(domain.ResultadoOperacion, string, string) ([]byte, error)
+}
 
 type OperacionGuardada struct {
-	Huella    string
-	Resultado domain.ResultadoOperacion
-	Nueva     bool
+	Representacion []byte
+	Huella         string
+	Correlacion    string
+	Resultado      domain.ResultadoOperacion
+	Nueva          bool
 }
 
 // Transaction agrupa las necesidades de escritura para confirmar un único efecto.
@@ -23,7 +35,7 @@ type Transaction interface {
 	TomarOperacion(context.Context, string, string, string, time.Time) (OperacionGuardada, error)
 	CuentaVinculada(context.Context, string, string) (domain.CuentaBeneficios, error)
 	GuardarMovimiento(context.Context, domain.CuentaBeneficios, domain.MovimientoPuntos) error
-	CompletarOperacion(context.Context, string, string, domain.ResultadoOperacion) error
+	CompletarOperacion(context.Context, string, string, domain.ResultadoOperacion, string, []byte) error
 }
 
 type Ledger interface {
@@ -35,6 +47,7 @@ type Ledger interface {
 type SaldoConsultado struct {
 	PartnerActivo, CuentaVinculada bool
 	Saldo                          int64
+	ActualizadoEn                  time.Time
 }
 
 type MovimientosConsultados struct {

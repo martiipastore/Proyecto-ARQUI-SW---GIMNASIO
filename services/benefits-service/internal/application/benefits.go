@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -14,30 +15,46 @@ import (
 )
 
 type AcreditarPuntos struct {
+	Correlacion                      string
+	EntradaInvalida                  bool
+	HuellaEntrada                    string
 	PartnerID, ExternalUserID, Clave string
 	Puntos                           int64
 	Motivo, Referencia               string
 }
 
 type RespuestaAcreditacion struct {
-	Resultado domain.ResultadoOperacion
-	Repetida  bool
+	Representacion []byte
+	Correlacion    string
+	Resultado      domain.ResultadoOperacion
+	Repetida       bool
 }
 
 type CasosDeUso interface {
 	Acreditar(context.Context, AcreditarPuntos) (RespuestaAcreditacion, error)
 	ConsultarSaldo(context.Context, string, string) (int64, error)
+	ConsultarBalance(context.Context, string, string) (Balance, error)
 	ListarMovimientos(context.Context, string, string, int, int) (domain.PaginaMovimientos, error)
 }
 
-type Benefits struct {
-	ledger ports.Ledger
-	clock  ports.Clock
-	ids    ports.IDGenerator
+type Balance struct {
+	Saldo         int64
+	ActualizadoEn time.Time
 }
 
-func New(ledger ports.Ledger, clock ports.Clock, ids ports.IDGenerator) *Benefits {
-	return &Benefits{ledger: ledger, clock: clock, ids: ids}
+type Benefits struct {
+	encoder ports.ResultadoEncoder
+	ledger  ports.Ledger
+	clock   ports.Clock
+	ids     ports.IDGenerator
+}
+
+func New(ledger ports.Ledger, clock ports.Clock, ids ports.IDGenerator, encoders ...ports.ResultadoEncoder) *Benefits {
+	b := &Benefits{ledger: ledger, clock: clock, ids: ids}
+	if len(encoders) > 0 {
+		b.encoder = encoders[0]
+	}
+	return b
 }
 
 var externalID = regexp.MustCompile(`^[A-Za-z0-9._:@-]{1,64}$`)
@@ -57,6 +74,10 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 	}
 	huella := sha256.Sum256(contenido)
 	hash := hex.EncodeToString(huella[:])
+	if entrada.EntradaInvalida {
+		raw := sha256.Sum256([]byte(fmt.Sprintf("INVALID:%s:%s", entrada.ExternalUserID, entrada.HuellaEntrada)))
+		hash = hex.EncodeToString(raw[:])
+	}
 	err = b.ledger.EnTransaccion(ctx, func(tx ports.Transaction) error {
 		activo, err := tx.PartnerActivo(ctx, entrada.PartnerID)
 		if err != nil {
@@ -80,11 +101,11 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 					return err
 				}
 			}
-			respuesta = RespuestaAcreditacion{Resultado: guardada.Resultado, Repetida: true}
+			respuesta = RespuestaAcreditacion{Resultado: guardada.Resultado, Repetida: true, Correlacion: guardada.Correlacion, Representacion: guardada.Representacion}
 			return nil
 		}
 		resultado := domain.ResultadoOperacion{}
-		if !externalID.MatchString(entrada.ExternalUserID) || entrada.Puntos < 1 || entrada.Puntos > 1000000 || !domain.TextoValido(entrada.Motivo, 3, 200) || !domain.TextoValido(entrada.Referencia, 1, 100) {
+		if entrada.EntradaInvalida || !externalID.MatchString(entrada.ExternalUserID) || entrada.Puntos < 1 || entrada.Puntos > 1000000 || !domain.TextoValido(entrada.Motivo, 3, 200) || !domain.TextoValido(entrada.Referencia, 1, 100) {
 			resultado.Rechazo = domain.OperacionInvalida
 		} else {
 			cuenta, err := tx.CuentaVinculada(ctx, entrada.PartnerID, entrada.ExternalUserID)
@@ -110,10 +131,20 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 				}
 			}
 		}
-		if err := tx.CompletarOperacion(ctx, entrada.PartnerID, entrada.Clave, resultado); err != nil {
+		var representacion []byte
+		if b.encoder != nil {
+			var err error
+			representacion, err = b.encoder.Representar(resultado, entrada.ExternalUserID, entrada.Correlacion)
+			if err != nil {
+				return err
+			}
+		}
+		if err := tx.CompletarOperacion(ctx, entrada.PartnerID, entrada.Clave, resultado, entrada.Correlacion, representacion); err != nil {
 			return err
 		}
 		respuesta.Resultado = resultado
+		respuesta.Representacion = representacion
+		respuesta.Correlacion = entrada.Correlacion
 		return nil
 	})
 	if err != nil {
@@ -123,22 +154,26 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 }
 
 func (b *Benefits) ConsultarSaldo(ctx context.Context, partner, usuario string) (int64, error) {
+	r, err := b.ConsultarBalance(ctx, partner, usuario)
+	return r.Saldo, err
+}
+func (b *Benefits) ConsultarBalance(ctx context.Context, partner, usuario string) (Balance, error) {
 	ctx, cancel := context.WithTimeout(ctx, 4*time.Second)
 	defer cancel()
 	if partner == "" || !externalID.MatchString(usuario) {
-		return 0, domain.ErrOperacionInvalida
+		return Balance{}, domain.ErrOperacionInvalida
 	}
-	lectura, err := b.ledger.ConsultarSaldo(ctx, partner, usuario)
+	r, err := b.ledger.ConsultarSaldo(ctx, partner, usuario)
 	if err != nil {
-		return 0, err
+		return Balance{}, err
 	}
-	if !lectura.PartnerActivo {
-		return 0, domain.ErrPartnerNoAutorizado
+	if !r.PartnerActivo {
+		return Balance{}, domain.ErrPartnerNoAutorizado
 	}
-	if !lectura.CuentaVinculada {
-		return 0, domain.ErrCuentaNoVinculada
+	if !r.CuentaVinculada {
+		return Balance{}, domain.ErrCuentaNoVinculada
 	}
-	return lectura.Saldo, nil
+	return Balance{Saldo: r.Saldo, ActualizadoEn: r.ActualizadoEn}, nil
 }
 
 func (b *Benefits) ListarMovimientos(ctx context.Context, partner, usuario string, pagina, tamanio int) (domain.PaginaMovimientos, error) {
