@@ -43,6 +43,30 @@ func (l ledgerConFallo) EnTransaccion(ctx context.Context, fn func(ports.Transac
 	return l.DB.EnTransaccion(ctx, func(tx ports.Transaction) error { return fn(falloAlCompletar{tx}) })
 }
 
+type cancelacionAlCompletar struct {
+	ports.Transaction
+	cancel context.CancelFunc
+}
+
+func (t cancelacionAlCompletar) CompletarOperacion(ctx context.Context, partner, clave string, resultado domain.ResultadoOperacion, correlacion string, representacion []byte) error {
+	if err := t.Transaction.CompletarOperacion(ctx, partner, clave, resultado, correlacion, representacion); err != nil {
+		return err
+	}
+	t.cancel()
+	return ctx.Err()
+}
+
+type ledgerConCancelacion struct {
+	*DB
+	cancel context.CancelFunc
+}
+
+func (l ledgerConCancelacion) EnTransaccion(ctx context.Context, fn func(ports.Transaction) error) error {
+	return l.DB.EnTransaccion(ctx, func(tx ports.Transaction) error {
+		return fn(cancelacionAlCompletar{Transaction: tx, cancel: l.cancel})
+	})
+}
+
 type fixture struct {
 	db                             *DB
 	app                            *application.Benefits
@@ -286,6 +310,27 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 		require.NoError(t, err)
 		_, err = f.app.Acreditar(ctx, f.credito("restriccion-001", 100))
 		require.ErrorIs(t, err, domain.ErrPartnerNoAutorizado)
+	})
+	t.Run("D10_RN22_RN27_cancelacion_revierte_movimiento_saldo_y_resultado", func(t *testing.T) {
+		f := nuevaFixture(t, db)
+		cancelable, cancel := context.WithCancel(ctx)
+		defer cancel()
+		app := application.New(ledgerConCancelacion{DB: db, cancel: cancel}, system.Clock{}, system.IDs{})
+		_, err := app.Acreditar(cancelable, f.credito("cancelacion-001", 100))
+		require.ErrorIs(t, err, ports.ErrAlmacenNoDisponible)
+		var movimientos, operaciones, saldo int64
+		require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM movimientos_puntos WHERE cuenta_id=$1`, f.cuenta).Scan(&movimientos))
+		require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM operaciones_partner WHERE partner_id=$1`, f.partner).Scan(&operaciones))
+		require.NoError(t, db.pool.QueryRow(ctx, `SELECT saldo FROM cuentas WHERE id=$1`, f.cuenta).Scan(&saldo))
+		require.Zero(t, movimientos)
+		require.Zero(t, operaciones)
+		require.Zero(t, saldo)
+		primera, err := f.app.Acreditar(ctx, f.credito("cancelacion-001", 100))
+		require.NoError(t, err)
+		replay, err := f.app.Acreditar(ctx, f.credito("cancelacion-001", 100))
+		require.NoError(t, err)
+		require.True(t, replay.Repetida)
+		require.Equal(t, primera.Resultado, replay.Resultado)
 	})
 	t.Run("RN22_RN27_rollback_del_movimiento_y_la_clave", func(t *testing.T) {
 		f := nuevaFixture(t, db)

@@ -10,6 +10,7 @@ RULESET := docs/contracts/.spectral.yaml
 GO_MODULES := pkg gateway \
 	services/members-service services/booking-service services/benefits-service \
 	services/training-service services/notification-worker
+RESILIENCE_GO_FILES := tests/resilience/fault-proxy/main.go tests/resilience/fault-proxy/main_test.go
 
 .DEFAULT_GOAL := help
 .PHONY: help up down clean logs ps test lint fmt tidy env-check mock-up mock-down mock-logs contract-lint
@@ -46,12 +47,14 @@ test: ## Tests de todos los módulos Go (los de integración usan Docker vía te
 		echo "==> go test $$m"; \
 		(cd $$m && go test ./...) || exit 1; \
 	done
+	go test $(RESILIENCE_GO_FILES)
 
 lint: ## go vet + golangci-lint (si está instalado) + chequeo de tipos del frontend
 	@for m in $(GO_MODULES); do \
 		echo "==> go vet $$m"; \
 		(cd $$m && go vet ./...) || exit 1; \
 	done
+	go vet $(RESILIENCE_GO_FILES)
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		for m in $(GO_MODULES); do \
 			echo "==> golangci-lint $$m"; \
@@ -67,7 +70,7 @@ lint: ## go vet + golangci-lint (si está instalado) + chequeo de tipos del fron
 	fi
 
 fmt: ## Formatea el código Go
-	gofmt -w $(GO_MODULES)
+	gofmt -w $(GO_MODULES) tests/resilience/fault-proxy
 
 tidy: ## go mod tidy en todos los módulos
 	@for m in $(GO_MODULES); do \

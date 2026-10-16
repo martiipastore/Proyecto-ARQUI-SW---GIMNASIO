@@ -5,9 +5,26 @@ import (
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 )
+
+// D10 / RN-27 / CL-08b: el gateway deja el reintento de escritura al consumidor.
+func TestPartners_NoReintentaEscriturasAnte503(t *testing.T) {
+	var attempts atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts.Add(1)
+		require.Equal(t, "POST", r.Method)
+		require.Equal(t, "fixture-idempotencia", r.Header.Get("Idempotency-Key"))
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer upstream.Close()
+	f := newFixture(t, map[string]string{"GATEWAY_BENEFITS_URL": upstream.URL})
+	response := f.do("POST", "/partner-api/v1/accounts/synthetic/credits", map[string]string{"Idempotency-Key": "fixture-idempotencia"})
+	require.Equal(t, 503, response.Code)
+	require.EqualValues(t, 1, attempts.Load())
+}
 
 // D8/RN-26: el gateway adapta la ruta y elimina identidad no confiable,
 // pero deja la autenticación de la API key al servicio de Benefits.
