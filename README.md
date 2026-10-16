@@ -74,8 +74,9 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 |---|---|
 | **Implementado** | Módulos y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing, correlación, CORS, timeouts y estado agregado; frontend de estado; contrato OpenAPI, guía y mock de partners. |
 | **Implementado en Benefits** | API con autenticación por partner para acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/ETAPA_2_BENEFITS.md) y [API y demostración](docs/ETAPA_3_API_BENEFITS.md). |
+| **Observabilidad del flujo mínimo** | Logs JSON correlacionados y traza Gateway → Benefits → PostgreSQL; Collector y Jaeger local en memoria. [Evidencia y reproducción](docs/ETAPA_4_OBSERVABILIDAD.md). |
 | **Desplegado como infraestructura, todavía sin uso funcional** | Redis y RabbitMQ. |
-| **Pendiente** | Resto de operaciones de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; trazas, métricas y tableros; consumo de la capacidad externa que se defina con otro grupo. |
+| **Pendiente** | Resto de operaciones de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; métricas exportadas y tableros; consumo de la capacidad externa que se defina con otro grupo. |
 
 ## Cómo ejecutarlo localmente
 
@@ -171,3 +172,5 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | Pastore | Martina | 2416245 |
 | Schaffer | Matías | 2434073 |
 | Viti | María Guadalupe | 2426038 |
+
+Observabilidad del flujo mínimo: [etapa 4](docs/ETAPA_4_OBSERVABILIDAD.md), con logs correlacionados y primera traza Gateway → Benefits → PostgreSQL. Jaeger local: http://localhost:16686; historial en memoria y evidencia exportada.

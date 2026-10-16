@@ -8,7 +8,7 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual:** etapa 3 de Entrega 2: API de partners para créditos, saldo y movimientos con API key y gateway; persistencia del resultado HTTP original, errores RFC 7807 públicos y migraciones al arrancar. Los demás endpoints de Benefits y las siguientes etapas siguen pendientes. Ver [docs/ETAPA_3_API_BENEFITS.md](docs/ETAPA_3_API_BENEFITS.md).
+- **Etapa actual:** etapa 4 de Entrega 2: primera traza Gateway → Benefits → PostgreSQL, logs correlacionados, Collector y Jaeger local en memoria; completada y validada en el workspace, pendiente de PR. API mínima de etapa 3 integrada por PR #2. Ver [docs/ETAPA_4_OBSERVABILIDAD.md](docs/ETAPA_4_OBSERVABILIDAD.md). Métricas exportadas, alertas y etapas siguientes pendientes.
 
 ## Stack
 
