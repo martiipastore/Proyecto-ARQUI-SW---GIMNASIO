@@ -62,6 +62,10 @@ jobs:
           go test ../tests/resilience/fault-proxy/main.go ../tests/resilience/fault-proxy/main_test.go
           go vet ../tests/resilience/fault-proxy/main.go ../tests/resilience/fault-proxy/main_test.go
 
+      - name: Verificar diagnóstico del pool para carga
+        if: matrix.module == 'services/benefits-service'
+        run: go vet ../../tests/load/pool-info.go
+
   web:
     name: Frontend · build
     runs-on: ubuntu-latest

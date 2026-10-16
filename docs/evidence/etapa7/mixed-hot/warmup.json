@@ -1,0 +1,481 @@
+{
+    "summary":  {
+                    "workload":  "mixed",
+                    "distribution":  "hot",
+                    "vus":  1,
+                    "pause_ms":  100,
+                    "duration":  "30s",
+                    "phase":  "warmup",
+                    "metrics":  {
+                                    "http_req_sending":  {
+                                                             "type":  "trend",
+                                                             "contains":  "time",
+                                                             "values":  {
+                                                                            "min":  0.018705,
+                                                                            "med":  0.059818,
+                                                                            "max":  1.820741,
+                                                                            "p(50)":  0.059818,
+                                                                            "p(95)":  0.1892164,
+                                                                            "p(99)":  0.3895836799999983,
+                                                                            "avg":  0.08856354646840149
+                                                                        }
+                                                         },
+                                    "http_req_receiving":  {
+                                                               "type":  "trend",
+                                                               "contains":  "time",
+                                                               "values":  {
+                                                                              "p(50)":  0.158544,
+                                                                              "p(95)":  0.6284078,
+                                                                              "p(99)":  1.328212399999999,
+                                                                              "avg":  0.255232457249071,
+                                                                              "min":  0.067419,
+                                                                              "med":  0.158544,
+                                                                              "max":  7.059794
+                                                                          }
+                                                           },
+                                    "vus":  {
+                                                "type":  "gauge",
+                                                "contains":  "default",
+                                                "values":  {
+                                                               "value":  1,
+                                                               "min":  1,
+                                                               "max":  1
+                                                           }
+                                            },
+                                    "http_req_duration{expected_response:true}":  {
+                                                                                      "type":  "trend",
+                                                                                      "contains":  "time",
+                                                                                      "values":  {
+                                                                                                     "avg":  10.084844245353155,
+                                                                                                     "min":  3.223862,
+                                                                                                     "med":  6.843744,
+                                                                                                     "max":  77.43084,
+                                                                                                     "p(50)":  6.843744,
+                                                                                                     "p(95)":  27.399663199999996,
+                                                                                                     "p(99)":  56.713201679999976
+                                                                                                 }
+                                                                                  },
+                                    "http_req_failed":  {
+                                                            "contains":  "default",
+                                                            "values":  {
+                                                                           "rate":  0,
+                                                                           "passes":  0,
+                                                                           "fails":  269
+                                                                       },
+                                                            "type":  "rate"
+                                                        },
+                                    "functional_failures":  {
+                                                                "thresholds":  {
+                                                                                   "rate==0":  {
+                                                                                                   "ok":  true
+                                                                                               }
+                                                                               },
+                                                                "type":  "rate",
+                                                                "contains":  "default",
+                                                                "values":  {
+                                                                               "rate":  0,
+                                                                               "passes":  0,
+                                                                               "fails":  269
+                                                                           }
+                                                            },
+                                    "http_req_connecting":  {
+                                                                "type":  "trend",
+                                                                "contains":  "time",
+                                                                "values":  {
+                                                                               "min":  0,
+                                                                               "med":  0,
+                                                                               "max":  3.135233,
+                                                                               "p(50)":  0,
+                                                                               "p(95)":  0,
+                                                                               "p(99)":  0,
+                                                                               "avg":  0.01165514126394052
+                                                                           }
+                                                            },
+                                    "iteration_duration":  {
+                                                               "values":  {
+                                                                              "avg":  111.71290823048321,
+                                                                              "min":  103.944414,
+                                                                              "med":  108.219904,
+                                                                              "max":  179.008467,
+                                                                              "p(50)":  108.219904,
+                                                                              "p(95)":  130.1246938,
+                                                                              "p(99)":  161.78672207999998
+                                                                          },
+                                                               "type":  "trend",
+                                                               "contains":  "time"
+                                                           },
+                                    "reads_completed":  {
+                                                            "type":  "counter",
+                                                            "contains":  "default",
+                                                            "values":  {
+                                                                           "count":  215,
+                                                                           "rate":  7.152352442477435
+                                                                       }
+                                                        },
+                                    "http_req_duration":  {
+                                                              "type":  "trend",
+                                                              "contains":  "time",
+                                                              "values":  {
+                                                                             "p(95)":  27.399663199999996,
+                                                                             "p(99)":  56.713201679999976,
+                                                                             "avg":  10.084844245353155,
+                                                                             "min":  3.223862,
+                                                                             "med":  6.843744,
+                                                                             "max":  77.43084,
+                                                                             "p(50)":  6.843744
+                                                                         }
+                                                          },
+                                    "credits_created":  {
+                                                            "type":  "counter",
+                                                            "contains":  "default",
+                                                            "values":  {
+                                                                           "count":  54,
+                                                                           "rate":  1.7964047995059604
+                                                                       }
+                                                        },
+                                    "http_req_blocked":  {
+                                                             "type":  "trend",
+                                                             "contains":  "time",
+                                                             "values":  {
+                                                                            "min":  0.004801,
+                                                                            "med":  0.008402,
+                                                                            "max":  11.137414,
+                                                                            "p(50)":  0.008402,
+                                                                            "p(95)":  0.025587,
+                                                                            "p(99)":  0.06551127999999992,
+                                                                            "avg":  0.052334156133829
+                                                                        }
+                                                         },
+                                    "http_reqs":  {
+                                                      "type":  "counter",
+                                                      "contains":  "default",
+                                                      "values":  {
+                                                                     "count":  269,
+                                                                     "rate":  8.948757241983396
+                                                                 }
+                                                  },
+                                    "http_req_tls_handshaking":  {
+                                                                     "contains":  "time",
+                                                                     "values":  {
+                                                                                    "min":  0,
+                                                                                    "med":  0,
+                                                                                    "max":  0,
+                                                                                    "p(50)":  0,
+                                                                                    "p(95)":  0,
+                                                                                    "p(99)":  0,
+                                                                                    "avg":  0
+                                                                                },
+                                                                     "type":  "trend"
+                                                                 },
+                                    "iterations":  {
+                                                       "values":  {
+                                                                      "count":  269,
+                                                                      "rate":  8.948757241983396
+                                                                  },
+                                                       "type":  "counter",
+                                                       "contains":  "default"
+                                                   },
+                                    "write_ms":  {
+                                                     "type":  "trend",
+                                                     "contains":  "time",
+                                                     "values":  {
+                                                                    "p(99)":  57.30483528,
+                                                                    "avg":  13.856105333333334,
+                                                                    "min":  5.412116,
+                                                                    "med":  8.9990195,
+                                                                    "max":  59.395274,
+                                                                    "p(50)":  8.9990195,
+                                                                    "p(95)":  36.09567814999998
+                                                                },
+                                                     "thresholds":  {
+                                                                        "p(95)\u003c500":  {
+                                                                                               "ok":  true
+                                                                                           }
+                                                                    }
+                                                 },
+                                    "read_ms":  {
+                                                    "type":  "trend",
+                                                    "contains":  "time",
+                                                    "values":  {
+                                                                   "avg":  9.137643786046507,
+                                                                   "min":  3.223862,
+                                                                   "med":  6.122328,
+                                                                   "max":  77.43084,
+                                                                   "p(50)":  6.122328,
+                                                                   "p(95)":  21.6983404,
+                                                                   "p(99)":  48.86103991999984
+                                                               },
+                                                    "thresholds":  {
+                                                                       "p(95)\u003c200":  {
+                                                                                              "ok":  true
+                                                                                          }
+                                                                   }
+                                                },
+                                    "http_req_waiting":  {
+                                                             "type":  "trend",
+                                                             "contains":  "time",
+                                                             "values":  {
+                                                                            "p(99)":  56.491775759999975,
+                                                                            "avg":  9.741048241635688,
+                                                                            "min":  3.074217,
+                                                                            "med":  6.570161,
+                                                                            "max":  77.062631,
+                                                                            "p(50)":  6.570161,
+                                                                            "p(95)":  26.261059599999992
+                                                                        }
+                                                         },
+                                    "data_sent":  {
+                                                      "type":  "counter",
+                                                      "contains":  "data",
+                                                      "values":  {
+                                                                     "count":  77201,
+                                                                     "rate":  2568.2267949381417
+                                                                 }
+                                                  },
+                                    "data_received":  {
+                                                          "type":  "counter",
+                                                          "contains":  "data",
+                                                          "values":  {
+                                                                         "rate":  16521.60147456741,
+                                                                         "count":  496640
+                                                                     }
+                                                      },
+                                    "vus_max":  {
+                                                    "type":  "gauge",
+                                                    "contains":  "default",
+                                                    "values":  {
+                                                                   "value":  1,
+                                                                   "min":  1,
+                                                                   "max":  1
+                                                               }
+                                                }
+                                },
+                    "state":  {
+                                  "isStdOutTTY":  false,
+                                  "isStdErrTTY":  false,
+                                  "testRunDurationMs":  30060.039928
+                              },
+                    "exit_code":  0
+                },
+    "state":  {
+                  "accounts":  100,
+                  "balance_sum":  1054,
+                  "movements":  1054,
+                  "operations":  1054,
+                  "inconsistent_accounts":  0
+              },
+    "expected_credits":  1054,
+    "invariants_ok":  true,
+    "samples":  [
+                    {
+                        "utc":  "2026-10-16T22:29:22.7193792Z",
+                        "services":  [
+                                         {
+                                             "service":  "gateway",
+                                             "cpu_percent":  7.87,
+                                             "memory_bytes":  11744051
+                                         },
+                                         {
+                                             "service":  "benefits",
+                                             "cpu_percent":  6.08,
+                                             "memory_bytes":  17112760
+                                         },
+                                         {
+                                             "service":  "collector",
+                                             "cpu_percent":  0.13,
+                                             "memory_bytes":  43778048
+                                         },
+                                         {
+                                             "service":  "jaeger",
+                                             "cpu_percent":  0.14,
+                                             "memory_bytes":  253440819
+                                         },
+                                         {
+                                             "service":  "postgres",
+                                             "cpu_percent":  4.43,
+                                             "memory_bytes":  133798298
+                                         },
+                                         {
+                                             "service":  "generator",
+                                             "cpu_percent":  4.29,
+                                             "memory_bytes":  13799260
+                                         }
+                                     ],
+                        "other_cpu_percent":  161.73999999999998,
+                        "other_memory_bytes":  803904423,
+                        "postgres":  {
+                                         "connections":  8,
+                                         "active":  0,
+                                         "lock_waiters":  0,
+                                         "io_waiters":  0
+                                     }
+                    },
+                    {
+                        "utc":  "2026-10-16T22:29:30.1971486Z",
+                        "services":  [
+                                         {
+                                             "service":  "generator",
+                                             "cpu_percent":  3.96,
+                                             "memory_bytes":  14585692
+                                         },
+                                         {
+                                             "service":  "gateway",
+                                             "cpu_percent":  1.89,
+                                             "memory_bytes":  11744051
+                                         },
+                                         {
+                                             "service":  "benefits",
+                                             "cpu_percent":  4.21,
+                                             "memory_bytes":  17112760
+                                         },
+                                         {
+                                             "service":  "collector",
+                                             "cpu_percent":  0.49,
+                                             "memory_bytes":  43778048
+                                         },
+                                         {
+                                             "service":  "jaeger",
+                                             "cpu_percent":  0.53,
+                                             "memory_bytes":  254174822
+                                         },
+                                         {
+                                             "service":  "postgres",
+                                             "cpu_percent":  9.63,
+                                             "memory_bytes":  133903155
+                                         }
+                                     ],
+                        "other_cpu_percent":  21.790000000000003,
+                        "other_memory_bytes":  790757376,
+                        "postgres":  {
+                                         "connections":  8,
+                                         "active":  0,
+                                         "lock_waiters":  0,
+                                         "io_waiters":  0
+                                     }
+                    },
+                    {
+                        "utc":  "2026-10-16T22:29:37.8456842Z",
+                        "services":  [
+                                         {
+                                             "service":  "generator",
+                                             "cpu_percent":  6.16,
+                                             "memory_bytes":  14847836
+                                         },
+                                         {
+                                             "service":  "gateway",
+                                             "cpu_percent":  1,
+                                             "memory_bytes":  11744051
+                                         },
+                                         {
+                                             "service":  "benefits",
+                                             "cpu_percent":  4.27,
+                                             "memory_bytes":  17112760
+                                         },
+                                         {
+                                             "service":  "collector",
+                                             "cpu_percent":  0.16,
+                                             "memory_bytes":  43778048
+                                         },
+                                         {
+                                             "service":  "jaeger",
+                                             "cpu_percent":  0.14,
+                                             "memory_bytes":  254699110
+                                         },
+                                         {
+                                             "service":  "postgres",
+                                             "cpu_percent":  2.34,
+                                             "memory_bytes":  133903155
+                                         }
+                                     ],
+                        "other_cpu_percent":  10.749999999999998,
+                        "other_memory_bytes":  790499427,
+                        "postgres":  {
+                                         "connections":  8,
+                                         "active":  0,
+                                         "lock_waiters":  0,
+                                         "io_waiters":  0
+                                     }
+                    },
+                    {
+                        "utc":  "2026-10-16T22:29:46.1237373Z",
+                        "services":  [
+                                         {
+                                             "service":  "generator",
+                                             "cpu_percent":  2.24,
+                                             "memory_bytes":  15372124
+                                         },
+                                         {
+                                             "service":  "gateway",
+                                             "cpu_percent":  1.23,
+                                             "memory_bytes":  11744051
+                                         },
+                                         {
+                                             "service":  "benefits",
+                                             "cpu_percent":  3.03,
+                                             "memory_bytes":  17228104
+                                         },
+                                         {
+                                             "service":  "collector",
+                                             "cpu_percent":  0.12,
+                                             "memory_bytes":  43778048
+                                         },
+                                         {
+                                             "service":  "jaeger",
+                                             "cpu_percent":  0.15,
+                                             "memory_bytes":  255537971
+                                         },
+                                         {
+                                             "service":  "postgres",
+                                             "cpu_percent":  7.06,
+                                             "memory_bytes":  134742016
+                                         }
+                                     ],
+                        "other_cpu_percent":  40.65,
+                        "other_memory_bytes":  790495232,
+                        "postgres":  {
+                                         "connections":  8,
+                                         "active":  0,
+                                         "lock_waiters":  0,
+                                         "io_waiters":  0
+                                     }
+                    },
+                    {
+                        "utc":  "2026-10-16T22:29:53.9374930Z",
+                        "services":  [
+                                         {
+                                             "service":  "gateway",
+                                             "cpu_percent":  0,
+                                             "memory_bytes":  11576279
+                                         },
+                                         {
+                                             "service":  "benefits",
+                                             "cpu_percent":  0.13,
+                                             "memory_bytes":  17249075
+                                         },
+                                         {
+                                             "service":  "collector",
+                                             "cpu_percent":  0.53,
+                                             "memory_bytes":  43778048
+                                         },
+                                         {
+                                             "service":  "jaeger",
+                                             "cpu_percent":  0.39,
+                                             "memory_bytes":  255852544
+                                         },
+                                         {
+                                             "service":  "postgres",
+                                             "cpu_percent":  0.01,
+                                             "memory_bytes":  134008013
+                                         }
+                                     ],
+                        "other_cpu_percent":  98.61,
+                        "other_memory_bytes":  851195200,
+                        "postgres":  {
+                                         "connections":  8,
+                                         "active":  0,
+                                         "lock_waiters":  0,
+                                         "io_waiters":  0
+                                     }
+                    }
+                ]
+}

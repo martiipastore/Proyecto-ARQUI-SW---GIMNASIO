@@ -1,0 +1,11 @@
+{
+  "assumption_decision": "D-60",
+  "movements_per_day": 200,
+  "window_days": 30,
+  "movements_in_window": 6000,
+  "observed_allocated_bytes_per_movement": 357.23,
+  "observed_allocated_bytes_per_idempotency_row": 1383.57,
+  "estimated_30_day_growth_mib": 9.96,
+  "estimated_365_day_growth_mib": 121.19,
+  "limitations": "Allocation per row includes indexes, free space and dead tuples. Synthetic payloads; not an exact marginal cost. Excludes WAL, backups, other databases and logs. No automatic idempotency purge."
+}

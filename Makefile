@@ -55,6 +55,7 @@ lint: ## go vet + golangci-lint (si está instalado) + chequeo de tipos del fron
 		(cd $$m && go vet ./...) || exit 1; \
 	done
 	go vet $(RESILIENCE_GO_FILES)
+	go vet tests/load/pool-info.go
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		for m in $(GO_MODULES); do \
 			echo "==> golangci-lint $$m"; \
@@ -70,7 +71,7 @@ lint: ## go vet + golangci-lint (si está instalado) + chequeo de tipos del fron
 	fi
 
 fmt: ## Formatea el código Go
-	gofmt -w $(GO_MODULES) tests/resilience/fault-proxy
+	gofmt -w $(GO_MODULES) tests/resilience/fault-proxy tests/load/pool-info.go
 
 tidy: ## go mod tidy en todos los módulos
 	@for m in $(GO_MODULES); do \

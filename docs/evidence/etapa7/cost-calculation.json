@@ -1,0 +1,28 @@
+{
+  "scope": "Public gross CPU/RAM/volume comparison before allowances, tax and payment fees",
+  "fx_source": "pricing-sources.json",
+  "scenarios": [
+    {
+      "ocpu": 2,
+      "ram_gb": 12,
+      "hours": 744,
+      "volume_gb": 200,
+      "vpu_per_gb": 10,
+      "gross_compute_usd": "28.27",
+      "gross_disk_usd": "8.50",
+      "gross_subtotal_usd": "36.77",
+      "reference_ars": "56441.95"
+    },
+    {
+      "ocpu": 4,
+      "ram_gb": 24,
+      "hours": 744,
+      "volume_gb": 200,
+      "vpu_per_gb": 10,
+      "gross_compute_usd": "56.54",
+      "gross_disk_usd": "8.50",
+      "gross_subtotal_usd": "65.04",
+      "reference_ars": "99836.40"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+    "measured_at_utc":  "2026-10-16T21:57:46.0477394Z",
+    "smoke":  false,
+    "docker_version":  "29.6.1",
+    "docker_arch":  "x86_64",
+    "docker_cpus":  8,
+    "docker_memory_bytes":  4018257920,
+    "host_cpu":  [
+                     "Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz"
+                 ],
+    "host_memory_kib":  8218420,
+    "k6_image":  "grafana/k6:1.3.0",
+    "traces_sampling":  "100 percent, unchanged",
+    "target":  "http://api-gateway:8080 through public partner prefix",
+    "generator_network":  "gym_default",
+    "pause_ms":  100,
+    "accounts_per_fixture":  100,
+    "seed_movements_per_account":  10,
+    "warmup_seconds":  30,
+    "level_seconds":  60,
+    "vu_levels":  [
+                      1,
+                      5,
+                      10
+                  ],
+    "sample_target_interval_seconds":  5,
+    "pool_note":  "pgxpool default max(4, NumCPU) when no pool_max_conns is configured; verify against runtime CPU count",
+    "postgres_settings":  {
+                              "max_connections":  "100",
+                              "shared_buffers":  "128MB",
+                              "version":  "PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit"
+                          }
+}
