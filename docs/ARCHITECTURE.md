@@ -666,7 +666,7 @@ Requisitos: ~8 GB de RAM y **al menos 15 GB libres en disco** para imágenes y b
 
 El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**.
 
-**Decisión:** se despliega **el stack completo en una VM con Docker Compose**, igual que en local, con perfil `prod`: el frontend se sirve como estáticos (sin el servidor de desarrollo de Vite) y Traefik actúa además como borde HTTPS. El **proveedor de nube no está elegido**; se definirá en un ADR posterior.
+**Decisión objetivo:** se despliega **el stack completo en una VM con Docker Compose**, con configuración de producción: el frontend se sirve como estáticos y Traefik actúa además como borde HTTPS. El equipo eligió **Oracle Cloud Free Tier, VM ARM**, según D-41 de [DECISIONES.md](DECISIONES.md). La disponibilidad de recursos, el dimensionamiento y el costo efectivo se verificarán en D13; no hay despliegue productivo acreditado por esta decisión. El perfil de producción todavía debe incorporarse.
 
 | Aspecto | Detalle |
 |---|---|
@@ -711,9 +711,20 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-002 original](adr/ADR-002-patrones-internos.md) | D2 — Patrón interno de cada servicio | Reemplazado por ADR-002 v2 |
 | [ADR-002 v2](adr/ADR-002-v2-patrones-internos.md) | D2 — Capas y Hexagonal; precisión de dependencias, puertos y adaptadores | Aceptado |
 | [ADR-003](adr/ADR-003-persistencia.md) | D3 — Persistencia por servicio (versión inicial) | Aceptado |
-| [ADR-004](adr/ADR-004-orden-movimientos-puntos.md) | D4 — Orden, atomicidad y consistencia del ledger de puntos | Aceptado |
+| [ADR-004](adr/ADR-004-orden-movimientos-puntos.md) | D4 — Orden y atomicidad inicial | Reemplazado por ADR-004 v2 |
+| [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md) | D4 — Orden, atomicidad y suma íntegra del ledger | Aceptado como aclaración; implementación pendiente |
 | [ADR-005 original](adr/ADR-005-comunicacion.md) | D5 — Comunicación síncrona y asíncrona | Reemplazado por ADR-005 v2 |
 | [ADR-005 v2](adr/ADR-005-v2-comunicacion.md) | D5 — Comunicación y garantías entre servicios | Aceptado |
-| [ADR-006](adr/ADR-006-seguridad.md) | D6 — Autenticación, autorización y frontera de confianza | Aceptado |
+| [ADR-006](adr/ADR-006-seguridad.md) | Seguridad — decisión adicional; la etiqueta D6 del archivo es un error histórico, D6 del TP corresponde a búsqueda | Aceptado |
 | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md) | D7 — Caché, autorización y disponibilidad degradada | Aceptado |
-| [ADR-008](adr/ADR-008-contrato-propio.md) | D8 — Contrato propio: API de fidelización v1 | Aceptado |
+| [ADR-008](adr/ADR-008-contrato-propio.md) | D8 — Contrato propio inicial | Reemplazado por ADR-008 v2 |
+| [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Aceptado; implementación del gateway pendiente |
+| [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Propuesto; proveedor y contrato pendientes |
+| [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Resiliencia del flujo de Benefits | Aceptado como diseño inicial; implementación y evidencia pendientes |
+| [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Observabilidad v1 | Aceptado como diseño inicial; instrumentación y validación pendientes |
+| [ADR-012](adr/ADR-012-balanceo-booking.md) | D12 — Balanceo inicial | Reemplazado por ADR-012 v2 |
+| [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | D12 — Balanceo con verificaciones consecutivas (3 fallos / 2 éxitos) | Aceptado como diseño inicial; soporte de herramienta, implementación y evidencia pendientes |
+| [ADR-013](adr/ADR-013-capacidad-costos.md) | D13 — Capacidad y costos | Aceptado como plan inicial; mediciones y cotización pendientes |
+| [ADR-014](adr/ADR-014-busqueda-clases.md) | D6 — Búsqueda de clases | Aceptado como diseño inicial; implementación y mediciones pendientes |
+
+La revisión de la Entrega 2 se registra en [REVISION_ETAPA_1.md](REVISION_ETAPA_1.md), incluyendo patrones de acceso de Benefits y la traducción pendiente de los errores 502/504 del gateway al contrato 1.1.0 aprobado. Las propuestas no cambian las decisiones aceptadas ni acreditan implementación.

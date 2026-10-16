@@ -79,9 +79,9 @@ El entorno de desarrollo y los tests deberán disponer de:
 
 Los datos de demostración deben cargarse mediante migraciones, fixtures de tests o un mecanismo de inicialización documentado. No se deben agregar endpoints ocultos ni credenciales reales al repositorio.
 
-### 3.4 Interpretación alternativa de “además”
+### 3.4 Alcance confirmado de “servicio operativo”
 
-Si la cátedra confirma que “un servicio operativo, además de la funcionalidad a compartir” exige dos capacidades separadas, se agregará un flujo mínimo en `members-service`. Esa ampliación no debe retrasar el flujo principal de Benefits y se registrará como cambio de alcance en este documento.
+El 16/10/2026 el equipo comunicó que la cátedra confirmó que Benefits alcanza para el requisito de servicio operativo y funcionalidad compartida (D-42). El flujo mínimo de §3.2 se mantiene; no se agrega otro servicio para cumplir este requisito. Operativo significa ejecutar reglas de negocio con persistencia real mediante el contrato, no solamente responder health checks.
 
 ## 4. Principios que se mantienen
 
@@ -101,7 +101,7 @@ Durante toda la Entrega 2 se deben respetar estas decisiones ya aceptadas:
 
 ## Etapa 0 — Preparación y línea base
 
-**Estado:** Pendiente
+**Estado:** Completada (inicio y cierre: 16/10/2026)
 
 ### Objetivo
 
@@ -141,11 +141,29 @@ No necesita commit si no se modifica ningún archivo. Si se registra la línea b
 
 ## Etapa 1 — Revisión y cierre inicial de decisiones
 
-**Estado:** Pendiente
+**Estado:** Completada en el workspace (inicio y cierre: 16/10/2026; revisión de PR pendiente)
+
+Revisión final: decisiones iniciales aprobadas, D9 propuesta explícita pendiente del proveedor y definición del saldo alineada con RN-22 mediante SPEC v0.10, ADR-004 v2 y D-52. Cambio local del SPEC pendiente de revisión de otro integrante antes de integrar por PR. No se realizaron commits, publicación ni merge. La evidencia está en REVISION_ETAPA_1.md.
+
+Criterio académico aclarado por el equipo: conceptos basados en el teórico, herramientas adicionales permitidas cuando sean necesarias y útiles, con justificación explícita en decisiones y etapas. Ver [BASE_TEORICA.md](BASE_TEORICA.md). Los parámetros propios se deciden con el equipo. D13 tiene plan inicial aprobado; las aprobaciones existentes conservan su estado.
+
+Avance del 16/10/2026: el equipo aprobó el límite interno inicial de 4 s en Benefits (D-43) y la alineación contractual de errores 502/504 (D-44). OpenAPI 1.1.0, CHANGELOG y ADR-008 v2 actualizados; Spectral terminó con código 0, sin advertencias ni errores. Registro sincronizado en Markdown y Word. La implementación queda en etapas posteriores; los demás ADR propuestos siguen pendientes de revisión. D9 espera la asignación del proveedor.
 
 ### Objetivo
 
 Alinear las decisiones obligatorias antes de que el código las vuelva implícitas.
+
+Diseño inicial de D6 aprobado el 16/10/2026 y registrado en ADR-014 y D-45: búsqueda de clases con OpenSearch, filtros, orden por inicio, 20 resultados por defecto (máximo 100) y objetivo de actualización < 2 s en condiciones normales. Implementación y mediciones pendientes.
+
+Diseño inicial de D12 aprobado el 16/10/2026 y registrado en ADR-012 y D-46: dos instancias de Booking detrás de Traefik, con igual peso, sin afinidad de sesión y health checks cada 5 s con timeout de 2 s. Implementación y evidencia de distribución pendientes.
+
+Diseño inicial de D10 aprobado el 16/10/2026 y registrado en ADR-010 y D-47: sin reintentos automáticos de escrituras en gateway, recuperación con la misma clave, fallo cerrado ante PostgreSQL y sin circuit breaker en el flujo inicial. Implementación y ejercicio de caída pendientes.
+
+Diseño inicial de D11 aprobado el 16/10/2026 y registrado en ADR-011 y D-48: logs JSON y trazas Gateway → Benefits → PostgreSQL con OTel, Collector y Jaeger; muestreo local 100 %, métricas y alertas iniciales. Instrumentación, primera traza y validación de umbrales pendientes.
+
+Plan inicial de D13 aprobado el 16/10/2026 y registrado en ADR-013 y D-50: k6 como herramienta adicional justificada, 100 cuentas y escalones de 1/5/10 usuarios, cero duplicaciones y objetivos p95 de lecturas < 200 ms y escrituras < 500 ms. Mediciones, comparación de mejoras y cotización pendientes de etapa 7. Se prioriza lo visto en clase; cualquier otra excepción debe justificarse y consultarse.
+
+Ajuste D12 aprobado el 16/10/2026: 3 fallos consecutivos para retirar y 2 éxitos consecutivos para reincorporar, con intervalo 5 s y timeout 2 s. ADR-012 v2 reemplaza al original; D-51 registra el motivo y la referencia a p. 87 del teórico. Son parámetros propios para evitar flapping, con mayor demora de detección/recuperación. Soporte de herramienta e implementación pendientes de la etapa de balanceo.
 
 ### Tareas
 
@@ -359,6 +377,8 @@ Una acreditación genera:
 
 **Estado:** Bloqueada hasta conocer el proveedor
 
+El 16/10/2026 el equipo confirmó que todavía no recibió la asignación del proveedor y que la recibirá próximamente. D9 queda documentada como propuesta inicial en ADR-009; esta dependencia no impide avanzar con las demás decisiones de la etapa 1.
+
 ### Objetivo
 
 Documentar e integrar la capacidad ofrecida por otro grupo sin acoplar el dominio a su contrato.
@@ -541,8 +561,8 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 
 | Etapa | Estado | Evidencia esperada | Commit o PR |
 |---|---|---|---|
-| 0. Preparación y línea base | Pendiente | Tests, stack y contrato validados | — |
-| 1. Decisiones iniciales | Pendiente | ADR obligatorios identificados | — |
+| 0. Preparación y línea base | Completada (16/10/2026) | Siete módulos con tests exitosos, Spectral sin advertencias, stack saludable y estado agregado ready | Sin commit; cambios locales |
+| 1. Decisiones iniciales | Completada en workspace (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | Sin commit; revisión de PR del SPEC pendiente |
 | 2. Dominio y persistencia | Pendiente | Migraciones y tests de Benefits | — |
 | 3. API y Gateway | Pendiente | Flujo contractual reproducible | — |
 | 4. Observabilidad | Pendiente | Logs correlacionados y traza | — |
@@ -550,6 +570,20 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 6. Resiliencia | Pendiente | Caída controlada y postmortem | — |
 | 7. Capacidad y costos | Pendiente | k6, resultados y D13 | — |
 | 8. Revisión final | Pendiente | Checklist y guion de demostración | — |
+
+### Línea base — 16/10/2026
+
+- Repositorio limpio al iniciar, sobre `main`. Después de `git fetch origin`, `git rev-list --left-right --count main...origin/main` devolvió `0 0`.
+- Rama de trabajo creada: `feature/etapa-02-dominio-e2e`. Sin commits ni push.
+- Primera ejecución de tests sobre los siete módulos: fallaron integraciones de Members, Booking, Training y Notifications por conflicto de nombre del contenedor de limpieza de Testcontainers al ejecutar módulos en paralelo durante el arranque de Docker. La repetición secuencial siguiendo el Makefile terminó con código 0 en los siete módulos; pasaron las integraciones de Members y Booking con PostgreSQL y Training y Notifications con MongoDB. Benefits reutilizó un resultado exitoso de la primera corrida, incluida su integración PostgreSQL. Los tests de arquitectura pasaron.
+- Docker inicialmente no disponible; después de iniciar Docker Desktop, `docker info` confirmó versión 29.6.1. Las ocho imágenes propias compilaron con `docker compose --env-file .env -f deploy/docker-compose.yml up -d --build --wait`, incluido TypeScript y Vite. El arranque terminó con código 1 porque `clasecache-2026-mongo-1` ocupa 27017. Además, `ticketerra-backend` ocupa 8080, requerido por el Gateway. Se consultó si detener esos contenedores o usar puertos alternativos temporales; pendiente de respuesta.
+- Resolución autorizada por el equipo: detener `clasecache-2026-mongo-1` y `ticketerra-backend`. El primer reintento dejó MongoDB sin red de Compose (`NetworkSettings.Networks` vacío), con readiness 503 en Training y Notifications. Se recreó únicamente el contenedor MongoDB conservando su volumen y se repitió `up -d --wait`: código 0 y los trece contenedores saludables. Los dos contenedores ajenos quedan detenidos.
+- Verificación HTTP final: Gateway `/health/live`, `/health/ready` y `/api/v1/status`, Web `/healthz` y readiness de Training y Notifications devuelven 200. El estado agregado del Gateway devuelve `ready`, con los seis procesos internos listos y sus dependencias `up`. Accesos locales: web `http://localhost:5173`, estado `http://localhost:8080/api/v1/status`.
+- Contrato validado con `stoplight/spectral:6.14.3` y el ruleset del repositorio: código de salida 0, sin advertencias ni errores.
+- `.env` local creado desde `.env.example`, sin sobrescribir archivos previos; se comprobó que Git lo ignora.
+- PDF original leído con un lector temporal, sin agregar dependencias al proyecto. Se confirmó §6.3: fecha 23/10/2026, servicio operativo y capacidad compartida funcionando, almacenamiento integrado, logs correlacionados, primera traza y decisiones indicadas en este plan. El equipo confirmó que Benefits alcanza (D-42 y §3.4). Los bonus deben anunciarse en esta entrega (§7), según D-40.
+- Hallazgo para la etapa 1: `docs/DECISIONES.md` D-41 ya elige Oracle Cloud, pero `docs/ARCHITECTURE.md` §14.2 todavía declara pendiente el proveedor. Reconciliar la documentación con la decisión confirmada.
+- Se registró la aclaración de alcance D-42 en `docs/DECISIONES.md` y en el Word. No se cambiaron decisiones arquitectónicas ni puertos del proyecto.
 
 ## 7. Matriz de decisiones de la Entrega 2
 

@@ -3,8 +3,8 @@
 > Especificación funcional del Trabajo Práctico Integrador de Arquitectura de Software (microservicios).
 > Este documento es la **referencia funcional** durante todo el desarrollo. No define tecnologías, lenguajes, frameworks ni modelos de base de datos.
 >
-> - Versión: 0.9 (vigencia de las autorizaciones)
-> - Fecha: 2026-10-08
+> - Versión: 0.10 (aclaración del saldo del ledger)
+> - Fecha: 2026-10-16
 > - Convenciones: `HU-xx` = historia de usuario, `RN-xx` = regla de negocio, `CU-xx` = caso de uso, `CL-xx` = caso límite, `E2E-xx` = criterio de aceptación de punta a punta. Las palabras **DEBE**, **NO DEBE** y **PUEDE** tienen sentido normativo.
 
 ---
@@ -138,7 +138,7 @@ La elección del microservicio consumidor y los detalles técnicos se documentar
 | **Ausencia automática** | Al finalizar una clase, toda reserva CONFIRMADA que no tenga un ingreso registrado pasa a **AUSENTE** automáticamente y genera una penalización de hasta -100 puntos, sin permitir saldo negativo. |
 | **Club de Beneficios** | Programa de fidelización basado en puntos. |
 | **Cuenta de beneficios** | Contenedor de puntos de un alumno. Tiene saldo e historial de movimientos. Puede estar vinculada a uno o más partners. |
-| **Saldo** | Suma algebraica de los movimientos confirmados de una cuenta. Nunca es negativo. |
+| **Saldo** | Suma algebraica de todos los movimientos aplicados de una cuenta, incluidos los originales en estado REVERTIDO y los compensatorios con su signo (RN-22). Nunca es negativo. |
 | **Movimiento de puntos** | Registro inmutable de una acreditación (+) o débito (−) de puntos, con fecha, motivo, origen y estado. |
 | **Acreditar** | Sumar puntos a una cuenta mediante un movimiento positivo. |
 | **Debitar** | Restar puntos de una cuenta mediante un movimiento negativo. |
@@ -1254,7 +1254,7 @@ stateDiagram-v2
 
 ---
 
-## Anexo A — Decisiones confirmadas y actualizaciones (v0.9)
+## Anexo A — Decisiones confirmadas y actualizaciones (v0.10)
 
 | ID | Tema | Decisión | Dónde impacta |
 |---|---|---|---|
@@ -1300,3 +1300,7 @@ Se define como orden canónico la secuencia en que benefits aplica las operacion
 ### Vigencia de las autorizaciones — v0.9 (2026-10-08)
 
 Se establece que las operaciones restringidas por una asignación profesional–alumno deben evaluar la asignación vigente al procesar cada solicitud. Revocarla impide la siguiente operación protegida y no existe un período de gracia por datos almacenados temporalmente.
+
+### Aclaración del saldo — v0.10 (2026-10-16)
+
+Se alinea el glosario con RN-22, CA-11.1 y CA-19.2: el estado REVERTIDO no excluye el importe original de la suma; el compensatorio aplica el importe contrario. Crédito +100 y reversión −100 dejan saldo 0. No se cambia la regla funcional ni se introduce una operación nueva. Aclaración aprobada por el usuario y registrada como D-52; cambio local preparado para revisión de otro integrante por PR según CONTRIBUTING, sin publicación ni merge realizados.

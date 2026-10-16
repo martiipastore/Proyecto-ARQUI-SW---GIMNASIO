@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado |
+| **Estado** | Reemplazado por [ADR-008 v2](ADR-008-v2-errores-gateway-partners.md) |
 | **Fecha** | 2026-10-07 |
 | **Decisión del TP** | D8 |
 | **Autores** | Pastore, Martina · Schaffer, Matías · Viti, María Guadalupe |

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado |
+| **Estado** | Reemplazado por [ADR-004 v2](ADR-004-v2-saldo-ledger.md) |
 | **Fecha** | 2026-10-08 |
 | **Decisión del TP** | D4 |
 | **Autores** | Equipo del TPI |

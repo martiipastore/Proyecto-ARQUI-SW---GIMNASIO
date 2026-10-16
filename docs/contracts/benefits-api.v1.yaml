@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: Club de Beneficios — API de fidelización para partners
-  version: 1.0.0
+  version: 1.1.0
   summary: Acreditar, debitar y canjear puntos de fidelización y consultar saldo, movimientos y catálogo.
   description: |
     API pública del **Club de Beneficios** del Sistema de Gestión de Gimnasio (TPI Arquitectura de Software, UCC).
@@ -44,7 +44,7 @@ servers:
   - url: http://localhost:4010
     description: Mock local (Prism). Responde con los ejemplos de este contrato.
   - url: https://{host}/partner-api
-    description: Producción (placeholder hasta definir el proveedor de nube).
+    description: Producción (host pendiente del despliegue en Oracle Cloud elegido por el equipo).
     variables:
       host:
         default: gimnasio.example.com
@@ -134,6 +134,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/Internal'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '503':
           $ref: '#/components/responses/Unavailable'
 
@@ -203,6 +207,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/Internal'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '503':
           $ref: '#/components/responses/Unavailable'
 
@@ -244,6 +252,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/Internal'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '503':
           $ref: '#/components/responses/Unavailable'
 
@@ -322,6 +334,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/Internal'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '503':
           $ref: '#/components/responses/Unavailable'
 
@@ -371,6 +387,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/Internal'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '503':
           $ref: '#/components/responses/Unavailable'
 
@@ -440,6 +460,10 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/Internal'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
         '503':
           $ref: '#/components/responses/Unavailable'
 
@@ -803,6 +827,7 @@ components:
             - RATE_LIMITED
             - INTERNAL
             - UNAVAILABLE
+            - TIMEOUT
           description: Código estable para manejar el error por programa.
         correlationId:
           type: string
@@ -1085,4 +1110,48 @@ components:
                 detail: El Club de Beneficios no está disponible temporalmente.
                 instance: /v1/accounts/cli-10045/credits
                 code: UNAVAILABLE
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+
+    BadGateway:
+      description: Servicio no disponible. Reintentar con backoff y la misma Idempotency-Key.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            gatewayError:
+              summary: Falla en el gateway
+              value:
+                type: https://gimnasio.example.com/problems/unavailable
+                title: Servicio no disponible
+                status: 502
+                detail: El gateway no pudo alcanzar el Club de Beneficios.
+                instance: /partner-api/v1/accounts/cli-10045/credits
+                code: UNAVAILABLE
+                correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d
+
+    GatewayTimeout:
+      description: Tiempo de espera agotado. Reintentar con backoff y la misma Idempotency-Key.
+      headers:
+        X-Correlation-Id:
+          $ref: '#/components/headers/XCorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            gatewayError:
+              summary: Falla en el gateway
+              value:
+                type: https://gimnasio.example.com/problems/timeout
+                title: Tiempo de espera agotado
+                status: 504
+                detail: El gateway agotó la espera. La operación puede haberse confirmado; reintentá con la misma Idempotency-Key.
+                instance: /partner-api/v1/accounts/cli-10045/credits
+                code: TIMEOUT
                 correlationId: 3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d

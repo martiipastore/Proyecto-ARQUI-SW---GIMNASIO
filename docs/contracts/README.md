@@ -104,7 +104,8 @@ Programá contra el campo **`code`** (estable); `title` y `detail` son texto par
 | `BENEFIT_NOT_AVAILABLE` | 422 | Beneficio vencido, inactivo o no habilitado para partners. | **No.** Volvé a leer el catálogo. |
 | `RATE_LIMITED` | 429 | Superaste el límite de uso. | **Sí**, después de `Retry-After` segundos. |
 | `INTERNAL` | 500 | Error inesperado de nuestro lado. | **Sí**, con backoff exponencial y la **misma key**. |
-| `UNAVAILABLE` | 503 | Servicio caído o en mantenimiento. | **Sí**, después de `Retry-After`, con la **misma key**. |
+| `UNAVAILABLE` | 502 / 503 | Servicio caído o en mantenimiento. | **Sí**, después de `Retry-After`, con la **misma key**. |
+| `TIMEOUT` | 504 | El gateway agotó la espera; el resultado de la operación es indeterminado. | **Sí**, con backoff y la **misma key**. |
 | *(timeout / error de red)* | — | No sabés si se aplicó. | **Sí**, con la **misma key**: si ya se aplicó, recibís la respuesta original. |
 
 **Backoff recomendado:** 1 s, 2 s, 4 s, 8 s (máximo 5 intentos), con un poco de aleatoriedad. Siempre respetá `Retry-After` cuando viene.
@@ -269,6 +270,13 @@ Lo que esperamos de tu cliente para que los cambios compatibles no te rompan:
 **Deprecación:** cuando salga `/v2`, `/v1` se mantiene **al menos 60 días** (o hasta el fin de la cursada, lo que ocurra primero). Durante ese período las respuestas de `/v1` incluyen los headers `Deprecation: true` y `Sunset: <fecha>`, y el cambio se anuncia en este CHANGELOG y a los contactos técnicos de cada partner.
 
 ## CHANGELOG del contrato
+
+### v1.1.0 — 2026-10-16
+
+- Se documentan 502 UNAVAILABLE y 504 TIMEOUT en todas las operaciones, con formato de errores de partners y correlación. 502 incluye Retry-After.
+- Reintentar con la misma Idempotency-Key; 504 no implica rollback.
+- Se mantienen rutas /v1, solicitudes, respuestas de éxito y timeout público de 5 s.
+- Diseño aprobado en ADR-008 v2. Traducción de errores del gateway pendiente de etapa 3; el contrato no acredita su implementación.
 
 ### v1.0.0 — 2026-10-07
 
