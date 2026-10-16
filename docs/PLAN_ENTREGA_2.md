@@ -208,7 +208,7 @@ Ajuste D12 aprobado el 16/10/2026: 3 fallos consecutivos para retirar y 2 éxito
 
 **Estado:** Completada en el workspace (16/10/2026)
 
-Rama: `feature/entrega-2-etapa-02-benefits`, creada desde el main que integra el PR de la etapa 1. Implementación y evidencia en [ETAPA_2_BENEFITS.md](ETAPA_2_BENEFITS.md). Dominio, aplicación, arquitectura, integración PostgreSQL real y go vet pasaron. Se verificaron migración desde base vacía, restricciones, rollback, concurrencia, replay y permisos sin privilegios globales. La API queda en etapa 3. La detección -race no pudo ejecutarse por incompatibilidad del compilador C de Windows. Sin commits ni push de esta etapa.
+Rama: `feature/entrega-2-etapa-02-benefits`, creada desde el main que integra el PR de la etapa 1. Implementación y evidencia en [ETAPA_2_BENEFITS.md](ETAPA_2_BENEFITS.md). Dominio, aplicación, arquitectura, integración PostgreSQL real y go vet pasaron. Se verificaron migración desde base vacía, restricciones, rollback, concurrencia, replay y permisos sin privilegios globales. La API queda en etapa 3. La detección -race no pudo ejecutarse por incompatibilidad del compilador C de Windows. Integrada en main mediante los commits de dominio, persistencia y adaptador de sistema (c2e0213, f41e215, a58ced8).
 
 ### Objetivo
 
@@ -322,7 +322,9 @@ Desde un cliente externo se puede:
 
 ## Etapa 4 — Logs correlacionados y primera traza distribuida
 
-**Estado:** Pendiente
+**Estado:** Completada en el workspace (16/10/2026)
+
+Rama `feature/entrega-2-etapa-04-observabilidad`, desde origin/main que integra PR #2. D-55 aprueba Jaeger en memoria con evidencia exportada; ADR-011 v2 conserva la historia. Tests, vet y lint de los siete módulos correctos; E2E y exportación de traza/logs correctos. Evidencia y límites en [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md). Código c5da897, integración por PR pendiente.
 
 ### Objetivo
 
@@ -381,7 +383,7 @@ Una acreditación genera:
 
 **Estado:** Bloqueada hasta conocer el proveedor
 
-El 16/10/2026 el equipo confirmó que todavía no recibió la asignación del proveedor y que la recibirá próximamente. D9 queda documentada como propuesta inicial en ADR-009; esta dependencia no impide avanzar con las demás decisiones de la etapa 1.
+El 16/10/2026 el equipo confirmó que todavía no recibió la asignación del proveedor y que la recibirá próximamente. D9 queda documentada como propuesta inicial en ADR-009; esta dependencia no impide avanzar con las demás etapas. Al comenzar etapa 4 el equipo reconfirmó que aún no recibió la asignación.
 
 ### Objetivo
 
@@ -567,9 +569,9 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 |---|---|---|---|
 | 0. Preparación y línea base | Completada (16/10/2026) | Siete módulos con tests exitosos, Spectral sin advertencias, stack saludable y estado agregado ready | Sin commit; cambios locales |
 | 1. Decisiones iniciales | Completada en workspace (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | Sin commit; revisión de PR del SPEC pendiente |
-| 2. Dominio y persistencia | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | Sin commit; cambios locales |
-| 3. API y Gateway | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | Commits en rama de etapa 3; integración a main por PR |
-| 4. Observabilidad | Pendiente | Logs correlacionados y traza | — |
+| 2. Dominio y persistencia | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | c2e0213, f41e215, a58ced8 en main |
+| 3. API y Gateway | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | PR #2 integrado en main (1bda5a4); incluye corrección de lint 2a481f7 |
+| 4. Observabilidad | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | c5da897; rama de etapa 4, PR pendiente |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
 | 6. Resiliencia | Pendiente | Caída controlada y postmortem | — |
 | 7. Capacidad y costos | Pendiente | k6, resultados y D13 | — |

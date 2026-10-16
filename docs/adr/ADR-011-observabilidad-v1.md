@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado como diseño inicial el 16/10/2026; instrumentación, traza y validación de umbrales pendientes |
+| **Estado** | Reemplazado por [ADR-011 v2](ADR-011-v2-observabilidad-local.md) el 16/10/2026; se conserva el diseño inicial |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D11 |
 | **Autores** | Equipo del TPI |

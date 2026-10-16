@@ -55,6 +55,7 @@ func TestRecovery_500SinExponerElPanico(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	assert.NotContains(t, rec.Body.String(), "secreto")
 	assert.Contains(t, logs.String(), "pánico recuperado")
+	assert.NotContains(t, logs.String(), "secreto")
 }
 
 func TestAccessLog_IncluyeCorrelationID(t *testing.T) {

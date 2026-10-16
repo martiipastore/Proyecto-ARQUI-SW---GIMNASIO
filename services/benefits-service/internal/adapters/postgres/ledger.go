@@ -27,6 +27,8 @@ type snapshot struct {
 }
 
 func (d *DB) EnTransaccion(ctx context.Context, fn func(ports.Transaction) error) (err error) {
+	ctx, finish := startDB(ctx, "postgres.transaccion")
+	defer func() { finish(err) }()
 	defer func() { err = storageError(err) }()
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
@@ -144,6 +146,8 @@ func (d *DB) ConsultarSaldo(ctx context.Context, partner, usuario string) (ports
 }
 
 func (d *DB) ListarMovimientos(ctx context.Context, partner, usuario string, pagina, tamanio int) (result ports.MovimientosConsultados, err error) {
+	ctx, finish := startDB(ctx, "postgres.listar_movimientos")
+	defer func() { finish(err) }()
 	defer func() { err = storageError(err) }()
 	r := ports.MovimientosConsultados{Pagina: domain.PaginaMovimientos{Movimientos: []domain.MovimientoPuntos{}}}
 	tx, err := d.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})

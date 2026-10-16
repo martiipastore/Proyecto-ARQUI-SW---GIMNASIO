@@ -1,0 +1,245 @@
+{
+    "data":  [
+                 {
+                     "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                     "spans":  [
+                                   {
+                                       "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                       "spanID":  "629de9bb05cdbb2e",
+                                       "operationName":  "postgres.autenticar_partner",
+                                       "references":  [
+                                                          {
+                                                              "refType":  "CHILD_OF",
+                                                              "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                                              "spanID":  "29926e65567444f6"
+                                                          }
+                                                      ],
+                                       "startTime":  1792183969227332,
+                                       "duration":  82743,
+                                       "tags":  [
+                                                    {
+                                                        "key":  "otel.scope.name",
+                                                        "type":  "string",
+                                                        "value":  "gym/benefits/postgres"
+                                                    },
+                                                    {
+                                                        "key":  "db.system.name",
+                                                        "type":  "string",
+                                                        "value":  "postgresql"
+                                                    },
+                                                    {
+                                                        "key":  "span.kind",
+                                                        "type":  "string",
+                                                        "value":  "client"
+                                                    }
+                                                ],
+                                       "logs":  [
+
+                                                ],
+                                       "processID":  "p1",
+                                       "warnings":  null
+                                   },
+                                   {
+                                       "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                       "spanID":  "1edfef09da4215c1",
+                                       "operationName":  "postgres.transaccion",
+                                       "references":  [
+                                                          {
+                                                              "refType":  "CHILD_OF",
+                                                              "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                                              "spanID":  "29926e65567444f6"
+                                                          }
+                                                      ],
+                                       "startTime":  1792183969332671,
+                                       "duration":  240217,
+                                       "tags":  [
+                                                    {
+                                                        "key":  "otel.scope.name",
+                                                        "type":  "string",
+                                                        "value":  "gym/benefits/postgres"
+                                                    },
+                                                    {
+                                                        "key":  "db.system.name",
+                                                        "type":  "string",
+                                                        "value":  "postgresql"
+                                                    },
+                                                    {
+                                                        "key":  "span.kind",
+                                                        "type":  "string",
+                                                        "value":  "client"
+                                                    }
+                                                ],
+                                       "logs":  [
+
+                                                ],
+                                       "processID":  "p1",
+                                       "warnings":  null
+                                   },
+                                   {
+                                       "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                       "spanID":  "29926e65567444f6",
+                                       "operationName":  "POST /v1/accounts/{externalUserId}/credits",
+                                       "references":  [
+                                                          {
+                                                              "refType":  "CHILD_OF",
+                                                              "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                                              "spanID":  "253f377377593c0a"
+                                                          }
+                                                      ],
+                                       "startTime":  1792183969225760,
+                                       "duration":  350252,
+                                       "tags":  [
+                                                    {
+                                                        "key":  "otel.scope.name",
+                                                        "type":  "string",
+                                                        "value":  "gym/http"
+                                                    },
+                                                    {
+                                                        "key":  "benefits.idempotent_replayed",
+                                                        "type":  "bool",
+                                                        "value":  false
+                                                    },
+                                                    {
+                                                        "key":  "http.request.method",
+                                                        "type":  "string",
+                                                        "value":  "POST"
+                                                    },
+                                                    {
+                                                        "key":  "http.status_code",
+                                                        "type":  "int64",
+                                                        "value":  201
+                                                    },
+                                                    {
+                                                        "key":  "http.route",
+                                                        "type":  "string",
+                                                        "value":  "/v1/accounts/{externalUserId}/credits"
+                                                    },
+                                                    {
+                                                        "key":  "span.kind",
+                                                        "type":  "string",
+                                                        "value":  "server"
+                                                    }
+                                                ],
+                                       "logs":  [
+
+                                                ],
+                                       "processID":  "p1",
+                                       "warnings":  null
+                                   },
+                                   {
+                                       "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                       "spanID":  "253f377377593c0a",
+                                       "operationName":  "POST /v1/accounts/{externalUserId}/credits",
+                                       "references":  [
+                                                          {
+                                                              "refType":  "CHILD_OF",
+                                                              "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                                              "spanID":  "4e4a622bd24e28ca"
+                                                          }
+                                                      ],
+                                       "startTime":  1792183969154675,
+                                       "duration":  422644,
+                                       "tags":  [
+                                                    {
+                                                        "key":  "otel.scope.name",
+                                                        "type":  "string",
+                                                        "value":  "gym/http"
+                                                    },
+                                                    {
+                                                        "key":  "http.request.method",
+                                                        "type":  "string",
+                                                        "value":  "POST"
+                                                    },
+                                                    {
+                                                        "key":  "http.status_code",
+                                                        "type":  "int64",
+                                                        "value":  201
+                                                    },
+                                                    {
+                                                        "key":  "http.route",
+                                                        "type":  "string",
+                                                        "value":  "/v1/accounts/{externalUserId}/credits"
+                                                    },
+                                                    {
+                                                        "key":  "span.kind",
+                                                        "type":  "string",
+                                                        "value":  "client"
+                                                    }
+                                                ],
+                                       "logs":  [
+
+                                                ],
+                                       "processID":  "p2",
+                                       "warnings":  null
+                                   },
+                                   {
+                                       "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                       "spanID":  "4e4a622bd24e28ca",
+                                       "operationName":  "POST /partner-api/v1/accounts/{externalUserId}/credits",
+                                       "references":  [
+                                                          {
+                                                              "refType":  "CHILD_OF",
+                                                              "traceID":  "177a2bc2d4774b20899d288eb5e53267",
+                                                              "spanID":  "0123456789abcdef"
+                                                          }
+                                                      ],
+                                       "startTime":  1792183969151090,
+                                       "duration":  428222,
+                                       "tags":  [
+                                                    {
+                                                        "key":  "otel.scope.name",
+                                                        "type":  "string",
+                                                        "value":  "gym/http"
+                                                    },
+                                                    {
+                                                        "key":  "http.request.method",
+                                                        "type":  "string",
+                                                        "value":  "POST"
+                                                    },
+                                                    {
+                                                        "key":  "http.status_code",
+                                                        "type":  "int64",
+                                                        "value":  201
+                                                    },
+                                                    {
+                                                        "key":  "http.route",
+                                                        "type":  "string",
+                                                        "value":  "/partner-api/v1/accounts/{externalUserId}/credits"
+                                                    },
+                                                    {
+                                                        "key":  "span.kind",
+                                                        "type":  "string",
+                                                        "value":  "server"
+                                                    }
+                                                ],
+                                       "logs":  [
+
+                                                ],
+                                       "processID":  "p2",
+                                       "warnings":  [
+                                                        "parent span ID=0123456789abcdef is not in the trace; skipping clock skew adjustment"
+                                                    ]
+                                   }
+                               ],
+                     "processes":  {
+                                       "p1":  {
+                                                  "serviceName":  "benefits-service",
+                                                  "tags":  [
+
+                                                           ]
+                                              },
+                                       "p2":  {
+                                                  "serviceName":  "api-gateway",
+                                                  "tags":  [
+
+                                                           ]
+                                              }
+                                   },
+                     "warnings":  null
+                 }
+             ],
+    "total":  0,
+    "limit":  0,
+    "offset":  0,
+    "errors":  null
+}

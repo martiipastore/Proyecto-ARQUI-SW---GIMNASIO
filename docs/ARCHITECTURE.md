@@ -39,8 +39,9 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 |---|---|
 | **Implementado** | Módulos Go y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing por prefijo, correlación, CORS, timeouts, errores y estado agregado; frontend de estado; bases y usuarios separados por servicio; contrato OpenAPI, guía y mock de partners. |
 | **Implementado en Benefits** | API de partners /v1 y ruta pública /partner-api/v1 por gateway; autenticación por API key sin caché; casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](ETAPA_2_BENEFITS.md) y [API](ETAPA_3_API_BENEFITS.md). |
+| **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](ETAPA_4_OBSERVABILIDAD.md). |
 | **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
-| **Pendiente de implementación** | Resto de operaciones de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; trazas, métricas, logs centralizados y tableros. |
+| **Pendiente de implementación** | Resto de operaciones de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; métricas exportadas, logs centralizados y tableros. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
 
 Salvo que una sección indique expresamente el estado actual, sus descripciones deben leerse como decisiones y comportamiento **objetivo**, no como funcionalidad ya disponible.
@@ -172,7 +173,7 @@ flowchart LR
     notif -->|"SMTP"| smtp
 ```
 
-> Este es el diagrama objetivo. Observabilidad (OTel Collector, Jaeger, Prometheus, Loki y Grafana) se omite por claridad; cuando se implemente, los contenedores Go exportarán trazas, métricas y logs al OTel Collector (ver §11). La capacidad externa que consumirá METALFITNESS se agregará cuando se defina el proveedor y el flujo (SPEC §1.5).
+> Este es el diagrama objetivo. La observabilidad se omite por claridad: etapa 4 exporta trazas de Gateway/Benefits a Collector y Jaeger; métricas y logs centralizados siguen como objetivo (ver §11). La capacidad externa que consumirá METALFITNESS se agregará cuando se defina el proveedor y el flujo (SPEC §1.5).
 
 ---
 
@@ -443,6 +444,8 @@ Esta separación evita confundir autenticación con autorización: un JWT o una 
 
 ## 11. Observabilidad
 
+**Implementado en etapa 4:** flujo mínimo Gateway → Benefits → PostgreSQL, middleware/transporte HTTP y spans manuales del repositorio; logs JSON con correlation_id/trace_id/span_id; OTLP → Collector → Jaeger local en memoria. Evidencia en [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md). No se usan otelgin/otelhttp en esta primera versión: la instrumentación manual restringe los atributos exportados. La tabla siguiente conserva el diseño objetivo; métricas, centralización de logs, tableros y trazas asíncronas siguen pendientes.
+
 | Señal | Instrumentación | Pipeline | Visualización |
 |---|---|---|---|
 | Trazas | OTel SDK Go (`otelgin`, `otelhttp`, instrumentación manual en publicación/consumo AMQP y SQL) | OTLP → OTel Collector → Jaeger | Jaeger UI y Grafana |
@@ -659,7 +662,8 @@ Estados por servicio: `ready`, `degraded`, `not_ready` (respondió 503) o `unrea
 | `traefik` | traefik v3 | — | 1 | No, etapa de balanceo |
 | `opensearch` | opensearch 2.x | — | 1 | No, etapa de CQRS |
 | `mailpit` | axllent/mailpit | — | 1 | No, etapa de notificaciones |
-| `otel-collector`, `jaeger`, `prometheus`, `loki`, `grafana` | oficiales | — | 1 c/u | No, etapa de observabilidad |
+| `otel-collector`, `jaeger` | versiones fijadas en Compose | Jaeger UI 16686 (loopback) | 1 c/u | Sí, primera traza del flujo mínimo; memoria local |
+| `prometheus`, `loki`, `grafana` | oficiales | — | 1 c/u | No; métricas, logs centralizados y tableros pendientes |
 
 Requisitos: ~8 GB de RAM y **al menos 15 GB libres en disco** para imágenes y builds cuando el stack esté completo (hoy, con el esqueleto, alrededor de 6 GB).
 
@@ -723,7 +727,8 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-008 v3](adr/ADR-008-v3-fecha-cuenta-sin-movimientos.md) | D8 — Contrato 1.1.1, fecha de cuenta sin movimientos | Aceptado; flujo mínimo implementado |
 | [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Propuesto; proveedor y contrato pendientes |
 | [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Resiliencia del flujo de Benefits | Aceptado como diseño inicial; implementación y evidencia pendientes |
-| [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Observabilidad v1 | Aceptado como diseño inicial; instrumentación y validación pendientes |
+| [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Diseño inicial de observabilidad | Reemplazado por v2 |
+| [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | D11 — Primera traza y memoria local | Aceptado; primera traza implementada, métricas y alertas pendientes |
 | [ADR-012](adr/ADR-012-balanceo-booking.md) | D12 — Balanceo inicial | Reemplazado por ADR-012 v2 |
 | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | D12 — Balanceo con verificaciones consecutivas (3 fallos / 2 éxitos) | Aceptado como diseño inicial; soporte de herramienta, implementación y evidencia pendientes |
 | [ADR-013](adr/ADR-013-capacidad-costos.md) | D13 — Capacidad y costos | Aceptado como plan inicial; mediciones y cotización pendientes |

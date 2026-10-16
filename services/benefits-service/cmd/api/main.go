@@ -12,6 +12,7 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
 	benefitshttp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system"
@@ -37,6 +38,17 @@ func main() {
 func run(cfg config.Config, log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	shutdownTraces, err := telemetry.Setup(ctx, serviceName, log)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		flushCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+		if err := shutdownTraces(flushCtx); err != nil {
+			log.Warn("no se completó el cierre de trazas")
+		}
+	}()
 
 	db, err := postgres.Open(ctx, cfg.DBDSN)
 	if err != nil {
@@ -48,7 +60,7 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}
 
 	router := benefitshttp.NewRouter(log, cfg.HealthTimeout, health.Check{Name: "postgres", Fn: db.Ping})
-	benefitshttp.RegisterPartners(router, application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{}), application.NewAuthenticator(db))
+	benefitshttp.RegisterPartners(router, application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{}), application.NewAuthenticator(db), log)
 	router.NoRoute(benefitshttp.PartnerFallback)
 	router.NoMethod(benefitshttp.PartnerFallback)
 	return httpserver.Run(ctx, log, httpserver.Options{
