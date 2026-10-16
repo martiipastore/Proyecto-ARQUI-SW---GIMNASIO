@@ -272,7 +272,9 @@ Implementar las reglas mínimas de cuentas, saldo, movimientos e idempotencia co
 
 ## Etapa 3 — API publicada e integración con el Gateway
 
-**Estado:** Pendiente
+**Estado:** Completada en el workspace (16/10/2026)
+
+Implementación y comandos en [ETAPA_3_API_BENEFITS.md](ETAPA_3_API_BENEFITS.md). Rama `feature/entrega-2-etapa-03-api-benefits`, desde main sincronizado. D-53 aclara updatedAt de cuentas vacías; D-54 aprueba bloqueo transaccional por clave para responder en curso. OpenAPI 1.1.1 y revisiones de ADR conservan la historia. Tests y go vet de los siete módulos correctos, integración real, 23 respuestas validadas con Spectral y E2E por gateway correcto. Se conserva el mock; las siguientes etapas y los endpoints fuera del flujo mínimo siguen pendientes.
 
 ### Objetivo
 
@@ -566,7 +568,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 0. Preparación y línea base | Completada (16/10/2026) | Siete módulos con tests exitosos, Spectral sin advertencias, stack saludable y estado agregado ready | Sin commit; cambios locales |
 | 1. Decisiones iniciales | Completada en workspace (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | Sin commit; revisión de PR del SPEC pendiente |
 | 2. Dominio y persistencia | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | Sin commit; cambios locales |
-| 3. API y Gateway | Pendiente | Flujo contractual reproducible | — |
+| 3. API y Gateway | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | Commits en rama de etapa 3; integración a main por PR |
 | 4. Observabilidad | Pendiente | Logs correlacionados y traza | — |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
 | 6. Resiliencia | Pendiente | Caída controlada y postmortem | — |

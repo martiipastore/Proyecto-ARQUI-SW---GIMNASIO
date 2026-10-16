@@ -41,7 +41,7 @@ func (p *puertoPrueba) GuardarMovimiento(context.Context, domain.CuentaBeneficio
 	p.guardados++
 	return nil
 }
-func (p *puertoPrueba) CompletarOperacion(_ context.Context, _, _ string, r domain.ResultadoOperacion) error {
+func (p *puertoPrueba) CompletarOperacion(_ context.Context, _, _ string, r domain.ResultadoOperacion, _ string, _ []byte) error {
 	p.final = r
 	return nil
 }

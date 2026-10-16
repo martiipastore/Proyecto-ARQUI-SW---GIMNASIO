@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io/fs"
 
@@ -17,7 +18,10 @@ func (d *DB) Migrate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.WithoutCancel(ctx))
+	defer func() {
+		// La limpieza es intencional: tras Commit, Rollback devuelve ErrTxClosed.
+		_ = tx.Rollback(context.WithoutCancel(ctx))
+	}()
 	if _, err = tx.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, huella text NOT NULL, aplicada_en timestamptz NOT NULL DEFAULT now())`); err != nil {
 		return err
 	}
@@ -42,7 +46,7 @@ func (d *DB) Migrate(ctx context.Context) error {
 			}
 			continue
 		}
-		if err != pgx.ErrNoRows {
+		if !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}
 		if _, err = tx.Exec(ctx, string(contents)); err != nil {

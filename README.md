@@ -2,7 +2,7 @@
 
 Trabajo Práctico Integrador de **Arquitectura de Software**: METALFITNESS es un sistema de microservicios para gestionar alumnos, membresías, clases y reservas, asistencia, entrenamiento, nutrición y un **Club de Beneficios** con puntos que también usan sistemas de otros grupos.
 
-> Estado actual: **esqueleto ejecutable del proyecto**. Los servicios exponen health checks, verifican sus bases y reportan su estado en una pantalla web. Benefits ya tiene dominio, casos de uso y persistencia de créditos, saldo y movimientos con idempotencia, probados contra PostgreSQL real; todavía no están expuestos por HTTP. El gateway ya realiza routing, correlación y timeouts. El contrato de la API de partners está publicado con un mock ejecutable.
+> Estado actual: **esqueleto ejecutable del proyecto**. Los servicios exponen health checks, verifican sus bases y reportan su estado en una pantalla web. Benefits ya tiene dominio, casos de uso y persistencia de créditos, saldo y movimientos con idempotencia, probados contra PostgreSQL real; ya están expuestos por /partner-api/v1 a través del gateway con API key. El gateway ya realiza routing, correlación y timeouts. El contrato de la API de partners está publicado con un mock ejecutable.
 >
 > La arquitectura, el flujo principal y las responsabilidades que se presentan a continuación describen el **diseño objetivo**. JWT, rate limiting, los demás casos de uso, eventos/outbox, CQRS con OpenSearch, balanceo con Traefik, envío de emails y observabilidad se incorporarán en las etapas correspondientes.
 
@@ -73,9 +73,9 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Estado | Alcance |
 |---|---|
 | **Implementado** | Módulos y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing, correlación, CORS, timeouts y estado agregado; frontend de estado; contrato OpenAPI, guía y mock de partners. |
-| **Implementado en Benefits, pendiente de API** | Dominio y casos de uso de acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [evidencia de etapa 2](docs/ETAPA_2_BENEFITS.md). |
+| **Implementado en Benefits** | API con autenticación por partner para acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/ETAPA_2_BENEFITS.md) y [API y demostración](docs/ETAPA_3_API_BENEFITS.md). |
 | **Desplegado como infraestructura, todavía sin uso funcional** | Redis y RabbitMQ. |
-| **Pendiente** | API HTTP de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; trazas, métricas y tableros; consumo de la capacidad externa que se defina con otro grupo. |
+| **Pendiente** | Resto de operaciones de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; trazas, métricas y tableros; consumo de la capacidad externa que se defina con otro grupo. |
 
 ## Cómo ejecutarlo localmente
 

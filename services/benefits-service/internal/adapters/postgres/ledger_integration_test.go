@@ -1,15 +1,21 @@
 package postgres
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http/httptest"
 	"net/url"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
+	benefitshttp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
@@ -27,7 +33,7 @@ func (r relojPrueba) Now() time.Time { return r.ahora }
 
 type falloAlCompletar struct{ ports.Transaction }
 
-func (falloAlCompletar) CompletarOperacion(context.Context, string, string, domain.ResultadoOperacion) error {
+func (falloAlCompletar) CompletarOperacion(context.Context, string, string, domain.ResultadoOperacion, string, []byte) error {
 	return errors.New("fallo de prueba antes de confirmar idempotencia")
 }
 
@@ -50,7 +56,10 @@ func nuevaFixture(t *testing.T, db *DB) fixture {
 	f := fixture{db: db, partner: nuevo(), otro: nuevo(), cuenta: nuevo(), usuario: "alumno-1"}
 	tx, err := db.pool.Begin(context.Background())
 	require.NoError(t, err)
-	defer tx.Rollback(context.Background())
+	defer func() {
+		// La limpieza es intencional: tras Commit, Rollback devuelve ErrTxClosed.
+		_ = tx.Rollback(context.Background())
+	}()
 	for _, id := range []string{f.partner, f.otro} {
 		hash := sha256.Sum256([]byte("fixture-" + id))
 		_, err = tx.Exec(context.Background(), `INSERT INTO partners(id,nombre,api_key_hash) VALUES ($1,'Partner de prueba',$2)`, id, hash[:])
@@ -102,7 +111,7 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 	require.NoError(t, db.Migrate(ctx)) // Desde base vacía y repetición segura.
 	var migraciones int
 	require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migraciones))
-	require.Equal(t, 1, migraciones)
+	require.Equal(t, 2, migraciones)
 	t.Run("D3_usuario_no_accede_a_base_ajena", func(t *testing.T) {
 		otra := *conexion
 		otra.Path = "/benefits_db"
@@ -218,6 +227,9 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 			wg.Wait()
 			close(fallos)
 			for err := range fallos {
+				if misma && errors.Is(err, domain.ErrOperacionEnCurso) {
+					continue
+				}
 				require.NoError(t, err)
 			}
 		}
@@ -300,6 +312,12 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 			go func(puntos int64) {
 				<-inicio
 				_, err := f.app.Acreditar(ctx, f.credito("conflicto-001", puntos))
+				if errors.Is(err, domain.ErrOperacionEnCurso) {
+					for intento := 0; intento < 20 && errors.Is(err, domain.ErrOperacionEnCurso); intento++ {
+						time.Sleep(5 * time.Millisecond)
+						_, err = f.app.Acreditar(ctx, f.credito("conflicto-001", puntos))
+					}
+				}
 				resultados <- err
 			}(puntos)
 		}
@@ -317,5 +335,116 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 		saldo, err := f.app.ConsultarSaldo(ctx, f.partner, f.usuario)
 		require.NoError(t, err)
 		require.Equal(t, p.Movimientos[0].Datos().Puntos, saldo)
+	})
+	t.Run("HU29_HU32_API_contrato_con_PostgreSQL", func(t *testing.T) {
+		f := nuevaFixture(t, db)
+		logBuffer := &bytes.Buffer{}
+		r := benefitshttp.NewRouter(slog.New(slog.NewJSONHandler(logBuffer, nil)), time.Second)
+		apiCases := application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{})
+		benefitshttp.RegisterPartners(r, apiCases, application.NewAuthenticator(db))
+		r.NoRoute(benefitshttp.PartnerFallback)
+		r.NoMethod(benefitshttp.PartnerFallback)
+		type ejemplo struct {
+			Path, Method, Status, Schema string
+			Body                         json.RawMessage
+		}
+		ejemplos := []ejemplo{}
+		do := func(method, path, body, key, apiKey, corr string) *httptest.ResponseRecorder {
+			req := httptest.NewRequest(method, path, bytes.NewBufferString(body))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-API-Key", apiKey)
+			if key != "" {
+				req.Header.Set("Idempotency-Key", key)
+			}
+			req.Header.Set("X-Correlation-ID", corr)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			var value map[string]any
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &value))
+			schema := "Problem"
+			switch w.Code {
+			case 201:
+				schema = "OperationResult"
+			case 200:
+				if method == "GET" && bytes.Contains([]byte(path), []byte("/balance")) {
+					schema = "Balance"
+				} else {
+					schema = "MovementPage"
+				}
+			}
+			plantilla := "/v1/accounts/{externalUserId}/credits"
+			if bytes.Contains([]byte(path), []byte("/balance")) {
+				plantilla = "/v1/accounts/{externalUserId}/balance"
+			} else if bytes.Contains([]byte(path), []byte("/movements")) {
+				plantilla = "/v1/accounts/{externalUserId}/movements"
+			}
+			ejemplos = append(ejemplos, ejemplo{Path: plantilla, Method: method, Status: fmt.Sprint(w.Code), Schema: schema, Body: append([]byte(nil), w.Body.Bytes()...)})
+			if w.Code >= 400 {
+				require.NotContains(t, value, "correlation_id")
+				require.Regexp(t, `^[0-9a-f-]{36}$`, value["correlationId"])
+				require.Equal(t, "application/problem+json", w.Header().Get("Content-Type"))
+			}
+			return w
+		}
+		credencial := "fixture-" + f.partner
+		path := "/v1/accounts/" + f.usuario
+		const corr = "3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d"
+		const body = `{"points":100,"reason":"Compra de prueba","reference":"ref-1"}`
+		vacio := do("GET", path+"/balance", "", "", credencial, corr)
+		require.Equal(t, 200, vacio.Code)
+		var balance map[string]any
+		require.NoError(t, json.Unmarshal(vacio.Body.Bytes(), &balance))
+		require.EqualValues(t, 0, balance["balance"])
+		_, err := time.Parse(time.RFC3339Nano, balance["updatedAt"].(string))
+		require.NoError(t, err)
+		primera := do("POST", path+"/credits", body, "api-compra-001", credencial, corr)
+		require.Equal(t, 201, primera.Code)
+		replay := do("POST", path+"/credits", body, "api-compra-001", credencial, "4c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d")
+		require.Equal(t, primera.Body.String(), replay.Body.String())
+		require.Equal(t, "true", replay.Header().Get("Idempotent-Replayed"))
+		bloqueada, err := db.pool.Begin(ctx)
+		require.NoError(t, err)
+		_, err = bloqueada.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, f.partner+":api-en-curso-001")
+		require.NoError(t, err)
+		enCurso := do("POST", path+"/credits", body, "api-en-curso-001", credencial, corr)
+		require.Equal(t, 409, enCurso.Code)
+		require.Contains(t, enCurso.Body.String(), "IDEMPOTENCY_IN_PROGRESS")
+		require.NoError(t, bloqueada.Rollback(ctx))
+		consulta := do("GET", path+"/balance", "", "", credencial, corr)
+		require.Equal(t, 200, consulta.Code)
+		movimientos := do("GET", path+"/movements?page=1&size=20", "", "", credencial, corr)
+		require.Equal(t, 200, movimientos.Code)
+		conflicto := do("POST", path+"/credits", `{"points":101,"reason":"Compra de prueba","reference":"ref-1"}`, "api-compra-001", credencial, corr)
+		require.Equal(t, 409, conflicto.Code)
+		sinCuenta := do("POST", "/v1/accounts/no-vinculado/credits", body, "api-sincuenta-001", credencial, corr)
+		require.Equal(t, 404, sinCuenta.Code)
+		rechazoReplay := do("POST", "/v1/accounts/no-vinculado/credits", body, "api-sincuenta-001", credencial, "5c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d")
+		require.Equal(t, sinCuenta.Body.String(), rechazoReplay.Body.String())
+		for i, invalidBody := range []string{`null`, `{`, body + body, `{"points":100,"reason":"Compra","reference":"ref","extra":1}`} {
+			key := fmt.Sprintf("api-invalid-%03d", i)
+			original := do("POST", path+"/credits", invalidBody, key, credencial, corr)
+			require.Equal(t, 400, original.Code)
+			repetido := do("POST", path+"/credits", invalidBody, key, credencial, "5c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d")
+			require.Equal(t, original.Body.String(), repetido.Body.String())
+		}
+		require.Equal(t, 401, do("GET", path+"/balance", "", "", "incorrecta", corr).Code)
+		require.Equal(t, 400, do("POST", path+"/credits", body, "", credencial, corr).Code)
+		require.Equal(t, 400, do("GET", path+"/movements?size=0", "", "", credencial, corr).Code)
+		require.Equal(t, 400, do("GET", path+"/movements?page=1&page=2", "", "", credencial, corr).Code)
+		// La revocación de la clave es efectiva en la siguiente solicitud.
+		hash := sha256.Sum256([]byte("clave-nueva-" + f.partner))
+		_, err = db.pool.Exec(ctx, `UPDATE partners SET api_key_hash=$2 WHERE id=$1`, f.partner, hash[:])
+		require.NoError(t, err)
+		require.Equal(t, 401, do("GET", path+"/balance", "", "", credencial, corr).Code)
+		_, err = db.pool.Exec(ctx, `UPDATE partners SET activo=false WHERE id=$1`, f.partner)
+		require.NoError(t, err)
+		require.Equal(t, 403, do("GET", path+"/balance", "", "", "clave-nueva-"+f.partner, corr).Code)
+		require.NotContains(t, logBuffer.String(), "alumno-1")
+		require.NotContains(t, logBuffer.String(), credencial)
+		if destino := os.Getenv("BENEFITS_CONTRACT_EVIDENCE"); destino != "" {
+			data, err := json.MarshalIndent(ejemplos, "", "  ")
+			require.NoError(t, err)
+			require.NoError(t, os.WriteFile(destino, data, 0600))
+		}
 	})
 }

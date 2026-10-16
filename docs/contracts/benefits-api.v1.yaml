@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: Club de Beneficios — API de fidelización para partners
-  version: 1.1.0
+  version: 1.1.1
   summary: Acreditar, debitar y canjear puntos de fidelización y consultar saldo, movimientos y catálogo.
   description: |
     API pública del **Club de Beneficios** del Sistema de Gestión de Gimnasio (TPI Arquitectura de Software, UCC).
@@ -632,7 +632,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-          description: Fecha del último movimiento de la cuenta.
+          description: Fecha del último movimiento aplicado; si no hay movimientos, fecha de creación de la cuenta.
 
     Movement:
       type: object

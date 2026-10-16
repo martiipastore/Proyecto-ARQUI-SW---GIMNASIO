@@ -13,6 +13,7 @@ var (
 	ErrPartnerNoAutorizado   = errors.New("partner no autorizado")
 	ErrConflictoIdempotencia = errors.New("clave de idempotencia usada con otros datos")
 	ErrOperacionInvalida     = errors.New("operación inválida")
+	ErrOperacionEnCurso      = errors.New("operación en curso")
 )
 
 // CuentaBeneficios protege el saldo y la secuencia del agregado (RN-22/42).
@@ -100,4 +101,9 @@ func (r ResultadoOperacion) Error() error {
 type PaginaMovimientos struct {
 	Movimientos []MovimientoPuntos
 	Total       int64
+}
+
+type Partner struct {
+	ID     string
+	Activo bool
 }
