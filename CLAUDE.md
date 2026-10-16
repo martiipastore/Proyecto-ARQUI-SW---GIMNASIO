@@ -131,6 +131,10 @@ Equivalente sin make: `docker compose --env-file .env -f deploy/docker-compose.y
 
 ## Reglas que toda IA debe respetar en este repo
 
+### Restricción académica confirmada el 16/10/2026
+
+El equipo exige basar el trabajo en los conceptos del teórico aportado. Priorizar lo visto en clase. Solo proponer herramientas no explicadas en el PDF si son realmente necesarias y útiles, justificar por qué no alcanza una alternativa del material y consultar cada excepción nueva al equipo antes de incorporarla. Documentar finalidad, justificación y vínculo con clase en decisiones y etapas. No atribuir esas herramientas al teórico. Ver [docs/BASE_TEORICA.md](docs/BASE_TEORICA.md). Los parámetros propios se proponen con justificación y se consultan al equipo. Las aprobaciones existentes se conservan; conceptos o cambios nuevos de arquitectura/alcance se consultan antes de implementarlos.
+
 1. **El SPEC manda.** Antes de implementar, identificá las HU/RN involucradas y citá sus IDs en el código de tests y en el PR. Si algo no está en el SPEC o lo contradice, **preguntá**; no lo resuelvas por tu cuenta.
 2. **No cambies decisiones de arquitectura en silencio.** Tecnología, límites de servicio, patrones, puertos y contratos solo cambian con un ADR nuevo aprobado por el equipo. Si ves un problema, explicalo primero.
 3. **Cada servicio accede solo a su base.** Nunca agregues una conexión, query o join a la base de otro servicio. Datos ajenos: por API interna o por eventos.

@@ -54,6 +54,31 @@ Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son 
 | D-39 | Ingreso sin reserva | Si la membresía está vigente pero no tiene una reserva con la ventana de asistencia abierta (ni una asistencia en curso, D-38), no puede pasar: nombre en rojo y el motivo "sin reserva para este horario". |
 | D-40 | Desafíos bonus | Se anuncian en la Entrega 2: tests e2e con Playwright de los flujos del SPEC §11 y actualización de la ocupación de las clases en tiempo real (Server-Sent Events). |
 | D-41 | Proveedor de nube | Oracle Cloud Free Tier: una VM ARM "Always Free" con Docker Compose (completa D-34). |
+| D-42 | Alcance del servicio operativo para la Entrega 2 | Según confirmación de la cátedra comunicada por el equipo el 16/10/2026, benefits-service alcanza tanto para el servicio operativo como para la capacidad propia compartida. Se implementa el flujo de acreditación, saldo, movimientos e idempotencia con PostgreSQL; no se exige un segundo servicio para este requisito de la Entrega 2. Ver docs/PLAN_ENTREGA_2.md §3. |
+| D-43 | Presupuesto inicial de Benefits | Aprobado el 16/10/2026: Benefits limita su operación de aplicación y PostgreSQL a 4 segundos, o al tiempo restante del contexto si es menor, dentro de los 5 segundos del gateway. Implementación y validación pendientes. Ver ADR-010. |
+| D-44 | Errores de borde del contrato de partners | Aprobado el 16/10/2026: OpenAPI 1.1.0 documenta 502 UNAVAILABLE y 504 TIMEOUT con formato de partners y correlationId; 502 incluye Retry-After. Reintento con la misma Idempotency-Key, sin asumir rollback ante timeout. Ver ADR-008 v2; traducción del gateway pendiente de etapa 3. |
+| D-45 | Diseño inicial de búsqueda de clases (D6) | Aprobado el 16/10/2026: OpenSearch con filtros por actividad, fecha, franja y disponibilidad; orden por inicio ascendente; 20 resultados por página por defecto, máximo 100. Objetivo de actualización menor a 2 segundos en condiciones normales. La reserva confirma el cupo en PostgreSQL. Implementación y medición pendientes. Ver ADR-014. |
+| D-46 | Diseño inicial de balanceo de Booking (D12) | Aprobado el 16/10/2026: dos instancias de booking-service detrás de Traefik, con igual peso y sin afinidad de sesión. Health checks cada 5 segundos con timeout de 2 segundos; retirar destinos caídos y reincorporarlos al recuperarse. Implementación y evidencia de distribución pendientes. Ver ADR-012. |
+| D-47 | Diseño inicial de resiliencia de Benefits (D10) | Aprobado el 16/10/2026: el gateway no reintenta escrituras automáticamente; el partner recupera el resultado reintentando con la misma Idempotency-Key. Benefits falla cerrado si PostgreSQL no permite confirmar la operación; un resultado de commit indeterminado no implica rollback. Se conserva el presupuesto D-43 y no se incorpora circuit breaker al flujo inicial Gateway → Benefits. Implementación y prueba de caída sin duplicación pendientes. Ver ADR-010. |
+| D-48 | Diseño inicial de observabilidad (D11) | Aprobado el 16/10/2026: logs JSON y trazas del flujo Gateway → Benefits → PostgreSQL con OpenTelemetry, Collector y Jaeger. Muestreo local 100 %, sin datos personales ni secretos. Métricas de duración, errores y reintentos; alertas iniciales por readiness crítica en 503 durante 30 s o errores 5xx superiores al 1 % durante 5 min con al menos 100 solicitudes. Instrumentación, primera traza y validación de umbrales pendientes. Ver ADR-011. |
+| D-49 | Base académica y herramientas adicionales | El 16/10/2026 el equipo aclaró que los conceptos se basan en el teórico y que se permiten herramientas adicionales necesarias y útiles, documentando su finalidad, justificación y vínculo con clase en decisiones y etapas. No atribuirlas al material. Los valores propios se proponen y deciden con el equipo. Conserva las aprobaciones previas; no aprueba automáticamente D13. Ver docs/BASE_TEORICA.md. |
+| D-50 | Plan inicial de capacidad y costos (D13) | Aprobado el 16/10/2026: usar k6 como herramienta adicional justificada para las pruebas de carga del TP, con 100 cuentas y escalones de 1, 5 y 10 usuarios simultáneos. Objetivos iniciales: cero duplicaciones, p95 de lecturas < 200 ms y escrituras < 500 ms. Comparar al menos dos mejoras y estimar costos con fecha y fuentes. Mediciones y cotización pendientes. Se prioriza lo visto en clase y se consulta cada excepción nueva; esta aprobación no amplía el stack en general. Ver ADR-013. |
+| D-51 | Estabilidad de health checks de Booking (D12) | Aprobado el 16/10/2026: retirar tras 3 fallos consecutivos y reincorporar tras 2 éxitos consecutivos; conservar checks cada 5 s y timeout 2 s. Complementa D-46. Motivo: evitar entradas/salidas repetidas por demoras pasajeras (flapping), según Teórico EN PDF.pdf, p. 87. El teórico recomienda verificaciones consecutivas; los valores 3/2 son propios del proyecto. Costo: mayor demora para detectar caída y recuperación. Ver ADR-012 v2, que reemplaza ADR-012. Soporte de herramienta, implementación y pruebas pendientes. |
+| D-52 | Aclaración del saldo ante reversiones | Aprobado el 16/10/2026: alinear el glosario con RN-22, CA-11.1 y CA-19.2. Sumar todos los importes aplicados, incluido el original REVERTIDO y su compensatorio: +100 y −100 dejan saldo 0. REVERTIDO impide otra reversión; no borra el aporte histórico. Motivo: excluir el original produciría un saldo incorrecto. Fundamento de clase: transacciones locales/invariantes, pp. 27–28, y agregado como límite de consistencia, p. 120; la fórmula viene del SPEC. ADR-004 v2 reemplaza al original. SPEC v0.10 preparado localmente, pendiente de revisión de otro integrante según CONTRIBUTING. |
+
+## Justificación teórica de las decisiones de la Entrega 2
+
+Referencias a páginas del PDF de 149 páginas aportado por el equipo. Se distingue el fundamento de clase de las herramientas y parámetros elegidos. Detalle en docs/BASE_TEORICA.md y en cada ADR.
+
+| Decisión | Fundamento | Motivo y límites |
+|---|---|---|
+| D-43 / D-47 | Presupuestos, cancelación e idempotencia: pp. 101–105 y 113–116. | Acotar esperas y recuperar resultados inciertos sin duplicar puntos. Los 4 s/5 s son parámetros propios, no valores universales de clase. |
+| D-44 | Contratos e idempotencia: pp. 138 y 144–148; presupuestos: pp. 101–105. | El contrato debe describir fallas reales del recorrido. Los HTTP/códigos concretos son elección del contrato del proyecto, no prescripción del teórico. |
+| D-45 | Búsqueda e índice derivado: pp. 69, 75–77 y 83. | Separar búsqueda de la fuente transaccional y validar cupo al reservar. Páginas 20/100 y objetivo < 2 s son valores propios pendientes de medir. |
+| D-46 / D-51 | Balanceo, afinidad y salud: pp. 85–87; flapping: p. 87. | Repartir tráfico entre réplicas aptas sin cambios por fallas aisladas. Traefik es herramienta adicional justificada; 5 s/2 s y conteos 3/2 son parámetros propios. |
+| D-48 | Correlación/trazabilidad: pp. 7–8; señales de resiliencia: pp. 111–112. | Reconstruir una petición y localizar fallas. OTel/Collector/Jaeger son instrumentos adicionales, no productos explicados en el apunte; alertas y muestreo son valores propios. |
+| D-49 | Criterio explícito del equipo sobre el uso del material. | Priorizar lo visto en clase; cada herramienta adicional debe ser necesaria, útil, justificada y consultada. No es un concepto atribuido al PDF. |
+| D-50 | Capacidad, latencia y costos: pp. 29–30, 86, 101–102 y 143; pruebas exigidas por el TP. | Medir antes de elegir mejoras o afirmar capacidad. k6 y percentiles son instrumentos adicionales aprobados; cargas y objetivos son propios y todavía no medidos. |
 
 ## Decisiones reemplazadas
 
@@ -67,6 +92,16 @@ Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son 
 
 | Fecha | Cambio |
 |---|---|
+| 16/10/2026 | Se agrega D-52: saldo alineado con RN-22; SPEC v0.10 y ADR-004 v2 preparados, con revisión de PR pendiente. |
+| 16/10/2026 | Se agrega D-51 y se registra fundamento teórico y motivo de las decisiones de la Entrega 2; ADR-012 v2 conserva la historia del balanceo. |
+| 16/10/2026 | Se agrega D-50: plan inicial D13 aprobado; se precisa la prioridad del material de clase y la aprobación individual de excepciones. |
+| 16/10/2026 | Se agrega D-49: criterio académico aclarado; herramientas adicionales permitidas con justificación explícita. |
+| 16/10/2026 | Se agrega D-48: diseño inicial de observabilidad aprobado (D11 / ADR-011). |
+| 16/10/2026 | Se agrega D-47: diseño inicial de resiliencia de Benefits aprobado (D10 / ADR-010). |
+| 16/10/2026 | Se agrega D-46: diseño inicial de balanceo de Booking aprobado (D12 / ADR-012). |
+| 16/10/2026 | Se agrega D-45: diseño inicial de búsqueda de clases aprobado (D6 / ADR-014). |
+| 16/10/2026 | Se agregan D-43 y D-44: límite inicial de 4 s en Benefits y contrato 1.1.0 con errores 502/504 aprobados. |
+| 16/10/2026 | Se agrega D-42: la cátedra confirmó que Benefits alcanza para el requisito de servicio operativo y capacidad compartida de la Entrega 2. |
 | 07/10/2026 | Creación del registro con las decisiones D-01 a D-19. |
 | 07/10/2026 | Se agregan D-20 a D-23: decisiones de arquitectura aprobadas por el grupo en la etapa 02 (eventos de cancelación, asignaciones, nombres de alumnos y despliegue en la nube). |
 | 07/10/2026 | Se agregan D-24 a D-28: decisiones del contrato público de la API de partners (etapa 03). |
