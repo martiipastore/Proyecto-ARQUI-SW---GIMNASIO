@@ -74,6 +74,7 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 |---|---|
 | **Implementado** | Módulos y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing, correlación, CORS, timeouts y estado agregado; frontend de estado; contrato OpenAPI, guía y mock de partners. |
 | **Implementado en Benefits** | API con autenticación por partner para acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/ETAPA_2_BENEFITS.md) y [API y demostración](docs/ETAPA_3_API_BENEFITS.md). |
+| **Resiliencia validada** | Caída controlada y recuperación idempotente ante 502/503/504, incluida respuesta perdida después de commit. [Reproducción](docs/ETAPA_6_RESILIENCIA.md) y [postmortem](docs/POSTMORTEM.md). |
 | **Observabilidad del flujo mínimo** | Logs JSON correlacionados y traza Gateway → Benefits → PostgreSQL; Collector y Jaeger local en memoria. [Evidencia y reproducción](docs/ETAPA_4_OBSERVABILIDAD.md). |
 | **Desplegado como infraestructura, todavía sin uso funcional** | Redis y RabbitMQ. |
 | **Pendiente** | Resto de operaciones de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; métricas exportadas y tableros; consumo de la capacidad externa que se defina con otro grupo. |

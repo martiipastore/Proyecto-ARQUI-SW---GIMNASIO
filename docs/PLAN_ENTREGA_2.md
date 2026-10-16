@@ -324,7 +324,7 @@ Desde un cliente externo se puede:
 
 **Estado:** Completada en el workspace (16/10/2026)
 
-Rama `feature/entrega-2-etapa-04-observabilidad`, desde origin/main que integra PR #2. D-55 aprueba Jaeger en memoria con evidencia exportada; ADR-011 v2 conserva la historia. Tests, vet y lint de los siete módulos correctos; E2E y exportación de traza/logs correctos. Evidencia y límites en [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md). Código c5da897, integración por PR pendiente.
+Rama `feature/entrega-2-etapa-04-observabilidad`, desde origin/main que integra PR #2. D-55 aprueba Jaeger en memoria con evidencia exportada; ADR-011 v2 conserva la historia. Tests, vet y lint de los siete módulos correctos; E2E y exportación de traza/logs correctos. Evidencia y límites en [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md). Código c5da897 y documentación 2c3bed2, integrados en main por PR #3 (8b0da47).
 
 ### Objetivo
 
@@ -425,7 +425,9 @@ Documentar e integrar la capacidad ofrecida por otro grupo sin acoplar el domini
 
 ## Etapa 6 — Resiliencia y caída controlada
 
-**Estado:** Pendiente
+**Estado:** Completada en el workspace (16/10/2026)
+
+Rama `feature/entrega-2-etapa-06-resiliencia`, desde main que integra la etapa 4. D-56 aprueba 500 ms de tolerancia solo para medir los presupuestos 4 s/5 s; no modifica timeouts de producción. Se verificaron caída de Benefits, PostgreSQL pausado y pérdida de respuesta antes/después de commit. Resultado final: 400 puntos, 4 movimientos, 4 operaciones; cinco trazas y catorce logs sanitizados. Restauración completa y tests/vet/lint de Gateway y Benefits correctos. Ver [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](POSTMORTEM.md). Integración por PR pendiente.
 
 ### Objetivo
 
@@ -571,9 +573,9 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 1. Decisiones iniciales | Completada en workspace (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | Sin commit; revisión de PR del SPEC pendiente |
 | 2. Dominio y persistencia | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | c2e0213, f41e215, a58ced8 en main |
 | 3. API y Gateway | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | PR #2 integrado en main (1bda5a4); incluye corrección de lint 2a481f7 |
-| 4. Observabilidad | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | c5da897; rama de etapa 4, PR pendiente |
+| 4. Observabilidad | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | PR #3 integrado en main (8b0da47) |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
-| 6. Resiliencia | Pendiente | Caída controlada y postmortem | — |
+| 6. Resiliencia | Completada en workspace (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | 29465ee y documentación en rama de etapa 6; PR pendiente |
 | 7. Capacidad y costos | Pendiente | k6, resultados y D13 | — |
 | 8. Revisión final | Pendiente | Checklist y guion de demostración | — |
 

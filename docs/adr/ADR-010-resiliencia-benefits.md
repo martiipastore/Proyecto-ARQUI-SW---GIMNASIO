@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado como diseño inicial el 16/10/2026; implementación y evidencia de caída pendientes |
+| **Estado** | Reemplazado por [ADR-010 v2](ADR-010-v2-resiliencia-validada.md) el 16/10/2026; se conserva el diseño inicial |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D10 |
 | **Autores** | Equipo del TPI |

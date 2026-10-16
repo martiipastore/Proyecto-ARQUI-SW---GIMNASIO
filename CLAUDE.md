@@ -8,7 +8,7 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual:** etapa 4 de Entrega 2: primera traza Gateway → Benefits → PostgreSQL, logs correlacionados, Collector y Jaeger local en memoria; completada y validada en el workspace, pendiente de PR. API mínima de etapa 3 integrada por PR #2. Ver [docs/ETAPA_4_OBSERVABILIDAD.md](docs/ETAPA_4_OBSERVABILIDAD.md). Métricas exportadas, alertas y etapas siguientes pendientes.
+- **Etapa actual:** etapa 6 de Entrega 2, completada y validada en el workspace: ejercicio de caída de Benefits, PostgreSQL sin responder y pérdida de respuesta tras commit, con recuperación idempotente y entorno restaurado. Ver [docs/ETAPA_6_RESILIENCIA.md](docs/ETAPA_6_RESILIENCIA.md). Etapas 3/4 integradas por PR #2/#3; etapa 5 pendiente de proveedor y etapa 7 pendiente de carga/costos. Integración de etapa 6 por PR pendiente.
 
 ## Stack
 
@@ -122,8 +122,8 @@ Conventional Commits y GitHub Flow; ver [CONTRIBUTING.md](CONTRIBUTING.md). Rama
 | `cp .env.example .env && make up` | Construye y levanta todo el stack; espera a que esté *healthy* |
 | `make down` / `make clean` | Baja el stack / lo baja y borra los volúmenes |
 | `make logs s=<servicio>` / `make ps` | Logs en vivo / estado de los contenedores |
-| `make test` | `go test ./...` en todos los módulos (integración con testcontainers; se saltean si no hay Docker) |
-| `make lint` | `go vet` + `golangci-lint` (si está instalado) + `tsc` del frontend (si hay `web/node_modules`) |
+| `make test` | `go test ./...` en todos los módulos y tests del inyector de resiliencia (integración con testcontainers; se saltean si no hay Docker) |
+| `make lint` | `go vet` de módulos e inyector + `golangci-lint` de módulos (si está instalado) + `tsc` del frontend (si hay `web/node_modules`) |
 | `make fmt` / `make tidy` | `gofmt -w` / `go mod tidy` en todos los módulos |
 | `go run ./cmd/migrate` (desde `services/benefits-service`) | Aplica migraciones SQL de Benefits; requiere `BENEFITS_DB_DSN` en el entorno. Ejecutar una sola instancia al inicializar una base vacía. |
 | `make mock-up` / `make contract-lint` | Mock de Prism del contrato de partners / validación con Spectral |

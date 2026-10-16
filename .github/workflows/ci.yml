@@ -56,6 +56,12 @@ jobs:
       - name: go test (unitarios + integración con testcontainers)
         run: go test ./...
 
+      - name: Verificar inyector del ejercicio de resiliencia
+        if: matrix.module == 'gateway'
+        run: |
+          go test ../tests/resilience/fault-proxy/main.go ../tests/resilience/fault-proxy/main_test.go
+          go vet ../tests/resilience/fault-proxy/main.go ../tests/resilience/fault-proxy/main_test.go
+
   web:
     name: Frontend · build
     runs-on: ubuntu-latest

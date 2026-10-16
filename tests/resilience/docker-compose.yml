@@ -1,0 +1,18 @@
+# Override temporal: usar solo desde verify-resilience.ps1; no publicar puertos.
+services:
+  resilience-proxy:
+    build:
+      # Compose resuelve todas las rutas contra el primer archivo (deploy/).
+      context: ../tests/resilience/fault-proxy
+      dockerfile: Dockerfile
+    environment:
+      TARGET_URL: http://benefits-service:8083
+      FAULT_MODE: ${RESILIENCE_FAULT_MODE:-before}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  api-gateway:
+    environment:
+      GATEWAY_BENEFITS_URL: http://resilience-proxy:9090
