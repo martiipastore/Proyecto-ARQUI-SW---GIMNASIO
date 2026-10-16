@@ -8,7 +8,7 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual:** esqueleto del proyecto — monorepo Go con `go.work`, `pkg/` compartido, los 5 servicios + indexer + gateway con `/health/live` y `/health/ready`, frontend con la pantalla "Estado del sistema", Docker Compose y CI. **Todavía no hay funcionalidades de negocio** (usuarios, membresías, clases, reservas, entrenamiento, nutrición ni beneficios).
+- **Etapa actual:** etapa 2 de Entrega 2 completada en el workspace: Benefits implementa dominio, casos de uso y persistencia PostgreSQL para créditos, saldo y movimientos con idempotencia. Tests de arquitectura, integración real y go vet pasan. Aún no se exponen estos casos por HTTP (etapa 3); los demás servicios conservan el esqueleto. Ver [docs/ETAPA_2_BENEFITS.md](docs/ETAPA_2_BENEFITS.md).
 
 ## Stack
 
@@ -125,6 +125,7 @@ Conventional Commits y GitHub Flow; ver [CONTRIBUTING.md](CONTRIBUTING.md). Rama
 | `make test` | `go test ./...` en todos los módulos (integración con testcontainers; se saltean si no hay Docker) |
 | `make lint` | `go vet` + `golangci-lint` (si está instalado) + `tsc` del frontend (si hay `web/node_modules`) |
 | `make fmt` / `make tidy` | `gofmt -w` / `go mod tidy` en todos los módulos |
+| `go run ./cmd/migrate` (desde `services/benefits-service`) | Aplica migraciones SQL de Benefits; requiere `BENEFITS_DB_DSN` en el entorno. Ejecutar una sola instancia al inicializar una base vacía. |
 | `make mock-up` / `make contract-lint` | Mock de Prism del contrato de partners / validación con Spectral |
 
 Equivalente sin make: `docker compose --env-file .env -f deploy/docker-compose.yml up -d --build --wait`, y `cd <módulo> && go test ./...` por módulo.

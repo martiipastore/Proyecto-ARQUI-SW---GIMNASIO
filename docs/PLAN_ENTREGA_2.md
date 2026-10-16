@@ -206,7 +206,9 @@ Ajuste D12 aprobado el 16/10/2026: 3 fallos consecutivos para retirar y 2 éxito
 
 ## Etapa 2 — Dominio y persistencia de Benefits
 
-**Estado:** Pendiente
+**Estado:** Completada en el workspace (16/10/2026)
+
+Rama: `feature/entrega-2-etapa-02-benefits`, creada desde el main que integra el PR de la etapa 1. Implementación y evidencia en [ETAPA_2_BENEFITS.md](ETAPA_2_BENEFITS.md). Dominio, aplicación, arquitectura, integración PostgreSQL real y go vet pasaron. Se verificaron migración desde base vacía, restricciones, rollback, concurrencia, replay y permisos sin privilegios globales. La API queda en etapa 3. La detección -race no pudo ejecutarse por incompatibilidad del compilador C de Windows. Sin commits ni push de esta etapa.
 
 ### Objetivo
 
@@ -563,7 +565,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 |---|---|---|---|
 | 0. Preparación y línea base | Completada (16/10/2026) | Siete módulos con tests exitosos, Spectral sin advertencias, stack saludable y estado agregado ready | Sin commit; cambios locales |
 | 1. Decisiones iniciales | Completada en workspace (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | Sin commit; revisión de PR del SPEC pendiente |
-| 2. Dominio y persistencia | Pendiente | Migraciones y tests de Benefits | — |
+| 2. Dominio y persistencia | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | Sin commit; cambios locales |
 | 3. API y Gateway | Pendiente | Flujo contractual reproducible | — |
 | 4. Observabilidad | Pendiente | Logs correlacionados y traza | — |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |

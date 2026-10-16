@@ -38,8 +38,9 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 | Estado | Componentes y comportamiento |
 |---|---|
 | **Implementado** | Módulos Go y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing por prefijo, correlación, CORS, timeouts, errores y estado agregado; frontend de estado; bases y usuarios separados por servicio; contrato OpenAPI, guía y mock de partners. |
+| **Implementado en Benefits, pendiente de entrada HTTP** | Casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Evidencia](ETAPA_2_BENEFITS.md). |
 | **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
-| **Pendiente de implementación** | Casos de uso y persistencia de negocio; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; trazas, métricas, logs centralizados y tableros. |
+| **Pendiente de implementación** | API de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; trazas, métricas, logs centralizados y tableros. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
 
 Salvo que una sección indique expresamente el estado actual, sus descripciones deben leerse como decisiones y comportamiento **objetivo**, no como funcionalidad ya disponible.
