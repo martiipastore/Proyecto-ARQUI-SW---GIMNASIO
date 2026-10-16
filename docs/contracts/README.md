@@ -271,6 +271,11 @@ Lo que esperamos de tu cliente para que los cambios compatibles no te rompan:
 
 ## CHANGELOG del contrato
 
+### v1.1.1 — 2026-10-16
+
+- Se aclara Balance.updatedAt: fecha del último movimiento aplicado o de creación de la cuenta si todavía no tiene movimientos (ADR-008 v3, D-53).
+- El flujo mínimo real incluye créditos, saldo y movimientos; los demás endpoints conservan su contrato y mock, pero su implementación está pendiente. Ver docs/ETAPA_3_API_BENEFITS.md.
+
 ### v1.1.0 — 2026-10-16
 
 - Se documentan 502 UNAVAILABLE y 504 TIMEOUT en todas las operaciones, con formato de errores de partners y correlación. 502 incluye Retry-After.

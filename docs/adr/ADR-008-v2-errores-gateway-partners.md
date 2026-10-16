@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado; contrato actualizado, implementación del gateway pendiente de etapa 3 |
+| **Estado** | Reemplazado por [ADR-008 v3](ADR-008-v3-fecha-cuenta-sin-movimientos.md) |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D8 |
 | **Reemplaza** | [ADR-008](ADR-008-contrato-propio.md) |

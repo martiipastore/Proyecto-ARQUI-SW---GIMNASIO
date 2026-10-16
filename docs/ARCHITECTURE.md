@@ -38,9 +38,9 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 | Estado | Componentes y comportamiento |
 |---|---|
 | **Implementado** | Módulos Go y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing por prefijo, correlación, CORS, timeouts, errores y estado agregado; frontend de estado; bases y usuarios separados por servicio; contrato OpenAPI, guía y mock de partners. |
-| **Implementado en Benefits, pendiente de entrada HTTP** | Casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Evidencia](ETAPA_2_BENEFITS.md). |
+| **Implementado en Benefits** | API de partners /v1 y ruta pública /partner-api/v1 por gateway; autenticación por API key sin caché; casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](ETAPA_2_BENEFITS.md) y [API](ETAPA_3_API_BENEFITS.md). |
 | **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
-| **Pendiente de implementación** | API de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; trazas, métricas, logs centralizados y tableros. |
+| **Pendiente de implementación** | Resto de operaciones de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; trazas, métricas, logs centralizados y tableros. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
 
 Salvo que una sección indique expresamente el estado actual, sus descripciones deben leerse como decisiones y comportamiento **objetivo**, no como funcionalidad ya disponible.
@@ -719,7 +719,8 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-006](adr/ADR-006-seguridad.md) | Seguridad — decisión adicional; la etiqueta D6 del archivo es un error histórico, D6 del TP corresponde a búsqueda | Aceptado |
 | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md) | D7 — Caché, autorización y disponibilidad degradada | Aceptado |
 | [ADR-008](adr/ADR-008-contrato-propio.md) | D8 — Contrato propio inicial | Reemplazado por ADR-008 v2 |
-| [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Aceptado; implementación del gateway pendiente |
+| [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Reemplazado por ADR-008 v3 |
+| [ADR-008 v3](adr/ADR-008-v3-fecha-cuenta-sin-movimientos.md) | D8 — Contrato 1.1.1, fecha de cuenta sin movimientos | Aceptado; flujo mínimo implementado |
 | [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Propuesto; proveedor y contrato pendientes |
 | [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Resiliencia del flujo de Benefits | Aceptado como diseño inicial; implementación y evidencia pendientes |
 | [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Observabilidad v1 | Aceptado como diseño inicial; instrumentación y validación pendientes |
@@ -727,5 +728,6 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | D12 — Balanceo con verificaciones consecutivas (3 fallos / 2 éxitos) | Aceptado como diseño inicial; soporte de herramienta, implementación y evidencia pendientes |
 | [ADR-013](adr/ADR-013-capacidad-costos.md) | D13 — Capacidad y costos | Aceptado como plan inicial; mediciones y cotización pendientes |
 | [ADR-014](adr/ADR-014-busqueda-clases.md) | D6 — Búsqueda de clases | Aceptado como diseño inicial; implementación y mediciones pendientes |
+| [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md) | D4/D8 — Bloqueo por clave y operación en curso | Aceptado; implementado |
 
-La revisión de la Entrega 2 se registra en [REVISION_ETAPA_1.md](REVISION_ETAPA_1.md), incluyendo patrones de acceso de Benefits y la traducción pendiente de los errores 502/504 del gateway al contrato 1.1.0 aprobado. Las propuestas no cambian las decisiones aceptadas ni acreditan implementación.
+La revisión de la Entrega 2 se registra en [REVISION_ETAPA_1.md](REVISION_ETAPA_1.md), incluyendo patrones de acceso de Benefits y la traducción de los errores 502/504 del gateway ya implementada con el formato público. Las propuestas no cambian las decisiones aceptadas ni acreditan implementación.

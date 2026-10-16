@@ -8,7 +8,7 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual:** etapa 2 de Entrega 2 completada en el workspace: Benefits implementa dominio, casos de uso y persistencia PostgreSQL para créditos, saldo y movimientos con idempotencia. Tests de arquitectura, integración real y go vet pasan. Aún no se exponen estos casos por HTTP (etapa 3); los demás servicios conservan el esqueleto. Ver [docs/ETAPA_2_BENEFITS.md](docs/ETAPA_2_BENEFITS.md).
+- **Etapa actual:** etapa 3 de Entrega 2: API de partners para créditos, saldo y movimientos con API key y gateway; persistencia del resultado HTTP original, errores RFC 7807 públicos y migraciones al arrancar. Los demás endpoints de Benefits y las siguientes etapas siguen pendientes. Ver [docs/ETAPA_3_API_BENEFITS.md](docs/ETAPA_3_API_BENEFITS.md).
 
 ## Stack
 
