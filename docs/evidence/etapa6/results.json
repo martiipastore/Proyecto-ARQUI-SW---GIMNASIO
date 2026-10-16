@@ -1,0 +1,258 @@
+{
+    "measured_at_utc":  "2026-10-16T21:35:09.6325377Z",
+    "tolerance_ms":  500,
+    "benefits_budget_ms":  4000,
+    "gateway_budget_ms":  5000,
+    "attempts":  [
+                     {
+                         "scenario":  "benefits_stopped",
+                         "utc":  "2026-10-16T21:34:01.3126369Z",
+                         "status":  502,
+                         "code":  "UNAVAILABLE",
+                         "duration_ms":  3370.831,
+                         "trace_id":  "d541fae3a6ab4f43a6bfd81cc617fd1b",
+                         "correlation_id":  "d353c514-8ac1-4a5d-ad29-e9792330774c",
+                         "replayed":  false,
+                         "response_sha256":  "d12d9087154ddbf428d835f69eecf2622e907a481f80faf7bee39c3dfa976a4c",
+                         "retry_after":  "1"
+                     },
+                     {
+                         "scenario":  "benefits_stopped_recovery",
+                         "utc":  "2026-10-16T21:34:11.9497247Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  44.467,
+                         "trace_id":  "423f6c76b32e425cbb64f97b853decad",
+                         "correlation_id":  "113e6498-5f3a-4bcb-b898-3695878166cf",
+                         "replayed":  false,
+                         "response_sha256":  "06e15e2ed7857b0e885e780ae81053a966edde61b5c4574ea5f5ced20b4f6b9a",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "benefits_stopped_replay",
+                         "utc":  "2026-10-16T21:34:11.9993472Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  9.713,
+                         "trace_id":  "885717550f4f4f58b1fa265d9798e362",
+                         "correlation_id":  "8aa44f54-9366-4b9d-9042-a91a09562c29",
+                         "replayed":  true,
+                         "response_sha256":  "06e15e2ed7857b0e885e780ae81053a966edde61b5c4574ea5f5ced20b4f6b9a",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "postgres_paused",
+                         "utc":  "2026-10-16T21:34:14.5597836Z",
+                         "status":  503,
+                         "code":  "UNAVAILABLE",
+                         "duration_ms":  4004.363,
+                         "trace_id":  "575f6a98041c46008397d5a1b9483682",
+                         "correlation_id":  "642556c7-bb96-4b28-b932-8dca6ef482ae",
+                         "replayed":  false,
+                         "response_sha256":  "bfcfb179742079f93bd7e23ef7b942dbcf238d752763c94b80d1e15381b9b2dd",
+                         "retry_after":  "1"
+                     },
+                     {
+                         "scenario":  "postgres_paused_recovery",
+                         "utc":  "2026-10-16T21:34:19.4834537Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  29.516,
+                         "trace_id":  "06054b9dac1b477681dcb04bc9f7a4a1",
+                         "correlation_id":  "d38cee2c-fcc4-4295-b46a-e49ac1162c36",
+                         "replayed":  false,
+                         "response_sha256":  "2d9e461f0effdabc0083cc956e478e3a2b8fefd170f4e7b3934d46f27e773d5c",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "postgres_paused_replay",
+                         "utc":  "2026-10-16T21:34:19.5138325Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  6.914,
+                         "trace_id":  "d2dd980c31a24f1a862d99afc8394468",
+                         "correlation_id":  "a5183be3-4dd7-4218-9774-b7dc127f6153",
+                         "replayed":  true,
+                         "response_sha256":  "2d9e461f0effdabc0083cc956e478e3a2b8fefd170f4e7b3934d46f27e773d5c",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "timeout_before_commit",
+                         "utc":  "2026-10-16T21:34:32.6217059Z",
+                         "status":  504,
+                         "code":  "TIMEOUT",
+                         "duration_ms":  5010.314,
+                         "trace_id":  "4026873a3e464cc6ae33f07387402448",
+                         "correlation_id":  "f60a72b2-155b-4771-a1d0-e5015007075c",
+                         "replayed":  false,
+                         "response_sha256":  "cc75ba47b34c9652083d5aae413e817c348ff30bdfcbc354a0d63d133a6ba443",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "timeout_before_commit_recovery",
+                         "utc":  "2026-10-16T21:34:45.1335789Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  18.059,
+                         "trace_id":  "8878da2a203c4f538a3539eac50414bc",
+                         "correlation_id":  "19d57862-6097-49e1-989a-457f008a36ea",
+                         "replayed":  false,
+                         "response_sha256":  "e01b3fbf063632d4dca3ee4d415953f8e2f1f1fb6b73370bb7efb2bfe5d4957d",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "timeout_before_commit_replay",
+                         "utc":  "2026-10-16T21:34:45.1536842Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  7.583,
+                         "trace_id":  "2402560cd4844e40a3d763da0fab4047",
+                         "correlation_id":  "581eeef5-9994-41d6-9bf8-7b230b1a8e4d",
+                         "replayed":  true,
+                         "response_sha256":  "e01b3fbf063632d4dca3ee4d415953f8e2f1f1fb6b73370bb7efb2bfe5d4957d",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "timeout_after_commit",
+                         "utc":  "2026-10-16T21:34:53.1988418Z",
+                         "status":  504,
+                         "code":  "TIMEOUT",
+                         "duration_ms":  5004.196,
+                         "trace_id":  "96d97f9483554be39e47e3bab7bc1414",
+                         "correlation_id":  "75cee94d-f35c-4e18-8534-048cea32f32a",
+                         "replayed":  false,
+                         "response_sha256":  "14eaf9285711bdab0fb16d94667db4b7e11bc2975a12777271ca478591caccf1",
+                         "retry_after":  ""
+                     },
+                     {
+                         "scenario":  "timeout_after_commit_recovery",
+                         "utc":  "2026-10-16T21:34:58.9621089Z",
+                         "status":  201,
+                         "code":  null,
+                         "duration_ms":  8.987,
+                         "trace_id":  "e6f7dffaf25c457cb2680223c9fb93ad",
+                         "correlation_id":  "c2755c55-c4ea-4766-bc88-c189c22bad9c",
+                         "replayed":  true,
+                         "response_sha256":  "d231d11ad3a3503e9219b924e963b896b38d6994a8aa0650085a39803602cd64",
+                         "retry_after":  ""
+                     }
+                 ],
+    "timeline":  [
+                     {
+                         "utc":  "2026-10-16T21:34:00.5135773Z",
+                         "action":  "stop_benefits"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:11.9217844Z",
+                         "action":  "benefits_restored"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:12.3528082Z",
+                         "action":  "pause_postgres"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:19.1542864Z",
+                         "action":  "postgres_restored"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:19.9539823Z",
+                         "action":  "inject_delay_before_benefits"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:45.1335789Z",
+                         "action":  "restore_direct_route"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:45.5928099Z",
+                         "action":  "inject_response_loss_after_commit"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:34:59.5540670Z",
+                         "action":  "recovered_without_duplicates"
+                     },
+                     {
+                         "utc":  "2026-10-16T21:35:07.4062259Z",
+                         "action":  "restored_normal_stack"
+                     }
+                 ],
+    "state_checks":  [
+                         {
+                             "utc":  "2026-10-16T21:34:00.5026959Z",
+                             "expected_movements":  0,
+                             "balance":  0,
+                             "movements":  0,
+                             "operations":  0
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:05.5090129Z",
+                             "expected_movements":  0,
+                             "balance":  0,
+                             "movements":  0,
+                             "operations":  0
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:12.3528082Z",
+                             "expected_movements":  1,
+                             "balance":  100,
+                             "movements":  1,
+                             "operations":  1
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:19.4829177Z",
+                             "expected_movements":  1,
+                             "balance":  100,
+                             "movements":  1,
+                             "operations":  1
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:19.9534354Z",
+                             "expected_movements":  2,
+                             "balance":  200,
+                             "movements":  2,
+                             "operations":  2
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:38.1980482Z",
+                             "expected_movements":  2,
+                             "balance":  200,
+                             "movements":  2,
+                             "operations":  2
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:45.5922656Z",
+                             "expected_movements":  3,
+                             "balance":  300,
+                             "movements":  3,
+                             "operations":  3
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:58.7460272Z",
+                             "expected_movements":  4,
+                             "balance":  400,
+                             "movements":  4,
+                             "operations":  4
+                         },
+                         {
+                             "utc":  "2026-10-16T21:34:59.5540670Z",
+                             "expected_movements":  4,
+                             "balance":  400,
+                             "movements":  4,
+                             "operations":  4
+                         }
+                     ],
+    "final_state":  {
+                        "balance":  400,
+                        "movements":  4,
+                        "operations":  4
+                    },
+    "confirmed_response":  {
+                               "time":  "2026-10-16T21:34:53.213275189Z",
+                               "level":  "INFO",
+                               "msg":  "respuesta confirmada retenida por el ejercicio",
+                               "event":  "response_withheld",
+                               "original_status":  201,
+                               "response_sha256":  "d231d11ad3a3503e9219b924e963b896b38d6994a8aa0650085a39803602cd64",
+                               "trace_id":  "96d97f9483554be39e47e3bab7bc1414"
+                           },
+    "restored":  true
+}

@@ -39,6 +39,7 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 |---|---|
 | **Implementado** | Módulos Go y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing por prefijo, correlación, CORS, timeouts, errores y estado agregado; frontend de estado; bases y usuarios separados por servicio; contrato OpenAPI, guía y mock de partners. |
 | **Implementado en Benefits** | API de partners /v1 y ruta pública /partner-api/v1 por gateway; autenticación por API key sin caché; casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](ETAPA_2_BENEFITS.md) y [API](ETAPA_3_API_BENEFITS.md). |
+| **Validado en resiliencia** | Caída controlada 502/503/504 antes/después de commit, recuperación por misma clave y rollback previo al commit; proxy exclusivo de pruebas retirado al terminar. [Etapa 6](ETAPA_6_RESILIENCIA.md) y [postmortem](POSTMORTEM.md). |
 | **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](ETAPA_4_OBSERVABILIDAD.md). |
 | **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
 | **Pendiente de implementación** | Resto de operaciones de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; métricas exportadas, logs centralizados y tableros. |
@@ -726,7 +727,8 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Reemplazado por ADR-008 v3 |
 | [ADR-008 v3](adr/ADR-008-v3-fecha-cuenta-sin-movimientos.md) | D8 — Contrato 1.1.1, fecha de cuenta sin movimientos | Aceptado; flujo mínimo implementado |
 | [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Propuesto; proveedor y contrato pendientes |
-| [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Resiliencia del flujo de Benefits | Aceptado como diseño inicial; implementación y evidencia pendientes |
+| [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Diseño inicial de resiliencia | Reemplazado por v2 |
+| [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | D10 — Presupuestos y recuperación idempotente | Aceptado; ejercicio de etapa 6 validado |
 | [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Diseño inicial de observabilidad | Reemplazado por v2 |
 | [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | D11 — Primera traza y memoria local | Aceptado; primera traza implementada, métricas y alertas pendientes |
 | [ADR-012](adr/ADR-012-balanceo-booking.md) | D12 — Balanceo inicial | Reemplazado por ADR-012 v2 |
