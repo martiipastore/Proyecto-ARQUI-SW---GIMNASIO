@@ -13,13 +13,14 @@ import (
 
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/problem"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
 )
 
 // NewRouter crea un *gin.Engine con los middlewares comunes.
 func NewRouter(log *slog.Logger) *gin.Engine {
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
-	r.Use(correlation.Middleware(), AccessLog(log), Recovery(log))
+	r.Use(correlation.Middleware(), telemetry.Middleware(), AccessLog(log), Recovery(log))
 	r.NoRoute(func(c *gin.Context) {
 		problem.Write(c, problem.NotFound("No existe el recurso "+c.Request.URL.Path+"."))
 	})
@@ -64,7 +65,7 @@ func Recovery(log *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				log.ErrorContext(c.Request.Context(), "pánico recuperado", slog.Any("panic", rec),
+				log.ErrorContext(c.Request.Context(), "pánico recuperado",
 					slog.String("path", SafeLogPath(c.Request.URL.Path)))
 				problem.Write(c, problem.Internal())
 			}

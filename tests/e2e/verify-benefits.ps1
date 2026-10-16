@@ -1,4 +1,9 @@
-﻿param([string]$BaseUrl = 'http://localhost:8080')
+﻿param(
+ [string]$BaseUrl = 'http://localhost:8080',
+ [switch]$Observability,
+ [string]$JaegerUrl = 'http://localhost:16686',
+ [string]$EvidenceDirectory = 'docs/evidence/etapa4'
+)
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 Add-Type -AssemblyName System.Net.Http
@@ -32,14 +37,17 @@ COMMIT;
         try {
             $request.Headers.Add('X-API-Key', $Credential)
             $request.Headers.Add('X-Partner-Id', 'identidad-falsa-del-cliente')
-            $request.Headers.Add('X-Correlation-ID', [guid]::NewGuid().ToString())
+            $correlation = [guid]::NewGuid().ToString()
+            $traceId = [guid]::NewGuid().ToString('N')
+            $request.Headers.Add('X-Correlation-ID', $correlation)
+            if ($Observability) { $request.Headers.Add('traceparent', ('00-' + $traceId + '-0123456789abcdef-01')) }
             if ($Key) { $request.Headers.Add('Idempotency-Key', $Key) }
             if ($Method -eq 'POST') { $request.Content = [System.Net.Http.StringContent]::new($Body, [Text.Encoding]::UTF8, 'application/json') }
             $response = $client.SendAsync($request).GetAwaiter().GetResult()
             try {
                 $text = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
                 $replayed = $response.Headers.Contains('Idempotent-Replayed') -and ($response.Headers.GetValues('Idempotent-Replayed') -contains 'true')
-                return [pscustomobject]@{ Status = [int]$response.StatusCode; Body = $text; Data = ($text | ConvertFrom-Json); Replayed = $replayed }
+                return [pscustomobject]@{ TraceId = $traceId; CorrelationId = $correlation; Status = [int]$response.StatusCode; Body = $text; Data = ($text | ConvertFrom-Json); Replayed = $replayed }
             } finally { $response.Dispose() }
         } finally { $request.Dispose() }
     }
@@ -61,6 +69,42 @@ COMMIT;
     $missing = Send-Request 'GET' '/partner-api/v1/accounts/no-vinculado/balance' '' '' $apiKey
     if ($missing.Status -ne 404 -or $missing.Data.code -ne 'ACCOUNT_NOT_FOUND') { throw 'Aislamiento incorrecto.' }
     Write-Output 'E2E Gateway -> Benefits -> PostgreSQL: OK (201, replay idéntico, saldo 100, 1 movimiento, 409, 401, 404).'
+    if ($Observability) {
+        # Espera acotada solo para la exportación asíncrona de la evidencia.
+        $deadline = [DateTime]::UtcNow.AddSeconds(60)
+        $trace = $null
+        do {
+            try { $trace = Invoke-RestMethod ($JaegerUrl + '/api/traces/' + $credit.TraceId) } catch { $trace = $null }
+            if ($trace -and $trace.data -and $trace.data[0].spans.Count -ge 5) { break }
+            Start-Sleep -Milliseconds 1000
+        } while ([DateTime]::UtcNow -lt $deadline)
+        if (-not $trace -or -not $trace.data -or $trace.data[0].spans.Count -lt 5) { throw 'No se recibió la traza completa en Jaeger.' }
+        $data = $trace.data[0]
+        $services = @($data.processes.PSObject.Properties | ForEach-Object { $_.Value.serviceName })
+        if ($services -notcontains 'api-gateway' -or $services -notcontains 'benefits-service') { throw 'Falta un servicio en la traza distribuida.' }
+        if (@($data.spans | Where-Object { $_.operationName -eq 'postgres.transaccion' }).Count -ne 1) { throw 'Falta el span de persistencia de la acreditación.' }
+        foreach ($span in $data.spans) {
+            if ($span.traceID -ne $credit.TraceId) { throw 'La traza contiene identificadores inconsistentes.' }
+        }
+        $rawLogs = docker compose --env-file .env -f deploy/docker-compose.yml logs --no-color --no-log-prefix --since 5m api-gateway benefits-service
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron recuperar los logs.' }
+        $logs = @($rawLogs | ForEach-Object {
+            try { $entry = $_ | ConvertFrom-Json; if ($entry.trace_id -eq $credit.TraceId) { $entry } } catch { }
+        })
+        if (@($logs | Where-Object { $_.service -eq 'api-gateway' }).Count -lt 1 -or @($logs | Where-Object { $_.service -eq 'benefits-service' }).Count -lt 2) { throw 'Faltan logs correlacionados del flujo.' }
+        foreach ($entry in $logs) {
+            if ($entry.correlation_id -ne $credit.CorrelationId -or -not $entry.span_id) { throw 'El contexto de logs no coincide con la petición.' }
+        }
+        $traceJson = $trace | ConvertTo-Json -Depth 100
+        $logsJson = ($logs | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 20 }) -join "`n"
+        foreach ($sensitive in @($apiKey, $hash, $usuario, $partner, $cuenta, $alumno, $key, 'Compra de prueba', 'demo-etapa-3')) {
+            if ($traceJson.Contains($sensitive) -or $logsJson.Contains($sensitive)) { throw 'La evidencia contiene datos que deben excluirse.' }
+        }
+        New-Item -ItemType Directory -Force -Path $EvidenceDirectory | Out-Null
+        [IO.File]::WriteAllText((Join-Path (Resolve-Path $EvidenceDirectory) 'trace.json'), $traceJson, [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText((Join-Path (Resolve-Path $EvidenceDirectory) 'logs.jsonl'), $logsJson + "`n", [Text.UTF8Encoding]::new($false))
+        Write-Output ('Observabilidad: OK; trace_id=' + $credit.TraceId + '; evidencia en ' + $EvidenceDirectory)
+    }
     Write-Output 'El fixture sintético se conserva para respetar el ledger. La API key temporal no se imprime ni se guarda.'
 } finally {
     $client.Dispose()

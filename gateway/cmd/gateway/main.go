@@ -21,6 +21,7 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
 )
 
 const serviceName = "api-gateway"
@@ -41,8 +42,19 @@ func main() {
 func run(cfg gwconfig.Config, log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	shutdownTraces, err := telemetry.Setup(ctx, serviceName, log)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		flushCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+		if err := shutdownTraces(flushCtx); err != nil {
+			log.Warn("no se completó el cierre de trazas")
+		}
+	}()
 
-	transport := correlation.Transport{Base: http.DefaultTransport}
+	transport := correlation.Transport{Base: telemetry.Transport{Base: http.DefaultTransport}}
 
 	p, err := proxy.New(cfg, transport, log)
 	if err != nil {

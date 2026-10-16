@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"strconv"
@@ -20,6 +21,8 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/ports"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Authenticator interface {
@@ -28,11 +31,15 @@ type Authenticator interface {
 type PartnersAPI struct {
 	casos application.CasosDeUso
 	auth  Authenticator
+	log   *slog.Logger
 }
 
-func RegisterPartners(r *gin.Engine, casos application.CasosDeUso, auth Authenticator) {
+func RegisterPartners(r *gin.Engine, casos application.CasosDeUso, auth Authenticator, logs ...*slog.Logger) {
 	r.RedirectTrailingSlash = false
 	h := &PartnersAPI{casos: casos, auth: auth}
+	if len(logs) > 0 {
+		h.log = logs[0]
+	}
 	grupo := r.Group("/v1", func(c *gin.Context) {
 		c.Request = problem.PartnerRequest(c.Request)
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
@@ -63,6 +70,9 @@ func RegisterPartners(r *gin.Engine, casos application.CasosDeUso, auth Authenti
 }
 
 func (h *PartnersAPI) fallo(c *gin.Context, status int, code, detail, originalCorrelation string) {
+	if status >= 500 && h.log != nil {
+		h.log.ErrorContext(c.Request.Context(), "falló operación de Benefits", slog.Int("status", status), slog.String("code", code))
+	}
 	if status == 503 {
 		c.Header("Retry-After", "1")
 	}
@@ -148,6 +158,10 @@ func (h *PartnersAPI) acreditar(c *gin.Context) {
 		entrada.HuellaEntrada = hex.EncodeToString(hash[:])
 	}
 	respuesta, err := h.casos.Acreditar(c.Request.Context(), entrada)
+	trace.SpanFromContext(c.Request.Context()).SetAttributes(attribute.Bool("benefits.idempotent_replayed", respuesta.Repetida))
+	if err == nil && respuesta.Resultado.Rechazo == "" && h.log != nil {
+		h.log.InfoContext(c.Request.Context(), "acreditación procesada", slog.Bool("idempotent_replayed", respuesta.Repetida))
+	}
 	if respuesta.Repetida {
 		c.Header("Idempotent-Replayed", "true")
 	} else {

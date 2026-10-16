@@ -1,0 +1,31 @@
+extensions:
+  jaeger_storage:
+    backends:
+      demo:
+        memory:
+          # Valor del ejemplo oficial de Jaeger 2.22, sin tuning del proyecto.
+          max_traces: 100000
+  jaeger_query:
+    storage:
+      traces: demo
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch: {}
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: demo
+
+service:
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
