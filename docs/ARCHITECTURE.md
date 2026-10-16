@@ -672,7 +672,7 @@ Requisitos: ~8 GB de RAM y **al menos 15 GB libres en disco** para imágenes y b
 
 El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**.
 
-**Decisión objetivo:** se despliega **el stack completo en una VM con Docker Compose**, con configuración de producción: el frontend se sirve como estáticos y Traefik actúa además como borde HTTPS. El equipo eligió **Oracle Cloud Free Tier, VM ARM**, según D-41 de [DECISIONES.md](DECISIONES.md). La disponibilidad de recursos, el dimensionamiento y el costo efectivo se verificarán en D13; no hay despliegue productivo acreditado por esta decisión. El perfil de producción todavía debe incorporarse.
+**Decisión objetivo:** se despliega **el stack completo en una VM con Docker Compose**, con configuración de producción: el frontend se sirve como estáticos y Traefik actúa además como borde HTTPS. El equipo eligió **Oracle Cloud Free Tier, VM ARM**, según D-41 de [DECISIONES.md](DECISIONES.md). La disponibilidad de recursos, el dimensionamiento y el costo efectivo se verificarán en D13; no hay despliegue productivo acreditado por esta decisión. El perfil de producción todavía debe incorporarse. La [etapa 7](ETAPA_7_CAPACIDAD_COSTOS.md) midió el flujo local y conserva una [estimación fechada](COSTOS_ENTREGA_2.md) para São Paulo en USD/ARS; no valida capacidad ARM ni disponibilidad de la cuenta.
 
 | Aspecto | Detalle |
 |---|---|
@@ -733,7 +733,8 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | D11 — Primera traza y memoria local | Aceptado; primera traza implementada, métricas y alertas pendientes |
 | [ADR-012](adr/ADR-012-balanceo-booking.md) | D12 — Balanceo inicial | Reemplazado por ADR-012 v2 |
 | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | D12 — Balanceo con verificaciones consecutivas (3 fallos / 2 éxitos) | Aceptado como diseño inicial; soporte de herramienta, implementación y evidencia pendientes |
-| [ADR-013](adr/ADR-013-capacidad-costos.md) | D13 — Capacidad y costos | Aceptado como plan inicial; mediciones y cotización pendientes |
+| [ADR-013](adr/ADR-013-capacidad-costos.md) | D13 — Plan inicial de capacidad/costos | Reemplazado por v2 |
+| [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md) | D13 — Mediciones y costos fechados | Aceptado; evidencia local y límites en etapa 7 |
 | [ADR-014](adr/ADR-014-busqueda-clases.md) | D6 — Búsqueda de clases | Aceptado como diseño inicial; implementación y mediciones pendientes |
 | [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md) | D4/D8 — Bloqueo por clave y operación en curso | Aceptado; implementado |
 

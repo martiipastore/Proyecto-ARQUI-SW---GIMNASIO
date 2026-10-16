@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado como plan inicial el 16/10/2026; mediciones y cotización pendientes |
+| **Estado** | Reemplazado por [ADR-013 v2](ADR-013-v2-capacidad-costos-medidos.md) el 16/10/2026; se conserva el plan inicial como historia |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D13 |
 | **Autores** | Equipo del TPI |

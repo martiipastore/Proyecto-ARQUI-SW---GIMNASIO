@@ -161,7 +161,7 @@ Diseño inicial de D10 aprobado el 16/10/2026 y registrado en ADR-010 y D-47: si
 
 Diseño inicial de D11 aprobado el 16/10/2026 y registrado en ADR-011 y D-48: logs JSON y trazas Gateway → Benefits → PostgreSQL con OTel, Collector y Jaeger; muestreo local 100 %, métricas y alertas iniciales. Instrumentación, primera traza y validación de umbrales pendientes.
 
-Plan inicial de D13 aprobado el 16/10/2026 y registrado en ADR-013 y D-50: k6 como herramienta adicional justificada, 100 cuentas y escalones de 1/5/10 usuarios, cero duplicaciones y objetivos p95 de lecturas < 200 ms y escrituras < 500 ms. Mediciones, comparación de mejoras y cotización pendientes de etapa 7. Se prioriza lo visto en clase; cualquier otra excepción debe justificarse y consultarse.
+Plan inicial de D13 aprobado el 16/10/2026 y registrado en ADR-013 y D-50: k6 como herramienta adicional justificada, 100 cuentas y escalones de 1/5/10 usuarios, cero duplicaciones y objetivos p95 de lecturas < 200 ms y escrituras < 500 ms. Mediciones, comparación de alternativas y cotización completadas en [etapa 7](ETAPA_7_CAPACIDAD_COSTOS.md), con límites locales explícitos. Se prioriza lo visto en clase; cualquier otra excepción debe justificarse y consultarse.
 
 Ajuste D12 aprobado el 16/10/2026: 3 fallos consecutivos para retirar y 2 éxitos consecutivos para reincorporar, con intervalo 5 s y timeout 2 s. ADR-012 v2 reemplaza al original; D-51 registra el motivo y la referencia a p. 87 del teórico. Son parámetros propios para evitar flapping, con mayor demora de detección/recuperación. Soporte de herramienta e implementación pendientes de la etapa de balanceo.
 
@@ -476,7 +476,7 @@ Demostrar que el flujo principal responde de forma controlada cuando una depende
 
 ## Etapa 7 — Tests de carga, capacidad y costos
 
-**Estado:** Pendiente
+**Estado:** Completada en workspace (16/10/2026), integración por PR pendiente. [Informe](ETAPA_7_CAPACIDAD_COSTOS.md), [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md), [reproducción](../tests/load/README.md) y [costos](COSTOS_ENTREGA_2.md).
 
 ### Objetivo
 
@@ -575,8 +575,8 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 3. API y Gateway | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | PR #2 integrado en main (1bda5a4); incluye corrección de lint 2a481f7 |
 | 4. Observabilidad | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | PR #3 integrado en main (8b0da47) |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
-| 6. Resiliencia | Completada en workspace (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | 29465ee y documentación en rama de etapa 6; PR pendiente |
-| 7. Capacidad y costos | Pendiente | k6, resultados y D13 | — |
+| 6. Resiliencia | Completada en workspace (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
+| 7. Capacidad y costos | Completada en workspace (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | aabe4e0 (scripts) y documentación en rama feature/entrega-2-etapa-07-capacidad-costos; PR pendiente |
 | 8. Revisión final | Pendiente | Checklist y guion de demostración | — |
 
 ### Línea base — 16/10/2026

@@ -1,0 +1,37 @@
+[
+    {
+        "module":  "pkg",
+        "test":  "passed",
+        "vet":  "passed"
+    },
+    {
+        "module":  "gateway",
+        "test":  "passed",
+        "vet":  "passed"
+    },
+    {
+        "module":  "services/members-service",
+        "test":  "passed",
+        "vet":  "passed"
+    },
+    {
+        "module":  "services/booking-service",
+        "test":  "passed",
+        "vet":  "passed"
+    },
+    {
+        "module":  "services/benefits-service",
+        "test":  "passed",
+        "vet":  "passed"
+    },
+    {
+        "module":  "services/training-service",
+        "test":  "passed",
+        "vet":  "passed"
+    },
+    {
+        "module":  "services/notification-worker",
+        "test":  "passed",
+        "vet":  "passed"
+    }
+]

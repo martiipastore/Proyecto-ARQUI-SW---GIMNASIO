@@ -1,0 +1,17 @@
+{
+  "go_modules": "go-checks.json",
+  "go_test_cache": "Resultados de paquetes reutilizados del cache de Go; matriz k6 y SQL reales ejecutados en esta etapa",
+  "resilience_helper_test": "passed",
+  "resilience_helper_vet": "passed",
+  "pool_helper_vet": "passed",
+  "spectral": "passed; no warnings or errors",
+  "frontend_lint": "skipped: node_modules absent, following Makefile",
+  "golangci_local": "not installed; CI runs existing configuration",
+  "powershell_parser": "passed",
+  "python_syntax": "passed",
+  "load_phases": 36,
+  "functional_failures": 0,
+  "invariant_failures": 0,
+  "measured_latency_threshold_failures": 0,
+  "gateway_after_load": "ready"
+}

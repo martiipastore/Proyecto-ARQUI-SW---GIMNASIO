@@ -1,0 +1,131 @@
+{
+  "retrieved_at_utc": "2026-10-16T22:04:11.662201+00:00",
+  "region_reference": "sa-saopaulo-1",
+  "currency": "USD",
+  "products": [
+    {
+      "url": "https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/?partNumber=B93297&currencyCode=USD",
+      "response": {
+        "lastUpdated": "2026-10-08T14:38:16.165Z",
+        "items": [
+          {
+            "partNumber": "B93297",
+            "displayName": "Compute - Standard - A1 - OCPU",
+            "description": "In Oracle's ARM compute shapes, OCPUs equate to vCPUs.",
+            "metricName": "OCPU Per Hour",
+            "serviceCategory": "Compute - Virtual Machine",
+            "currencyCodeLocalizations": [
+              {
+                "currencyCode": "USD",
+                "prices": [
+                  {
+                    "model": "PAY_AS_YOU_GO",
+                    "value": 0,
+                    "rangeMin": 0,
+                    "rangeMax": 3000
+                  },
+                  {
+                    "model": "PAY_AS_YOU_GO",
+                    "value": 0.01,
+                    "rangeMin": 3000,
+                    "rangeMax": 999999999999999
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/?partNumber=B93298&currencyCode=USD",
+      "response": {
+        "lastUpdated": "2026-10-08T14:38:16.165Z",
+        "items": [
+          {
+            "partNumber": "B93298",
+            "displayName": "Compute - Standard - A1 - Memory",
+            "metricName": "Gigabyte Per Hour",
+            "serviceCategory": "Compute - Virtual Machine",
+            "currencyCodeLocalizations": [
+              {
+                "currencyCode": "USD",
+                "prices": [
+                  {
+                    "model": "PAY_AS_YOU_GO",
+                    "value": 0,
+                    "rangeMin": 0,
+                    "rangeMax": 18000
+                  },
+                  {
+                    "model": "PAY_AS_YOU_GO",
+                    "value": 0.0015,
+                    "rangeMin": 18000,
+                    "rangeMax": 999999999999999
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/?partNumber=B91961&currencyCode=USD",
+      "response": {
+        "lastUpdated": "2026-10-08T14:38:16.165Z",
+        "items": [
+          {
+            "partNumber": "B91961",
+            "displayName": "Storage - Block Volume - Storage",
+            "metricName": "Gigabyte Storage Capacity Per Month",
+            "serviceCategory": "Storage - Block Volumes",
+            "currencyCodeLocalizations": [
+              {
+                "currencyCode": "USD",
+                "prices": [
+                  {
+                    "model": "PAY_AS_YOU_GO",
+                    "value": 0.0255
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/?partNumber=B91962&currencyCode=USD",
+      "response": {
+        "lastUpdated": "2026-10-08T14:38:16.165Z",
+        "items": [
+          {
+            "partNumber": "B91962",
+            "displayName": "Storage - Block Volume - Performance Units",
+            "metricName": "Performance Units Per Gigabyte Per Month",
+            "serviceCategory": "Storage - Block Volumes",
+            "currencyCodeLocalizations": [
+              {
+                "currencyCode": "USD",
+                "prices": [
+                  {
+                    "model": "PAY_AS_YOU_GO",
+                    "value": 0.0017
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "fx": {
+    "source": "https://www.bna.com.ar/Personas",
+    "quoted_at": "2026-10-16T17:00:00-03:00",
+    "kind": "Dolar U.S.A billete vendedor",
+    "ars_per_usd": 1535,
+    "usage": "Conversión informativa; excluye impuestos y cargos de pago."
+  }
+}

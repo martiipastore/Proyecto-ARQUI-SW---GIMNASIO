@@ -1,0 +1,9 @@
+{
+  "application_source_commit": "b65469b631baf9cddddbe2d9172a97ac701b327b",
+  "benefits_image_id": "sha256:6db00734563e7c0daaaf996518e7c79f735cda2c94d1db6cdf49fc953bb34a49",
+  "gateway_image_id": "sha256:45f8e1cae85097e995ffbb86cbdb8d1a850d6ce6346501ea1c40d144ea8e1bb9",
+  "k6_manifest_digest": "sha256:3ddc8b1a33a2c3d8edc6e99b6a762ae36cba08788463458f5e6a7703e14eb77d",
+  "application_dockerfile_go_arg": "1.22; build toolchain binary not inspected",
+  "host_validation_go_version": "go1.26.1 windows/amd64",
+  "captured_after_measurement": true
+}
