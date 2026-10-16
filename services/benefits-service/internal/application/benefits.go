@@ -119,7 +119,7 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 					return err
 				}
 				nueva, movimiento, err := cuenta.Acreditar(id, entrada.PartnerID, entrada.Puntos, entrada.Motivo, entrada.Referencia, b.clock.Now().UTC())
-				if err == domain.ErrOperacionInvalida {
+				if errors.Is(err, domain.ErrOperacionInvalida) {
 					resultado.Rechazo = domain.OperacionInvalida
 				} else if err != nil {
 					return err

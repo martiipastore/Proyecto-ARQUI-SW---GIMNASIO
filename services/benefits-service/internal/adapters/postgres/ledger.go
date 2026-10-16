@@ -32,7 +32,10 @@ func (d *DB) EnTransaccion(ctx context.Context, fn func(ports.Transaction) error
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.WithoutCancel(ctx))
+	defer func() {
+		// La limpieza es intencional: tras Commit, Rollback devuelve ErrTxClosed.
+		_ = tx.Rollback(context.WithoutCancel(ctx))
+	}()
 	if err = fn(&transaction{tx: tx}); err != nil {
 		return err
 	}
@@ -147,7 +150,10 @@ func (d *DB) ListarMovimientos(ctx context.Context, partner, usuario string, pag
 	if err != nil {
 		return r, err
 	}
-	defer tx.Rollback(context.WithoutCancel(ctx))
+	defer func() {
+		// La limpieza es intencional: tras Commit, Rollback devuelve ErrTxClosed.
+		_ = tx.Rollback(context.WithoutCancel(ctx))
+	}()
 	t := &transaction{tx: tx}
 	r.PartnerActivo, err = t.PartnerActivo(ctx, partner)
 	if err != nil {

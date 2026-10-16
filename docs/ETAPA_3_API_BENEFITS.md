@@ -67,3 +67,7 @@ Los tests también cubren revocación, suspensión, JSON inválido y rechazos pe
 - Stack construido y healthy; script E2E por el gateway: correcto.
 - Validación final del workspace: tests y go vet de los siete módulos correctos; Benefits incluyó PostgreSQL real y persistencia del cuerpo HTTP exacto (22,561 s en el paquete de persistencia). Script E2E final correcto y trece contenedores healthy. No se omitieron los tests de integración de Benefits.
 - No se presenta autenticación JWT general, rate limiting ni los demás endpoints del contrato como implementados. No se declara la Entrega 2 completa: faltan observabilidad y las siguientes etapas del plan.
+
+## Corrección de lint del 16/10/2026
+
+Se reprodujeron seis observaciones de golangci-lint v2.1.6, la versión usada por CI. Se reemplazaron comparaciones directas por `errors.Is`, se hizo explícito el descarte del error de limpieza de `Rollback` (puede devolver `ErrTxClosed` después de confirmar) y se simplificó una selección de estado en el test contractual. No se desactivaron reglas ni se modificaron decisiones de arquitectura o reglas de negocio. Los tests de Benefits, incluidos los de PostgreSQL real, pasaron tras la corrección.

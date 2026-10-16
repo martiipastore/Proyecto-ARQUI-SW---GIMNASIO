@@ -56,7 +56,10 @@ func nuevaFixture(t *testing.T, db *DB) fixture {
 	f := fixture{db: db, partner: nuevo(), otro: nuevo(), cuenta: nuevo(), usuario: "alumno-1"}
 	tx, err := db.pool.Begin(context.Background())
 	require.NoError(t, err)
-	defer tx.Rollback(context.Background())
+	defer func() {
+		// La limpieza es intencional: tras Commit, Rollback devuelve ErrTxClosed.
+		_ = tx.Rollback(context.Background())
+	}()
 	for _, id := range []string{f.partner, f.otro} {
 		hash := sha256.Sum256([]byte("fixture-" + id))
 		_, err = tx.Exec(context.Background(), `INSERT INTO partners(id,nombre,api_key_hash) VALUES ($1,'Partner de prueba',$2)`, id, hash[:])
@@ -359,9 +362,10 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 			var value map[string]any
 			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &value))
 			schema := "Problem"
-			if w.Code == 201 {
+			switch w.Code {
+			case 201:
 				schema = "OperationResult"
-			} else if w.Code == 200 {
+			case 200:
 				if method == "GET" && bytes.Contains([]byte(path), []byte("/balance")) {
 					schema = "Balance"
 				} else {
