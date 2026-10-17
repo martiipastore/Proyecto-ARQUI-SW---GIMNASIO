@@ -1,6 +1,6 @@
 # Etapa 4 — Logs correlacionados y primera traza distribuida
 
-Fecha: 16/10/2026. Rama: `feature/entrega-2-etapa-04-observabilidad`, creada desde `origin/main` después del merge del PR #2. Estado: completada en el workspace; integración por PR pendiente. Código: `c5da897`.
+Fecha: 16/10/2026. Rama: `feature/entrega-2-etapa-04-observabilidad`, creada desde `origin/main` después del merge del PR #2. Estado: completada e integrada en `main` mediante el PR #3 (`8b0da47`). Código: `c5da897`.
 
 ## Alcance y requisitos
 

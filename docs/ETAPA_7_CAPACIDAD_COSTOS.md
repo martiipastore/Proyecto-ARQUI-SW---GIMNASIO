@@ -1,6 +1,6 @@
 # Etapa 7 — Capacidad y costos de Benefits
 
-Estado: **completada en workspace**, 16/10/2026; integración por PR pendiente. Etapa 5 sigue pendiente de asignación del proveedor externo; esta prueba no sustituye esa integración.
+Estado: **completada e integrada en `main`** mediante el PR #5 (`fb2a17c`), 16/10/2026. Etapa 5 sigue pendiente de asignación del proveedor externo; esta prueba no sustituye esa integración.
 
 ## Alcance y decisiones
 

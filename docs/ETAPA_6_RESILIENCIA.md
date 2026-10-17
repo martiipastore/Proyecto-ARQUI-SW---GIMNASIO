@@ -1,6 +1,6 @@
 # Etapa 6 — Resiliencia y caída controlada
 
-Fecha: 16/10/2026. Rama: `feature/entrega-2-etapa-06-resiliencia`, desde main que integra etapa 4 por PR #3 (8b0da47). Estado: ejercicio y validaciones completos; código y pruebas en `29465ee`, integración de esta etapa por PR pendiente. La etapa 5 sigue esperando proveedor.
+Fecha: 16/10/2026. Rama: `feature/entrega-2-etapa-06-resiliencia`, desde main que integra etapa 4 por PR #3 (`8b0da47`). Estado: ejercicio y validaciones completos; código y pruebas en `29465ee`, integrados en `main` mediante el PR #4 (`b65469b`). La etapa 5 sigue esperando proveedor.
 
 ## Alcance y fundamento
 
