@@ -533,7 +533,7 @@ Los valores definitivos se validarán con la prueba. Como punto de partida:
 
 ## Etapa 8 — Revisión documental y preparación de la entrega
 
-**Estado:** En progreso (17/10/2026). Validación técnica completada; faltan el guion de demostración, el checklist y la revisión final de enlaces. Ver [VALIDACION_ENTREGA_2.md](VALIDACION_ENTREGA_2.md).
+**Estado:** Completada (17/10/2026), con D9 bloqueada por la dependencia externa. Ver [validación técnica](VALIDACION_ENTREGA_2.md) y [guía de demostración](Guía_Entrega2.md).
 
 ### Objetivo
 
@@ -577,7 +577,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
 | 6. Resiliencia | Completada e integrada (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
 | 7. Capacidad y costos | Completada e integrada (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | PR #5 integrado en main (fb2a17c); incluye aabe4e0 y 05f7c0e |
-| 8. Revisión final | En progreso (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md); faltan checklist y guion de demostración | Rama `docs/entrega-2-etapa-08-cierre` |
+| 8. Revisión final | Completada (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md), [guía](Guía_Entrega2.md) y checklist actualizado; D9 continúa bloqueada | Rama `docs/entrega-2-etapa-08-cierre`; PR de cierre por crear |
 
 ### Línea base — 16/10/2026
 
@@ -640,27 +640,29 @@ Estos elementos siguen siendo parte del trabajo final. En la Entrega 2 deben que
 
 ## 10. Checklist final de la Entrega 2
 
-- [ ] Existe al menos un servicio con lógica de negocio operativa.
-- [ ] La capacidad propia se consume mediante su contrato.
-- [ ] PostgreSQL participa en el flujo principal.
-- [ ] La idempotencia evita duplicaciones.
-- [ ] Los logs son JSON y están correlacionados.
-- [ ] Existe una traza distribuida visible.
-- [ ] D1 fue validada.
-- [ ] D2 está respaldada por código real.
-- [ ] D3 fue validada.
-- [ ] D5 fue validada.
-- [ ] D6 está documentada.
-- [ ] D7 está revisada.
-- [ ] D8 fue revisada y solo cambió si era necesario.
-- [ ] D9 está documentada con el proveedor real.
-- [ ] D10 está documentada y demostrada.
-- [ ] D11 tiene una primera versión.
-- [ ] D12 está documentada.
-- [ ] D13 contiene mediciones y estimaciones.
-- [ ] Los tests unitarios e integración pasan.
-- [ ] El contrato pasa Spectral.
-- [ ] La caída controlada está registrada.
-- [ ] README y ARCHITECTURE reflejan el estado real.
-- [ ] La demostración puede reproducirse desde un entorno limpio.
+Resultado de la revisión del 17/10/2026: **22 de 23 condiciones verificadas**. La única pendiente es D9, que necesita el proveedor y contrato reales de otro grupo.
+
+- [x] Existe al menos un servicio con lógica de negocio operativa.
+- [x] La capacidad propia se consume mediante su contrato.
+- [x] PostgreSQL participa en el flujo principal.
+- [x] La idempotencia evita duplicaciones.
+- [x] Los logs son JSON y están correlacionados.
+- [x] Existe una traza distribuida visible.
+- [x] D1 fue validada.
+- [x] D2 está respaldada por código real.
+- [x] D3 fue validada.
+- [x] D5 fue validada.
+- [x] D6 está documentada.
+- [x] D7 está revisada.
+- [x] D8 fue revisada y solo cambió si era necesario.
+- [ ] D9 está documentada con el proveedor real. **Bloqueada hasta recibir la asignación y el contrato externo.**
+- [x] D10 está documentada y demostrada.
+- [x] D11 tiene una primera versión.
+- [x] D12 está documentada.
+- [x] D13 contiene mediciones y estimaciones.
+- [x] Los tests unitarios e integración pasan.
+- [x] El contrato pasa Spectral.
+- [x] La caída controlada está registrada.
+- [x] README y ARCHITECTURE reflejan el estado real.
+- [x] La demostración puede reproducirse desde un entorno limpio siguiendo [Guía_Entrega2.md](Guía_Entrega2.md).
 
