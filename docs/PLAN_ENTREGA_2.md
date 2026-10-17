@@ -141,9 +141,9 @@ No necesita commit si no se modifica ningún archivo. Si se registra la línea b
 
 ## Etapa 1 — Revisión y cierre inicial de decisiones
 
-**Estado:** Completada en el workspace (inicio y cierre: 16/10/2026; revisión de PR pendiente)
+**Estado:** Completada e integrada en `main` mediante el PR #1 (16/10/2026)
 
-Revisión final: decisiones iniciales aprobadas, D9 propuesta explícita pendiente del proveedor y definición del saldo alineada con RN-22 mediante SPEC v0.10, ADR-004 v2 y D-52. Cambio local del SPEC pendiente de revisión de otro integrante antes de integrar por PR. No se realizaron commits, publicación ni merge. La evidencia está en REVISION_ETAPA_1.md.
+Revisión final: decisiones iniciales aprobadas, D9 propuesta explícita pendiente del proveedor y definición del saldo alineada con RN-22 mediante SPEC v0.10, ADR-004 v2 y D-52. Los cambios fueron revisados e integrados en `main` mediante el PR #1. La evidencia está en REVISION_ETAPA_1.md.
 
 Criterio académico aclarado por el equipo: conceptos basados en el teórico, herramientas adicionales permitidas cuando sean necesarias y útiles, con justificación explícita en decisiones y etapas. Ver [BASE_TEORICA.md](BASE_TEORICA.md). Los parámetros propios se deciden con el equipo. D13 tiene plan inicial aprobado; las aprobaciones existentes conservan su estado.
 
@@ -206,7 +206,7 @@ Ajuste D12 aprobado el 16/10/2026: 3 fallos consecutivos para retirar y 2 éxito
 
 ## Etapa 2 — Dominio y persistencia de Benefits
 
-**Estado:** Completada en el workspace (16/10/2026)
+**Estado:** Completada e integrada en `main` mediante el PR #1 (16/10/2026)
 
 Rama: `feature/entrega-2-etapa-02-benefits`, creada desde el main que integra el PR de la etapa 1. Implementación y evidencia en [ETAPA_2_BENEFITS.md](ETAPA_2_BENEFITS.md). Dominio, aplicación, arquitectura, integración PostgreSQL real y go vet pasaron. Se verificaron migración desde base vacía, restricciones, rollback, concurrencia, replay y permisos sin privilegios globales. La API queda en etapa 3. La detección -race no pudo ejecutarse por incompatibilidad del compilador C de Windows. Integrada en main mediante los commits de dominio, persistencia y adaptador de sistema (c2e0213, f41e215, a58ced8).
 
@@ -272,7 +272,7 @@ Implementar las reglas mínimas de cuentas, saldo, movimientos e idempotencia co
 
 ## Etapa 3 — API publicada e integración con el Gateway
 
-**Estado:** Completada en el workspace (16/10/2026)
+**Estado:** Completada e integrada en `main` mediante el PR #2 (16/10/2026)
 
 Implementación y comandos en [ETAPA_3_API_BENEFITS.md](ETAPA_3_API_BENEFITS.md). Rama `feature/entrega-2-etapa-03-api-benefits`, desde main sincronizado. D-53 aclara updatedAt de cuentas vacías; D-54 aprueba bloqueo transaccional por clave para responder en curso. OpenAPI 1.1.1 y revisiones de ADR conservan la historia. Tests y go vet de los siete módulos correctos, integración real, 23 respuestas validadas con Spectral y E2E por gateway correcto. Se conserva el mock; las siguientes etapas y los endpoints fuera del flujo mínimo siguen pendientes.
 
@@ -322,7 +322,7 @@ Desde un cliente externo se puede:
 
 ## Etapa 4 — Logs correlacionados y primera traza distribuida
 
-**Estado:** Completada en el workspace (16/10/2026)
+**Estado:** Completada e integrada en `main` mediante el PR #3 (16/10/2026)
 
 Rama `feature/entrega-2-etapa-04-observabilidad`, desde origin/main que integra PR #2. D-55 aprueba Jaeger en memoria con evidencia exportada; ADR-011 v2 conserva la historia. Tests, vet y lint de los siete módulos correctos; E2E y exportación de traza/logs correctos. Evidencia y límites en [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md). Código c5da897 y documentación 2c3bed2, integrados en main por PR #3 (8b0da47).
 
@@ -425,9 +425,9 @@ Documentar e integrar la capacidad ofrecida por otro grupo sin acoplar el domini
 
 ## Etapa 6 — Resiliencia y caída controlada
 
-**Estado:** Completada en el workspace (16/10/2026)
+**Estado:** Completada e integrada en `main` mediante el PR #4 (16/10/2026)
 
-Rama `feature/entrega-2-etapa-06-resiliencia`, desde main que integra la etapa 4. D-56 aprueba 500 ms de tolerancia solo para medir los presupuestos 4 s/5 s; no modifica timeouts de producción. Se verificaron caída de Benefits, PostgreSQL pausado y pérdida de respuesta antes/después de commit. Resultado final: 400 puntos, 4 movimientos, 4 operaciones; cinco trazas y catorce logs sanitizados. Restauración completa y tests/vet/lint de Gateway y Benefits correctos. Ver [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](POSTMORTEM.md). Integración por PR pendiente.
+Rama `feature/entrega-2-etapa-06-resiliencia`, desde main que integra la etapa 4. D-56 aprueba 500 ms de tolerancia solo para medir los presupuestos 4 s/5 s; no modifica timeouts de producción. Se verificaron caída de Benefits, PostgreSQL pausado y pérdida de respuesta antes/después de commit. Resultado final: 400 puntos, 4 movimientos, 4 operaciones; cinco trazas y catorce logs sanitizados. Restauración completa y tests/vet/lint de Gateway y Benefits correctos. Ver [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](POSTMORTEM.md). Los cambios fueron integrados en `main` mediante el PR #4.
 
 ### Objetivo
 
@@ -476,7 +476,7 @@ Demostrar que el flujo principal responde de forma controlada cuando una depende
 
 ## Etapa 7 — Tests de carga, capacidad y costos
 
-**Estado:** Completada en workspace (16/10/2026), integración por PR pendiente. [Informe](ETAPA_7_CAPACIDAD_COSTOS.md), [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md), [reproducción](../tests/load/README.md) y [costos](COSTOS_ENTREGA_2.md).
+**Estado:** Completada e integrada en `main` mediante el PR #5 (16/10/2026). [Informe](ETAPA_7_CAPACIDAD_COSTOS.md), [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md), [reproducción](../tests/load/README.md) y [costos](COSTOS_ENTREGA_2.md).
 
 ### Objetivo
 
@@ -533,7 +533,7 @@ Los valores definitivos se validarán con la prueba. Como punto de partida:
 
 ## Etapa 8 — Revisión documental y preparación de la entrega
 
-**Estado:** Pendiente
+**Estado:** Completada (17/10/2026), con D9 bloqueada por la dependencia externa. Ver [validación técnica](VALIDACION_ENTREGA_2.md) y [guía de demostración](Guía_Entrega2.md).
 
 ### Objetivo
 
@@ -570,14 +570,14 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | Etapa | Estado | Evidencia esperada | Commit o PR |
 |---|---|---|---|
 | 0. Preparación y línea base | Completada (16/10/2026) | Siete módulos con tests exitosos, Spectral sin advertencias, stack saludable y estado agregado ready | Sin commit; cambios locales |
-| 1. Decisiones iniciales | Completada en workspace (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | Sin commit; revisión de PR del SPEC pendiente |
-| 2. Dominio y persistencia | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | c2e0213, f41e215, a58ced8 en main |
-| 3. API y Gateway | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | PR #2 integrado en main (1bda5a4); incluye corrección de lint 2a481f7 |
-| 4. Observabilidad | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | PR #3 integrado en main (8b0da47) |
+| 1. Decisiones iniciales | Completada e integrada (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | PR #1 integrado en main (8c7daa1) |
+| 2. Dominio y persistencia | Completada e integrada (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | PR #1 integrado en main (8c7daa1); incluye c2e0213, f41e215 y a58ced8 |
+| 3. API y Gateway | Completada e integrada (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | PR #2 integrado en main (1bda5a4); incluye corrección de lint 2a481f7 |
+| 4. Observabilidad | Completada e integrada (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | PR #3 integrado en main (8b0da47) |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
-| 6. Resiliencia | Completada en workspace (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
-| 7. Capacidad y costos | Completada en workspace (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | aabe4e0 (scripts) y documentación en rama feature/entrega-2-etapa-07-capacidad-costos; PR pendiente |
-| 8. Revisión final | Pendiente | Checklist y guion de demostración | — |
+| 6. Resiliencia | Completada e integrada (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
+| 7. Capacidad y costos | Completada e integrada (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | PR #5 integrado en main (fb2a17c); incluye aabe4e0 y 05f7c0e |
+| 8. Revisión final | Completada (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md), [guía](Guía_Entrega2.md) y checklist actualizado; D9 continúa bloqueada | Rama `docs/entrega-2-etapa-08-cierre`; PR de cierre por crear |
 
 ### Línea base — 16/10/2026
 
@@ -590,7 +590,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 - Contrato validado con `stoplight/spectral:6.14.3` y el ruleset del repositorio: código de salida 0, sin advertencias ni errores.
 - `.env` local creado desde `.env.example`, sin sobrescribir archivos previos; se comprobó que Git lo ignora.
 - PDF original leído con un lector temporal, sin agregar dependencias al proyecto. Se confirmó §6.3: fecha 23/10/2026, servicio operativo y capacidad compartida funcionando, almacenamiento integrado, logs correlacionados, primera traza y decisiones indicadas en este plan. El equipo confirmó que Benefits alcanza (D-42 y §3.4). Los bonus deben anunciarse en esta entrega (§7), según D-40.
-- Hallazgo para la etapa 1: `docs/DECISIONES.md` D-41 ya elige Oracle Cloud, pero `docs/ARCHITECTURE.md` §14.2 todavía declara pendiente el proveedor. Reconciliar la documentación con la decisión confirmada.
+- Hallazgo de la etapa 1, posteriormente resuelto: `docs/DECISIONES.md` D-41 ya elegía Oracle Cloud mientras `docs/ARCHITECTURE.md` §14.2 todavía declaraba pendiente el proveedor. La arquitectura ahora refleja la decisión confirmada y la etapa 7 agrega su estimación fechada.
 - Se registró la aclaración de alcance D-42 en `docs/DECISIONES.md` y en el Word. No se cambiaron decisiones arquitectónicas ni puertos del proyecto.
 
 ## 7. Matriz de decisiones de la Entrega 2
@@ -640,27 +640,29 @@ Estos elementos siguen siendo parte del trabajo final. En la Entrega 2 deben que
 
 ## 10. Checklist final de la Entrega 2
 
-- [ ] Existe al menos un servicio con lógica de negocio operativa.
-- [ ] La capacidad propia se consume mediante su contrato.
-- [ ] PostgreSQL participa en el flujo principal.
-- [ ] La idempotencia evita duplicaciones.
-- [ ] Los logs son JSON y están correlacionados.
-- [ ] Existe una traza distribuida visible.
-- [ ] D1 fue validada.
-- [ ] D2 está respaldada por código real.
-- [ ] D3 fue validada.
-- [ ] D5 fue validada.
-- [ ] D6 está documentada.
-- [ ] D7 está revisada.
-- [ ] D8 fue revisada y solo cambió si era necesario.
-- [ ] D9 está documentada con el proveedor real.
-- [ ] D10 está documentada y demostrada.
-- [ ] D11 tiene una primera versión.
-- [ ] D12 está documentada.
-- [ ] D13 contiene mediciones y estimaciones.
-- [ ] Los tests unitarios e integración pasan.
-- [ ] El contrato pasa Spectral.
-- [ ] La caída controlada está registrada.
-- [ ] README y ARCHITECTURE reflejan el estado real.
-- [ ] La demostración puede reproducirse desde un entorno limpio.
+Resultado de la revisión del 17/10/2026: **22 de 23 condiciones verificadas**. La única pendiente es D9, que necesita el proveedor y contrato reales de otro grupo.
+
+- [x] Existe al menos un servicio con lógica de negocio operativa.
+- [x] La capacidad propia se consume mediante su contrato.
+- [x] PostgreSQL participa en el flujo principal.
+- [x] La idempotencia evita duplicaciones.
+- [x] Los logs son JSON y están correlacionados.
+- [x] Existe una traza distribuida visible.
+- [x] D1 fue validada.
+- [x] D2 está respaldada por código real.
+- [x] D3 fue validada.
+- [x] D5 fue validada.
+- [x] D6 está documentada.
+- [x] D7 está revisada.
+- [x] D8 fue revisada y solo cambió si era necesario.
+- [ ] D9 está documentada con el proveedor real. **Bloqueada hasta recibir la asignación y el contrato externo.**
+- [x] D10 está documentada y demostrada.
+- [x] D11 tiene una primera versión.
+- [x] D12 está documentada.
+- [x] D13 contiene mediciones y estimaciones.
+- [x] Los tests unitarios e integración pasan.
+- [x] El contrato pasa Spectral.
+- [x] La caída controlada está registrada.
+- [x] README y ARCHITECTURE reflejan el estado real.
+- [x] La demostración puede reproducirse desde un entorno limpio siguiendo [Guía_Entrega2.md](Guía_Entrega2.md).
 
