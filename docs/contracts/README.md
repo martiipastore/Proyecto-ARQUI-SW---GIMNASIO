@@ -281,7 +281,7 @@ Lo que esperamos de tu cliente para que los cambios compatibles no te rompan:
 - Se documentan 502 UNAVAILABLE y 504 TIMEOUT en todas las operaciones, con formato de errores de partners y correlación. 502 incluye Retry-After.
 - Reintentar con la misma Idempotency-Key; 504 no implica rollback.
 - Se mantienen rutas /v1, solicitudes, respuestas de éxito y timeout público de 5 s.
-- Diseño aprobado en ADR-008 v2. Traducción de errores del gateway pendiente de etapa 3; el contrato no acredita su implementación.
+- Diseño aprobado en ADR-008 v2. La traducción de errores del gateway se implementó posteriormente en la etapa 3 y se validó en la etapa 6; el contrato por sí solo no acredita esa implementación.
 
 ### v1.0.0 — 2026-10-07
 

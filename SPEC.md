@@ -1303,4 +1303,4 @@ Se establece que las operaciones restringidas por una asignación profesional–
 
 ### Aclaración del saldo — v0.10 (2026-10-16)
 
-Se alinea el glosario con RN-22, CA-11.1 y CA-19.2: el estado REVERTIDO no excluye el importe original de la suma; el compensatorio aplica el importe contrario. Crédito +100 y reversión −100 dejan saldo 0. No se cambia la regla funcional ni se introduce una operación nueva. Aclaración aprobada por el usuario y registrada como D-52; cambio local preparado para revisión de otro integrante por PR según CONTRIBUTING, sin publicación ni merge realizados.
+Se alinea el glosario con RN-22, CA-11.1 y CA-19.2: el estado REVERTIDO no excluye el importe original de la suma; el compensatorio aplica el importe contrario. Crédito +100 y reversión −100 dejan saldo 0. No se cambia la regla funcional ni se introduce una operación nueva. Aclaración aprobada por el equipo, registrada como D-52 e integrada en `main` mediante el PR #1.

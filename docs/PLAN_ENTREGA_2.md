@@ -590,7 +590,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 - Contrato validado con `stoplight/spectral:6.14.3` y el ruleset del repositorio: código de salida 0, sin advertencias ni errores.
 - `.env` local creado desde `.env.example`, sin sobrescribir archivos previos; se comprobó que Git lo ignora.
 - PDF original leído con un lector temporal, sin agregar dependencias al proyecto. Se confirmó §6.3: fecha 23/10/2026, servicio operativo y capacidad compartida funcionando, almacenamiento integrado, logs correlacionados, primera traza y decisiones indicadas en este plan. El equipo confirmó que Benefits alcanza (D-42 y §3.4). Los bonus deben anunciarse en esta entrega (§7), según D-40.
-- Hallazgo para la etapa 1: `docs/DECISIONES.md` D-41 ya elige Oracle Cloud, pero `docs/ARCHITECTURE.md` §14.2 todavía declara pendiente el proveedor. Reconciliar la documentación con la decisión confirmada.
+- Hallazgo de la etapa 1, posteriormente resuelto: `docs/DECISIONES.md` D-41 ya elegía Oracle Cloud mientras `docs/ARCHITECTURE.md` §14.2 todavía declaraba pendiente el proveedor. La arquitectura ahora refleja la decisión confirmada y la etapa 7 agrega su estimación fechada.
 - Se registró la aclaración de alcance D-42 en `docs/DECISIONES.md` y en el Word. No se cambiaron decisiones arquitectónicas ni puertos del proyecto.
 
 ## 7. Matriz de decisiones de la Entrega 2
