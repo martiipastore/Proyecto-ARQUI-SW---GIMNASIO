@@ -16,7 +16,7 @@ Fundamento de clase: capacidad, latencia, límites y costos, pp. 29–30, 86, 10
 
 ## Ambiente y procedimiento
 
-[Procedimiento reproducible](../tests/load/README.md), [ambiente capturado](evidence/etapa7/environment.json), [imágenes y versión de código](evidence/etapa7/images.json) y [configuración del pool](evidence/etapa7/pool.json). Windows, Docker Desktop x86_64 con 8 CPU lógicas y aproximadamente 3,7 GiB de RAM, recursos compartidos con otros contenedores. Sin despliegue ARM ni medición por Internet. Jaeger sigue con muestreo al 100 % y memoria según D-55.
+[Procedimiento reproducible](../../tests/load/README.md), [ambiente capturado](../evidence/etapa7/environment.json), [imágenes y versión de código](../evidence/etapa7/images.json) y [configuración del pool](../evidence/etapa7/pool.json). Windows, Docker Desktop x86_64 con 8 CPU lógicas y aproximadamente 3,7 GiB de RAM, recursos compartidos con otros contenedores. Sin despliegue ARM ni medición por Internet. Jaeger sigue con muestreo al 100 % y memoria según D-55.
 
 La configuración del pool se analizó con el mismo pgxpool usado por Benefits: máximo 8, mínimo 0, vida máxima 1 h, inactividad máxima 30 min y comprobación cada 1 min. El diagnóstico corre en el host, cuya cantidad de CPU coincide con Docker; las conexiones reales se muestrean en PostgreSQL. No se cambió la configuración para mejorar un resultado.
 
@@ -26,7 +26,7 @@ Ocho combinaciones: read/write/replay/mixed × hot/distributed. Nuevo fixture po
 
 ## Evidencia y comprobaciones
 
-[Tabla generada de resultados](evidence/etapa7/RESULTADOS.md) a partir de JSON por fase. Se excluye calentamiento del análisis de rendimiento, pero se incluyen sus escrituras en la validación de integridad. Cada fase compara saldos, secuencias, movimientos, operaciones idempotentes y créditos nuevos confirmados. Los umbrales fallidos deben conservarse como fallos, no omitirse del reporte. El percentil de lecturas agrupa saldo y movimientos; no permite afirmar el percentil individual de cada endpoint.
+[Tabla generada de resultados](../evidence/etapa7/RESULTADOS.md) a partir de JSON por fase. Se excluye calentamiento del análisis de rendimiento, pero se incluyen sus escrituras en la validación de integridad. Cada fase compara saldos, secuencias, movimientos, operaciones idempotentes y créditos nuevos confirmados. Los umbrales fallidos deben conservarse como fallos, no omitirse del reporte. El percentil de lecturas agrupa saldo y movimientos; no permite afirmar el percentil individual de cada endpoint.
 
 El muestreo de recursos tiene un intervalo objetivo de 5 s más consultas; una espera breve puede no aparecer. No se dispone de historial continuo de espera del pool ni atribución estadística por consulta. Otros proyectos se registran solo mediante totales de recursos, sin nombres o identificadores.
 
@@ -48,7 +48,7 @@ El plan `ledger-plan.json` de cada combinación observa el agregado que particip
 
 Después de créditos concentrados, el agregado examinó 7.497 filas de esa cuenta y tardó 2,632 ms; en créditos distribuidos, 99 filas y 1,004 ms. Distinto tamaño y estado de caché: no es un ensayo controlado de índices. La lectura del SQL confirma que la validación suma el historial; los planes justifican estudiar su costo al crecer, sin debilitar la consistencia.
 
-Como la matriz con pausa no alcanzó una saturación demostrada, se ejecutó el experimento adicional D-59: misma API y protecciones, créditos sobre una cuenta, sin pausa, precarga propia y [evidencia separada](evidence/etapa7/probe/RESULTADOS.md). No se extrapola linealmente a más usuarios ni se amplía concurrencia sin aprobación.
+Como la matriz con pausa no alcanzó una saturación demostrada, se ejecutó el experimento adicional D-59: misma API y protecciones, créditos sobre una cuenta, sin pausa, precarga propia y [evidencia separada](../evidence/etapa7/probe/RESULTADOS.md). No se extrapola linealmente a más usuarios ni se amplía concurrencia sin aprobación.
 
 | Usuarios sin pausa | Créditos/s | p95 ms | p99 ms |
 |---:|---:|---:|---:|
@@ -78,4 +78,4 @@ La comparación de recursos 2 OCPU/12 GB frente a 4 OCPU/24 GB y sus costos est�
 
 Las 36 fases (32 de matriz y 4 adicionales, incluidos calentamientos) conservaron las invariantes y no tuvieron errores funcionales; todos los niveles medidos cumplieron los objetivos iniciales. La matriz con pausa está acotada por el generador; el experimento sin pausa muestra contención y crecimiento de latencia sobre una cuenta. No se cambió una protección para obtener mejores números ni se aplicó una optimización sin consultar.
 
-El espacio observado y la proyección aprobada D-60 se conservan en [storage.json](evidence/etapa7/storage.json), [storage-projection.json](evidence/etapa7/storage-projection.json) y [costos](COSTOS_ENTREGA_2.md). El gateway volvió a informar `ready` después de la carga. Tests y `go vet` de los siete módulos correctos (paquetes reutilizados de la caché de Go); inyector y diagnóstico del pool correctos; Spectral sin advertencias. Las pruebas k6/SQL se ejecutaron realmente en esta etapa. El frontend se omitió por ausencia de `node_modules`, como prevé el Makefile; golangci-lint no está instalado localmente y queda en CI. Sintaxis PowerShell/Python y JSON/XML/ZIP verificados. Detalle: [validation.json](evidence/etapa7/validation.json). Commit local de etapa e integración por PR se registran en el plan.
+El espacio observado y la proyección aprobada D-60 se conservan en [storage.json](../evidence/etapa7/storage.json), [storage-projection.json](../evidence/etapa7/storage-projection.json) y [costos](COSTOS_ENTREGA_2.md). El gateway volvió a informar `ready` después de la carga. Tests y `go vet` de los siete módulos correctos (paquetes reutilizados de la caché de Go); inyector y diagnóstico del pool correctos; Spectral sin advertencias. Las pruebas k6/SQL se ejecutaron realmente en esta etapa. El frontend se omitió por ausencia de `node_modules`, como prevé el Makefile; golangci-lint no está instalado localmente y queda en CI. Sintaxis PowerShell/Python y JSON/XML/ZIP verificados. Detalle: [validation.json](../evidence/etapa7/validation.json). Commit local de etapa e integración por PR se registran en el plan.

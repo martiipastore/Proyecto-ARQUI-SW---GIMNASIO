@@ -38,9 +38,9 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 | Estado | Componentes y comportamiento |
 |---|---|
 | **Implementado** | Módulos Go y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing por prefijo, correlación, CORS, timeouts, errores y estado agregado; frontend de estado; bases y usuarios separados por servicio; contrato OpenAPI, guía y mock de partners. |
-| **Implementado en Benefits** | API de partners /v1 y ruta pública /partner-api/v1 por gateway; autenticación por API key sin caché; casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](ETAPA_2_BENEFITS.md) y [API](ETAPA_3_API_BENEFITS.md). |
-| **Validado en resiliencia** | Caída controlada 502/503/504 antes/después de commit, recuperación por misma clave y rollback previo al commit; proxy exclusivo de pruebas retirado al terminar. [Etapa 6](ETAPA_6_RESILIENCIA.md) y [postmortem](POSTMORTEM.md). |
-| **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](ETAPA_4_OBSERVABILIDAD.md). |
+| **Implementado en Benefits** | API de partners /v1 y ruta pública /partner-api/v1 por gateway; autenticación por API key sin caché; casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](entrega-2/ETAPA_2_BENEFITS.md) y [API](entrega-2/ETAPA_3_API_BENEFITS.md). |
+| **Validado en resiliencia** | Caída controlada 502/503/504 antes/después de commit, recuperación por misma clave y rollback previo al commit; proxy exclusivo de pruebas retirado al terminar. [Etapa 6](entrega-2/ETAPA_6_RESILIENCIA.md) y [postmortem](POSTMORTEM.md). |
+| **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
 | **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
 | **Pendiente de implementación** | Resto de operaciones de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; métricas exportadas, logs centralizados y tableros. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
@@ -445,7 +445,7 @@ Esta separación evita confundir autenticación con autorización: un JWT o una 
 
 ## 11. Observabilidad
 
-**Implementado en etapa 4:** flujo mínimo Gateway → Benefits → PostgreSQL, middleware/transporte HTTP y spans manuales del repositorio; logs JSON con correlation_id/trace_id/span_id; OTLP → Collector → Jaeger local en memoria. Evidencia en [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md). No se usan otelgin/otelhttp en esta primera versión: la instrumentación manual restringe los atributos exportados. La tabla siguiente conserva el diseño objetivo; métricas, centralización de logs, tableros y trazas asíncronas siguen pendientes.
+**Implementado en etapa 4:** flujo mínimo Gateway → Benefits → PostgreSQL, middleware/transporte HTTP y spans manuales del repositorio; logs JSON con correlation_id/trace_id/span_id; OTLP → Collector → Jaeger local en memoria. Evidencia en [ETAPA_4_OBSERVABILIDAD.md](entrega-2/ETAPA_4_OBSERVABILIDAD.md). No se usan otelgin/otelhttp en esta primera versión: la instrumentación manual restringe los atributos exportados. La tabla siguiente conserva el diseño objetivo; métricas, centralización de logs, tableros y trazas asíncronas siguen pendientes.
 
 | Señal | Instrumentación | Pipeline | Visualización |
 |---|---|---|---|
@@ -672,7 +672,7 @@ Requisitos: ~8 GB de RAM y **al menos 15 GB libres en disco** para imágenes y b
 
 El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**.
 
-**Decisión objetivo:** se despliega **el stack completo en una VM con Docker Compose**, con configuración de producción: el frontend se sirve como estáticos y Traefik actúa además como borde HTTPS. El equipo eligió **Oracle Cloud Free Tier, VM ARM**, según D-41 de [DECISIONES.md](DECISIONES.md). La disponibilidad de recursos, el dimensionamiento y el costo efectivo se verificarán en D13; no hay despliegue productivo acreditado por esta decisión. El perfil de producción todavía debe incorporarse. La [etapa 7](ETAPA_7_CAPACIDAD_COSTOS.md) midió el flujo local y conserva una [estimación fechada](COSTOS_ENTREGA_2.md) para São Paulo en USD/ARS; no valida capacidad ARM ni disponibilidad de la cuenta.
+**Decisión objetivo:** se despliega **el stack completo en una VM con Docker Compose**, con configuración de producción: el frontend se sirve como estáticos y Traefik actúa además como borde HTTPS. El equipo eligió **Oracle Cloud Free Tier, VM ARM**, según D-41 de [DECISIONES.md](DECISIONES.md). La disponibilidad de recursos, el dimensionamiento y el costo efectivo se verificarán en D13; no hay despliegue productivo acreditado por esta decisión. El perfil de producción todavía debe incorporarse. La [etapa 7](entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md) midió el flujo local y conserva una [estimación fechada](entrega-2/COSTOS_ENTREGA_2.md) para São Paulo en USD/ARS; no valida capacidad ARM ni disponibilidad de la cuenta.
 
 | Aspecto | Detalle |
 |---|---|

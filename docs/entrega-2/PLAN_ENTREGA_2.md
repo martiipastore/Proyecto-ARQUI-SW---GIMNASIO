@@ -145,7 +145,7 @@ No necesita commit si no se modifica ningún archivo. Si se registra la línea b
 
 Revisión final: decisiones iniciales aprobadas, D9 propuesta explícita pendiente del proveedor y definición del saldo alineada con RN-22 mediante SPEC v0.10, ADR-004 v2 y D-52. Los cambios fueron revisados e integrados en `main` mediante el PR #1. La evidencia está en REVISION_ETAPA_1.md.
 
-Criterio académico aclarado por el equipo: conceptos basados en el teórico, herramientas adicionales permitidas cuando sean necesarias y útiles, con justificación explícita en decisiones y etapas. Ver [BASE_TEORICA.md](BASE_TEORICA.md). Los parámetros propios se deciden con el equipo. D13 tiene plan inicial aprobado; las aprobaciones existentes conservan su estado.
+Criterio académico aclarado por el equipo: conceptos basados en el teórico, herramientas adicionales permitidas cuando sean necesarias y útiles, con justificación explícita en decisiones y etapas. Ver [BASE_TEORICA.md](../BASE_TEORICA.md). Los parámetros propios se deciden con el equipo. D13 tiene plan inicial aprobado; las aprobaciones existentes conservan su estado.
 
 Avance del 16/10/2026: el equipo aprobó el límite interno inicial de 4 s en Benefits (D-43) y la alineación contractual de errores 502/504 (D-44). OpenAPI 1.1.0, CHANGELOG y ADR-008 v2 actualizados; Spectral terminó con código 0, sin advertencias ni errores. Registro sincronizado en Markdown y Word. La implementación queda en etapas posteriores; los demás ADR propuestos siguen pendientes de revisión. D9 espera la asignación del proveedor.
 
@@ -427,7 +427,7 @@ Documentar e integrar la capacidad ofrecida por otro grupo sin acoplar el domini
 
 **Estado:** Completada e integrada en `main` mediante el PR #4 (16/10/2026)
 
-Rama `feature/entrega-2-etapa-06-resiliencia`, desde main que integra la etapa 4. D-56 aprueba 500 ms de tolerancia solo para medir los presupuestos 4 s/5 s; no modifica timeouts de producción. Se verificaron caída de Benefits, PostgreSQL pausado y pérdida de respuesta antes/después de commit. Resultado final: 400 puntos, 4 movimientos, 4 operaciones; cinco trazas y catorce logs sanitizados. Restauración completa y tests/vet/lint de Gateway y Benefits correctos. Ver [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](POSTMORTEM.md). Los cambios fueron integrados en `main` mediante el PR #4.
+Rama `feature/entrega-2-etapa-06-resiliencia`, desde main que integra la etapa 4. D-56 aprueba 500 ms de tolerancia solo para medir los presupuestos 4 s/5 s; no modifica timeouts de producción. Se verificaron caída de Benefits, PostgreSQL pausado y pérdida de respuesta antes/después de commit. Resultado final: 400 puntos, 4 movimientos, 4 operaciones; cinco trazas y catorce logs sanitizados. Restauración completa y tests/vet/lint de Gateway y Benefits correctos. Ver [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](../POSTMORTEM.md). Los cambios fueron integrados en `main` mediante el PR #4.
 
 ### Objetivo
 
@@ -476,7 +476,7 @@ Demostrar que el flujo principal responde de forma controlada cuando una depende
 
 ## Etapa 7 — Tests de carga, capacidad y costos
 
-**Estado:** Completada e integrada en `main` mediante el PR #5 (16/10/2026). [Informe](ETAPA_7_CAPACIDAD_COSTOS.md), [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md), [reproducción](../tests/load/README.md) y [costos](COSTOS_ENTREGA_2.md).
+**Estado:** Completada e integrada en `main` mediante el PR #5 (16/10/2026). [Informe](ETAPA_7_CAPACIDAD_COSTOS.md), [ADR-013 v2](../adr/ADR-013-v2-capacidad-costos-medidos.md), [reproducción](../../tests/load/README.md) y [costos](COSTOS_ENTREGA_2.md).
 
 ### Objetivo
 
@@ -570,12 +570,12 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | Etapa | Estado | Evidencia esperada | Commit o PR |
 |---|---|---|---|
 | 0. Preparación y línea base | Completada (16/10/2026) | Siete módulos con tests exitosos, Spectral sin advertencias, stack saludable y estado agregado ready | Sin commit; cambios locales |
-| 1. Decisiones iniciales | Completada e integrada (16/10/2026) | [Revisión](REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | PR #1 integrado en main (8c7daa1) |
+| 1. Decisiones iniciales | Completada e integrada (16/10/2026) | [Revisión](../REVISION_ETAPA_1.md), ADR e índice, contrato 1.1.0 y saldo alineado; D9 inicial pendiente de proveedor | PR #1 integrado en main (8c7daa1) |
 | 2. Dominio y persistencia | Completada e integrada (16/10/2026) | [Evidencia](ETAPA_2_BENEFITS.md): tests, PostgreSQL real y go vet; -race limitado por entorno | PR #1 integrado en main (8c7daa1); incluye c2e0213, f41e215 y a58ced8 |
 | 3. API y Gateway | Completada e integrada (16/10/2026) | [Evidencia](ETAPA_3_API_BENEFITS.md): API, PostgreSQL, gateway, tests y Spectral | PR #2 integrado en main (1bda5a4); incluye corrección de lint 2a481f7 |
 | 4. Observabilidad | Completada e integrada (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | PR #3 integrado en main (8b0da47) |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
-| 6. Resiliencia | Completada e integrada (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
+| 6. Resiliencia | Completada e integrada (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](../POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
 | 7. Capacidad y costos | Completada e integrada (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | PR #5 integrado en main (fb2a17c); incluye aabe4e0 y 05f7c0e |
 | 8. Revisión final | Completada (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md), [guía](Guía_Entrega2.md) y checklist actualizado; D9 continúa bloqueada | Rama `docs/entrega-2-etapa-08-cierre`; PR de cierre por crear |
 

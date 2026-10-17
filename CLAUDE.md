@@ -8,7 +8,7 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual:** etapa 7 de Entrega 2 completada en workspace: matriz k6, experimento sin pausa, invariantes y costos São Paulo USD/ARS. Ver [informe](docs/ETAPA_7_CAPACIDAD_COSTOS.md), ADR-013 v2 y decisiones D-57 a D-60. Integración por PR pendiente; etapas 3/4/6 integradas por PR #2/#3/#4. Etapa 5 pendiente del proveedor; siguiente etapa 8 de revisión, sin declarar entrega completa. No extrapolar capacidad local a ARM.
+- **Etapa actual:** etapa 7 de Entrega 2 completada en workspace: matriz k6, experimento sin pausa, invariantes y costos São Paulo USD/ARS. Ver [informe](docs/entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md), ADR-013 v2 y decisiones D-57 a D-60. Integración por PR pendiente; etapas 3/4/6 integradas por PR #2/#3/#4. Etapa 5 pendiente del proveedor; siguiente etapa 8 de revisión, sin declarar entrega completa. No extrapolar capacidad local a ARM.
 
 ## Stack
 

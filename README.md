@@ -73,10 +73,10 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Estado | Alcance |
 |---|---|
 | **Implementado** | Módulos y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing, correlación, CORS, timeouts y estado agregado; frontend de estado; contrato OpenAPI, guía y mock de partners. |
-| **Implementado en Benefits** | API con autenticación por partner para acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/ETAPA_2_BENEFITS.md) y [API y demostración](docs/ETAPA_3_API_BENEFITS.md). |
-| **Resiliencia validada** | Caída controlada y recuperación idempotente ante 502/503/504, incluida respuesta perdida después de commit. [Reproducción](docs/ETAPA_6_RESILIENCIA.md) y [postmortem](docs/POSTMORTEM.md). |
-| **Observabilidad del flujo mínimo** | Logs JSON correlacionados y traza Gateway → Benefits → PostgreSQL; Collector y Jaeger local en memoria. [Evidencia y reproducción](docs/ETAPA_4_OBSERVABILIDAD.md). |
-| **Capacidad y costos medidos** | Matriz k6 y experimento sobre cuenta compartida, sin errores funcionales ni inconsistencias; límites locales y comparación de costos USD/ARS. [Resultados y reproducción](docs/ETAPA_7_CAPACIDAD_COSTOS.md). |
+| **Implementado en Benefits** | API con autenticación por partner para acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/entrega-2/ETAPA_2_BENEFITS.md) y [API y demostración](docs/entrega-2/ETAPA_3_API_BENEFITS.md). |
+| **Resiliencia validada** | Caída controlada y recuperación idempotente ante 502/503/504, incluida respuesta perdida después de commit. [Reproducción](docs/entrega-2/ETAPA_6_RESILIENCIA.md) y [postmortem](docs/POSTMORTEM.md). |
+| **Observabilidad del flujo mínimo** | Logs JSON correlacionados y traza Gateway → Benefits → PostgreSQL; Collector y Jaeger local en memoria. [Evidencia y reproducción](docs/entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
+| **Capacidad y costos medidos** | Matriz k6 y experimento sobre cuenta compartida, sin errores funcionales ni inconsistencias; límites locales y comparación de costos USD/ARS. [Resultados y reproducción](docs/entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md). |
 | **Desplegado como infraestructura, todavía sin uso funcional** | Redis y RabbitMQ. |
 | **Pendiente** | Resto de operaciones de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; métricas exportadas y tableros; consumo de la capacidad externa que se defina con otro grupo. |
 
@@ -163,8 +163,8 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura: C4, servicios, comunicaciones, eventos, despliegue, limitaciones |
 | [docs/adr/](docs/adr/) | Registros de decisiones de arquitectura (ADR) |
 | [docs/contracts/](docs/contracts/README.md) | **Contrato público** del Club de Beneficios para otros grupos: [benefits-api.v1.yaml](docs/contracts/benefits-api.v1.yaml) (OpenAPI 3.1), guía de integración y mock |
-| [docs/VALIDACION_ENTREGA_2.md](docs/VALIDACION_ENTREGA_2.md) | Validación reproducible de tests, contrato, stack, flujo principal, observabilidad y resiliencia de la Entrega 2 |
-| [docs/Guía_Entrega2.md](docs/Guía_Entrega2.md) | Preparación y recorrido sugerido para demostrar la Entrega 2 sin reemplazar las evidencias versionadas |
+| [docs/entrega-2/VALIDACION_ENTREGA_2.md](docs/entrega-2/VALIDACION_ENTREGA_2.md) | Validación reproducible de tests, contrato, stack, flujo principal, observabilidad y resiliencia de la Entrega 2 |
+| [docs/entrega-2/Guía_Entrega2.md](docs/entrega-2/Guía_Entrega2.md) | Preparación y recorrido sugerido para demostrar la Entrega 2 sin reemplazar las evidencias versionadas |
 | [Registro_de_Decisiones_Gimnasio.docx](Registro_de_Decisiones_Gimnasio.docx) | Registro de decisiones del grupo (D-01 en adelante) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Ramas, commits, PR y revisión |
 | [CLAUDE.md](CLAUDE.md) | Contexto y reglas para asistentes de IA en este repo |
@@ -177,4 +177,4 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | Schaffer | Matías | 2434073 |
 | Viti | María Guadalupe | 2426038 |
 
-Observabilidad del flujo mínimo: [etapa 4](docs/ETAPA_4_OBSERVABILIDAD.md), con logs correlacionados y primera traza Gateway → Benefits → PostgreSQL. Jaeger local: http://localhost:16686; historial en memoria y evidencia exportada.
+Observabilidad del flujo mínimo: [etapa 4](docs/entrega-2/ETAPA_4_OBSERVABILIDAD.md), con logs correlacionados y primera traza Gateway → Benefits → PostgreSQL. Jaeger local: http://localhost:16686; historial en memoria y evidencia exportada.
