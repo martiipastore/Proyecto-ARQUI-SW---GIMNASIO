@@ -4,7 +4,7 @@ Fecha: 16/10/2026. Rama: `feature/entrega-2-etapa-04-observabilidad`, creada des
 
 ## Alcance y requisitos
 
-Se instrumenta el flujo mínimo de Entrega 2: Partner → Gateway → Benefits → PostgreSQL. Se conserva HU-29, HU-32, CU-06, RN-22, RN-26, RN-27 y CL-08/08b/08c; no se cambian reglas de negocio ni el contrato público. D11 se demuestra mediante logs JSON y una traza distribuida. D-48 aprueba el diseño inicial; D-55 aprueba historial de Jaeger en memoria y evidencia exportada. Ver [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md).
+Se instrumenta el flujo mínimo de Entrega 2: Partner → Gateway → Benefits → PostgreSQL. Se conserva HU-29, HU-32, CU-06, RN-22, RN-26, RN-27 y CL-08/08b/08c; no se cambian reglas de negocio ni el contrato público. D11 se demuestra mediante logs JSON y una traza distribuida. D-48 aprueba el diseño inicial; D-55 aprueba historial de Jaeger en memoria y evidencia exportada. Ver [ADR-011 v2](../adr/ADR-011-v2-observabilidad-local.md).
 
 Fundamento: correlación/trazabilidad, pp. 7–8 del teórico; señales de resiliencia, pp. 111–112; independencia de dominio/adaptadores, pp. 120–124. OpenTelemetry, Collector y Jaeger son herramientas adicionales aprobadas, necesarias para obtener y visualizar la primera traza exigida; sus productos y configuración no se atribuyen al PDF. Solo logs no muestran relaciones y duración de spans. No se agrega otra base de observabilidad.
 
@@ -38,8 +38,8 @@ Abrir [Jaeger local](http://localhost:16686), elegir `api-gateway` y buscar la o
 
 ## Evidencia real
 
-- [Traza exportada](evidence/etapa4/trace.json), `177a2bc2d4774b20899d288eb5e53267`.
-- [Tres líneas de logs JSON](evidence/etapa4/logs.jsonl), con correlation_id `f6950893-9e52-47ed-a78a-804b0716ab4f`.
+- [Traza exportada](../evidence/etapa4/trace.json), `177a2bc2d4774b20899d288eb5e53267`.
+- [Tres líneas de logs JSON](../evidence/etapa4/logs.jsonl), con correlation_id `f6950893-9e52-47ed-a78a-804b0716ab4f`.
 - Cinco spans: servidor Gateway → cliente HTTP Gateway → servidor Benefits → autenticación PostgreSQL y transacción PostgreSQL. Los dos spans de persistencia son hijos del servidor Benefits.
 - El span Gateway conserva un padre remoto sintético del script, utilizado para comprobar que el traceparent externo se continúa.
 - Acreditación 201; replay 201 con cuerpo idéntico; saldo 100; un movimiento; conflicto 409; credencial inválida 401; cuenta no vinculada 404.

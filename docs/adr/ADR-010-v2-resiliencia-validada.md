@@ -44,4 +44,4 @@ La evidencia corresponde a un ejercicio local: no cubre todas las particiones de
 
 ## Verificación
 
-Tests: Gateway no reintenta un POST ante 503; cancelación previa al commit revierte movimiento, saldo y resultado con PostgreSQL real; el inyector retiene una sola respuesta. Ejercicio: 502, 503 y 504 antes/después de commit, comparación del hash del cuerpo original y del replay y recuentos de base. Evidencia y comandos en [ETAPA_6_RESILIENCIA.md](../ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](../POSTMORTEM.md).
+Tests: Gateway no reintenta un POST ante 503; cancelación previa al commit revierte movimiento, saldo y resultado con PostgreSQL real; el inyector retiene una sola respuesta. Ejercicio: 502, 503 y 504 antes/después de commit, comparación del hash del cuerpo original y del replay y recuentos de base. Evidencia y comandos en [ETAPA_6_RESILIENCIA.md](../entrega-2/ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](../POSTMORTEM.md).

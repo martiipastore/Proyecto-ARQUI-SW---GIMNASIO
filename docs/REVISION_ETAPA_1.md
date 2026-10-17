@@ -2,7 +2,7 @@
 
 Fecha: 16/10/2026. Alcance: etapa 1 del plan. Revisión documental y del esqueleto; no acredita implementación del dominio ni pruebas nuevas de resiliencia, carga o trazas.
 
-> **Estado posterior:** este documento conserva la fotografía de la etapa 1 y sus pendientes de ese momento. Luego, los cambios de SPEC y decisiones se integraron mediante el PR #1; el proxy y los errores de borde mediante el PR #2; observabilidad, resiliencia y capacidad mediante los PR #3, #4 y #5. El estado vigente se mantiene en [PLAN_ENTREGA_2.md](PLAN_ENTREGA_2.md).
+> **Estado posterior:** este documento conserva la fotografía de la etapa 1 y sus pendientes de ese momento. Luego, los cambios de SPEC y decisiones se integraron mediante el PR #1; el proxy y los errores de borde mediante el PR #2; observabilidad, resiliencia y capacidad mediante los PR #3, #4 y #5. El estado vigente se mantiene en [PLAN_ENTREGA_2.md](entrega-2/PLAN_ENTREGA_2.md).
 
 Criterio académico aclarado por el equipo: conceptos basados en clase y herramientas adicionales permitidas si son necesarias, útiles y justificadas en decisiones/etapas. Ver [BASE_TEORICA.md](BASE_TEORICA.md). Se conservan las aprobaciones de D11 y D12 con esa justificación. D13 tiene plan inicial aprobado con k6 como herramienta adicional justificada; verificaciones consecutivas aprobadas según p. 87: ADR-012 v2.
 

@@ -45,10 +45,10 @@ Explicar brevemente:
 
 Documentos de apoyo:
 
-- [arquitectura general](ARCHITECTURE.md);
-- [contrato de partners](contracts/README.md);
+- [arquitectura general](../ARCHITECTURE.md);
+- [contrato de partners](../contracts/README.md);
 - [validación técnica](VALIDACION_ENTREGA_2.md);
-- [decisiones arquitectónicas](adr/).
+- [decisiones arquitectónicas](../adr/).
 
 ## 3. Estado del sistema
 
@@ -146,7 +146,7 @@ docker compose --env-file .env -f deploy/docker-compose.yml -f tests/resilience/
 | Dominio y PostgreSQL | [ETAPA_2_BENEFITS.md](ETAPA_2_BENEFITS.md) |
 | API y Gateway | [ETAPA_3_API_BENEFITS.md](ETAPA_3_API_BENEFITS.md) |
 | Logs y trazas | [ETAPA_4_OBSERVABILIDAD.md](ETAPA_4_OBSERVABILIDAD.md) |
-| Resiliencia | [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](POSTMORTEM.md) |
+| Resiliencia | [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md) y [POSTMORTEM.md](../POSTMORTEM.md) |
 | Capacidad y costos | [ETAPA_7_CAPACIDAD_COSTOS.md](ETAPA_7_CAPACIDAD_COSTOS.md) |
 | Validación de cierre | [VALIDACION_ENTREGA_2.md](VALIDACION_ENTREGA_2.md) |
 | Seguimiento completo | [PLAN_ENTREGA_2.md](PLAN_ENTREGA_2.md) |

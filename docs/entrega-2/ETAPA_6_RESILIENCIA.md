@@ -8,7 +8,7 @@ Se valida D10 para Partner → Gateway → Benefits → PostgreSQL y HU-29, HU-3
 
 Teórico: presupuestos, cancelación e idempotencia, pp. 101–105 y 113–116; transacción local, pp. 27–28; trazabilidad, pp. 7–8. El mecanismo concreto del ejercicio reutiliza Go/HTTP y Docker ya presentes. El proxy es un auxiliar de pruebas para generar la pérdida de una respuesta confirmada; no es un servicio del dominio ni una herramienta externa incorporada al stack normal.
 
-D-43 y D-47 conservan 4 s en Benefits, 5 s en Gateway, sin reintentos de escritura a nivel de aplicación en Gateway y recuperación con la misma clave. D-56 aprueba hasta 500 ms adicionales solo para medir de punta a punta, sin ampliar esos contextos ni afirmar un SLA. Ver [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md).
+D-43 y D-47 conservan 4 s en Benefits, 5 s en Gateway, sin reintentos de escritura a nivel de aplicación en Gateway y recuperación con la misma clave. D-56 aprueba hasta 500 ms adicionales solo para medir de punta a punta, sin ampliar esos contextos ni afirmar un SLA. Ver [ADR-010 v2](../adr/ADR-010-v2-resiliencia-validada.md).
 
 ## Escenarios y comprobaciones
 
@@ -65,10 +65,10 @@ Resultado final de la cuenta sintética: saldo 400, cuatro movimientos y cuatro 
 
 ## Evidencia y límites
 
-- [Resultados, intentos, estados y línea temporal](evidence/etapa6/results.json).
-- [Cinco trazas exportadas](evidence/etapa6/traces.json).
-- [Logs sanitizados](evidence/etapa6/logs.jsonl).
-- [Postmortem del ejercicio](POSTMORTEM.md).
+- [Resultados, intentos, estados y línea temporal](../evidence/etapa6/results.json).
+- [Cinco trazas exportadas](../evidence/etapa6/traces.json).
+- [Logs sanitizados](../evidence/etapa6/logs.jsonl).
+- [Postmortem del ejercicio](../POSTMORTEM.md).
 
 Las trazas de Benefits detenido y demora previa tienen dos spans del Gateway; no se inventan spans de un servicio que no recibió la petición. La pausa tiene además Benefits y autenticación SQL; la confirmación y el replay incluyen transacción PostgreSQL. La exportación conserva la evidencia aunque se pierda la memoria de Jaeger al reiniciar.
 
