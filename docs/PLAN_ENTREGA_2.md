@@ -533,7 +533,7 @@ Los valores definitivos se validarán con la prueba. Como punto de partida:
 
 ## Etapa 8 — Revisión documental y preparación de la entrega
 
-**Estado:** Pendiente
+**Estado:** En progreso (17/10/2026). Validación técnica completada; faltan el guion de demostración, el checklist y la revisión final de enlaces. Ver [VALIDACION_ENTREGA_2.md](VALIDACION_ENTREGA_2.md).
 
 ### Objetivo
 
@@ -577,7 +577,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
 | 6. Resiliencia | Completada e integrada (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
 | 7. Capacidad y costos | Completada e integrada (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | PR #5 integrado en main (fb2a17c); incluye aabe4e0 y 05f7c0e |
-| 8. Revisión final | Pendiente | Checklist y guion de demostración | — |
+| 8. Revisión final | En progreso (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md); faltan checklist y guion de demostración | Rama `docs/entrega-2-etapa-08-cierre` |
 
 ### Línea base — 16/10/2026
 
