@@ -1,0 +1,25 @@
+{
+    "project":  "gym-review-d233936e",
+    "passed":  false,
+    "original_restored":  true,
+    "fresh_state":  null,
+    "timeline":  [
+                     {
+                         "utc":  "2026-10-16T23:46:24.2365019Z",
+                         "action":  "proyecto_nuevo_sin_contenedores_ni_volumenes"
+                     },
+                     {
+                         "utc":  "2026-10-16T23:46:57.2154766Z",
+                         "action":  "gimnasio_original_detenido_volumenes_conservados"
+                     },
+                     {
+                         "utc":  "2026-10-16T23:51:12.6887543Z",
+                         "action":  "contenedores_de_copia_retirados_volumenes_de_prueba_conservados"
+                     },
+                     {
+                         "utc":  "2026-10-16T23:53:32.0926955Z",
+                         "action":  "gimnasio_original_restaurado_y_ready"
+                     }
+                 ],
+    "test_volumes_retained":  true
+}

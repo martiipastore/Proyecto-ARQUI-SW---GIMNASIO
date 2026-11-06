@@ -63,6 +63,9 @@ func RegisterPartners(r *gin.Engine, casos application.CasosDeUso, auth Authenti
 		}
 		c.Set("partnerID", id)
 		c.Next()
+		if h.log != nil {
+			h.log.InfoContext(c.Request.Context(), "solicitud de integración", slog.String("partner_id", id), slog.String("route", c.FullPath()), slog.Int("status", c.Writer.Status()))
+		}
 	})
 	grupo.POST("/accounts/:externalUserId/credits", h.acreditar)
 	grupo.GET("/accounts/:externalUserId/balance", h.balance)
@@ -76,7 +79,10 @@ func (h *PartnersAPI) fallo(c *gin.Context, status int, code, detail, originalCo
 	if status == 503 {
 		c.Header("Retry-After", "1")
 	}
-	titles := map[int]string{400: "Solicitud inválida", 401: "No autenticado", 403: "Sin permiso", 404: "Cuenta no encontrada", 409: "Conflicto de idempotencia", 500: "Error interno", 503: "Servicio no disponible"}
+	if status == 429 {
+		c.Header("Retry-After", "60")
+	}
+	titles := map[int]string{400: "Solicitud inválida", 401: "No autenticado", 403: "Sin permiso", 404: "Cuenta no encontrada", 409: "Conflicto de idempotencia", 429: "Demasiadas solicitudes", 500: "Error interno", 503: "Servicio no disponible"}
 	p := problem.New(status, code, titles[status], detail)
 	p.CorrelationID = originalCorrelation
 	problem.WritePartnerHTTP(c.Writer, c.Request, p)
@@ -85,6 +91,8 @@ func (h *PartnersAPI) fallo(c *gin.Context, status int, code, detail, originalCo
 
 func (h *PartnersAPI) error(c *gin.Context, err error, correlacion string) {
 	switch {
+	case errors.Is(err, domain.ErrLimiteSolicitudes):
+		h.fallo(c, 429, "RATE_LIMITED", "Se alcanzó el límite de solicitudes de la integración.", correlacion)
 	case errors.Is(err, application.ErrCredencialInvalida):
 		h.fallo(c, 401, "UNAUTHORIZED", "Credencial inválida o revocada.", correlacion)
 	case errors.Is(err, application.ErrPartnerInactivo), errors.Is(err, domain.ErrPartnerNoAutorizado):
@@ -105,6 +113,7 @@ func (h *PartnersAPI) error(c *gin.Context, err error, correlacion string) {
 }
 
 type creditRequest struct {
+	EventID   string  `json:"eventId,omitempty"`
 	Points    *int64  `json:"points"`
 	Reason    *string `json:"reason"`
 	Reference *string `json:"reference"`
@@ -126,7 +135,7 @@ func (h *PartnersAPI) acreditar(c *gin.Context) {
 		return
 	}
 	entrada := application.AcreditarPuntos{PartnerID: c.GetString("partnerID"), ExternalUserID: c.Param("externalUserId"), Clave: c.GetHeader("Idempotency-Key"), Correlacion: correlation.FromContext(c.Request.Context())}
-	body, err := io.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10))
 	if err != nil {
 		h.error(c, domain.ErrOperacionInvalida, "")
 		return
@@ -147,6 +156,7 @@ func (h *PartnersAPI) acreditar(c *gin.Context) {
 		entrada.Puntos = *dto.Points
 		entrada.Motivo = *dto.Reason
 		entrada.Referencia = *dto.Reference
+		entrada.EventoID = dto.EventID
 	}
 	// Las entradas rechazadas también conservan su identidad sin guardar el body.
 	if entrada.EntradaInvalida {

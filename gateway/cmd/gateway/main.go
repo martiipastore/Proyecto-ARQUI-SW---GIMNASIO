@@ -2,8 +2,8 @@
 //
 // En esta etapa: routing por prefijo hacia cada servicio, timeout por ruta,
 // propagación de X-Correlation-ID, bloqueo de /internal/*, CORS para el frontend
-// y GET /api/v1/status. JWT, rate limiting e inyección de identidad se agregan
-// en etapas posteriores.
+// y GET /api/v1/status. JWT RS256 e identidad verificada en CB-03; la matriz
+// específica de recursos futuros y los límites generales siguen por completar.
 package main
 
 import (

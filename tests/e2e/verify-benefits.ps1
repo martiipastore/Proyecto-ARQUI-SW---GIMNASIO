@@ -2,7 +2,8 @@
  [string]$BaseUrl = 'http://localhost:8080',
  [switch]$Observability,
  [string]$JaegerUrl = 'http://localhost:16686',
- [string]$EvidenceDirectory = 'docs/evidence/etapa4'
+ [string]$EvidenceDirectory = 'docs/evidence/etapa4',
+ [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$ComposeProject = 'gym'
 )
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -10,6 +11,7 @@ Add-Type -AssemblyName System.Net.Http
 Push-Location (Resolve-Path (Join-Path $PSScriptRoot '../..'))
 $client = [System.Net.Http.HttpClient]::new()
 $client.Timeout = [TimeSpan]::FromSeconds(10)
+$compose = @('compose','--env-file','.env','-p',$ComposeProject,'-f','deploy/docker-compose.yml')
 try {
     $partner = [guid]::NewGuid().ToString()
     $cuenta = [guid]::NewGuid().ToString()
@@ -24,12 +26,12 @@ try {
     # Fixture local sintético, sin endpoints ocultos ni claves en texto plano.
     $seed = @"
 BEGIN;
-INSERT INTO partners(id,nombre,api_key_hash) VALUES ('$partner','Demo etapa 3',decode('$hash','hex'));
+INSERT INTO partners(id,nombre,api_key_hash,requiere_evento) VALUES ('$partner','Demo etapa 3',decode('$hash','hex'),false);
 INSERT INTO cuentas(id,alumno_id) VALUES ('$cuenta','$alumno');
 INSERT INTO vinculaciones(partner_id,external_user_id,cuenta_id) VALUES ('$partner','$usuario','$cuenta');
 COMMIT;
 "@
-    $seed | docker compose --env-file .env -f deploy/docker-compose.yml exec -T postgres sh -c 'PGPASSWORD="$BENEFITS_DB_PASSWORD" exec psql -v ON_ERROR_STOP=1 -U benefits_user -d benefits_db' | Out-Null
+    $seed | docker @compose exec -T postgres sh -c 'PGPASSWORD="$BENEFITS_DB_PASSWORD" exec psql -v ON_ERROR_STOP=1 -U benefits_user -d benefits_db' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Falló la carga del fixture sintético.' }
 
     function Send-Request([string]$Method, [string]$Path, [string]$Body, [string]$Key, [string]$Credential) {
@@ -86,7 +88,7 @@ COMMIT;
         foreach ($span in $data.spans) {
             if ($span.traceID -ne $credit.TraceId) { throw 'La traza contiene identificadores inconsistentes.' }
         }
-        $rawLogs = docker compose --env-file .env -f deploy/docker-compose.yml logs --no-color --no-log-prefix --since 5m api-gateway benefits-service
+        $rawLogs = docker @compose logs --no-color --no-log-prefix --since 5m api-gateway benefits-service
         if ($LASTEXITCODE -ne 0) { throw 'No se pudieron recuperar los logs.' }
         $logs = @($rawLogs | ForEach-Object {
             try { $entry = $_ | ConvertFrom-Json; if ($entry.trace_id -eq $credit.TraceId) { $entry } } catch { }

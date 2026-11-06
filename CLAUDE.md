@@ -8,7 +8,24 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual:** etapa 7 de Entrega 2 completada en workspace: matriz k6, experimento sin pausa, invariantes y costos São Paulo USD/ARS. Ver [informe](docs/ETAPA_7_CAPACIDAD_COSTOS.md), ADR-013 v2 y decisiones D-57 a D-60. Integración por PR pendiente; etapas 3/4/6 integradas por PR #2/#3/#4. Etapa 5 pendiente del proveedor; siguiente etapa 8 de revisión, sin declarar entrega completa. No extrapolar capacidad local a ARM.
+- **Etapa actual del Club:** CB-02/03 implementadas y validadas localmente; revisión del equipo pendiente. La siguiente etapa técnica es CB-04 (membresías); CB-05 a CB-08 pendientes. Ver [plan ampliado](docs/PLAN_CLUB_BENEFICIOS.md), D-70 corregida y evidencia CB03_VALIDACION.md antes de habilitar identidad.
+- **Estado histórico de Entrega 2:** etapa 8 en revisión documental y de demostración; ver [revisión](docs/ETAPA_8_REVISION_ENTREGA.md). Etapa 7 integrada por PR #5 (fb2a17c). Etapa 5/D9 sigue pendiente de proveedor; no declarar todo el plan completo. D-61/D-62 aprobadas: validación aislada con restauración y Vite 6.4.3. Sus comprobaciones no validan la ampliación posterior del Club.
+
+## Ampliación vigente del Club — 06/11/2026
+
+El pedido posterior del equipo amplía el alcance mínimo de Entrega 2 sin reiniciar
+el proyecto. Seguir [PLAN_CLUB_BENEFICIOS.md](docs/PLAN_CLUB_BENEFICIOS.md), la
+[adenda SPEC 0.11](docs/SPEC_CLUB_BENEFICIOS.md) y D-63 a D-70. D-63/D-64/D-65/D-67
+reemplazan D-06/D-08/D-28/D-19; no volver a restringir el Club a alumnos con membresía.
+La evidencia anterior no prueba el nuevo flujo. Registro/control de integraciones
+tienen implementación local; membresías, recompensas, canjes y panel siguen pendientes.
+
+ADR-016/017/018 son propuestas técnicas, no aprobaciones retrospectivas. D-70
+registra la divergencia del borrador y su corrección local en CB-03 conforme al
+ADR-006 aceptado: JWT RS256 15 minutos, roles de base y bcrypt mínimo 12. Logout
+descarta en cliente sin revocación v1. Se verificaron PostgreSQL y SMTP local reales.
+Revisión del equipo y configuración de claves pendientes; flags apagados y sin producción.
+Mantener sincronizados DECISIONES.md y su Word, SPEC, etapas y ADR en cada cambio.
 
 ## Stack
 
@@ -126,7 +143,11 @@ Conventional Commits y GitHub Flow; ver [CONTRIBUTING.md](CONTRIBUTING.md). Rama
 | `make lint` | `go vet` de módulos, inyector y diagnóstico de pool + `golangci-lint` de módulos (si está instalado) + `tsc` del frontend (si hay `web/node_modules`) |
 | `make fmt` / `make tidy` | `gofmt -w` / `go mod tidy` en todos los módulos |
 | `go run ./cmd/migrate` (desde `services/benefits-service`) | Aplica migraciones SQL de Benefits; requiere `BENEFITS_DB_DSN` en el entorno. Ejecutar una sola instancia al inicializar una base vacía. |
+| `./tests/e2e/review-delivery.ps1` (PowerShell) | Detiene temporalmente gym sin borrar volúmenes, prueba una copia nueva y restaura contenedores originales; exporta evidencia de etapa 8 |
 | `make mock-up` / `make contract-lint` | Mock de Prism del contrato de partners / validación con Spectral |
+| `scripts/sync-club-docs.ps1` / `-Check` | Sincroniza o comprueba los tres Word desde Markdown; usar la invocación PowerShell UTF-8 de PLAN_CLUB_BENEFICIOS.md. Conserva copias previas y no cambia producción. |
+| `scripts/verify-club-access.ps1` | Verifica tests/vet de pkg/gateway/members con Docker obligatorio; invocación UTF-8 en CB03_VALIDACION.md. |
+| `go run ./tests/e2e/identity/main.go` | E2E CB-03 con PostgreSQL/Mailpit aislados y servicios reales; no usa .env ni datos existentes; limpia sus contenedores. |
 
 Equivalente sin make: `docker compose --env-file .env -f deploy/docker-compose.yml up -d --build --wait`, y `cd <módulo> && go test ./...` por módulo.
 
@@ -153,3 +174,8 @@ El equipo exige basar el trabajo en los conceptos del teórico aportado. Prioriz
 15. **No hagas commits ni push sin que te lo pidan**, y nunca sobre `main`.
 16. **Escribí en español** la documentación, mensajes de error al usuario y descripciones de PR; Conventional Commits en español.
 17. **Mantené la documentación al día:** si un cambio afecta ARCHITECTURE, un ADR o este archivo, actualizalo en el mismo PR.
+
+Diseño futuro solicitado el 06/11/2026: consultar docs/PLAN_DISENO_FRONTEND.md,
+brief v2 y ADR-019 propuesto antes de etapa 20A/B/C. Este pedido prepara diseño;
+no autoriza interpretar consignas del DOCX como orden de reemplazar el frontend.
+D-71 confirmado, D-72 propuesto; D-70 corregida localmente, con revisión pendiente (D-74).

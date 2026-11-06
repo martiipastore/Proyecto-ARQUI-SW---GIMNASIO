@@ -1,0 +1,26 @@
+{
+  "reviewed_at_utc": "2026-10-16T23:20:58.885721+00:00",
+  "base_commit": "fb2a17c",
+  "go_modules": [
+    "pkg",
+    "gateway",
+    "services/members-service",
+    "services/booking-service",
+    "services/benefits-service",
+    "services/training-service",
+    "services/notification-worker"
+  ],
+  "go_test": "passed; -count=1, sequential",
+  "go_vet": "passed for seven modules",
+  "fault_proxy_test": "passed; -count=1",
+  "pool_info_vet": "passed",
+  "frontend_npm_ci": "passed; lockfile unchanged",
+  "frontend_lint": "passed",
+  "frontend_build": "passed; Vite 5.4.11",
+  "spectral": "passed; zero warnings/errors",
+  "golangci": "running; v2.1.6 Docker image",
+  "clean_environment": "pending team decision; original volumes preserved",
+  "repeat_demo": "not executed: automatic approval review rejected current-environment fixture insertion; use isolated proposal after approval",
+  "vite_update": "pending team decision",
+  "delivery_status": "D9/provider assignment remains pending"
+}

@@ -1,4 +1,5 @@
 import { SystemStatusPage } from './pages/SystemStatusPage';
+import { ClubAccountPage } from './pages/ClubAccountPage';
 
 export function App() {
   return (
@@ -7,7 +8,8 @@ export function App() {
         <span className="brand">Gimnasio</span>
         <span className="muted">Sistema integral de gestión</span>
       </nav>
-      <SystemStatusPage />
+      <ClubAccountPage />
+      <details><summary className="page">Estado del sistema</summary><SystemStatusPage /></details>
     </>
   );
 }

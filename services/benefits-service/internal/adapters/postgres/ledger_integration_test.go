@@ -86,7 +86,8 @@ func nuevaFixture(t *testing.T, db *DB) fixture {
 	}()
 	for _, id := range []string{f.partner, f.otro} {
 		hash := sha256.Sum256([]byte("fixture-" + id))
-		_, err = tx.Exec(context.Background(), `INSERT INTO partners(id,nombre,api_key_hash) VALUES ($1,'Partner de prueba',$2)`, id, hash[:])
+		// Fixture histórica: mantiene clientes que todavía no envían eventId.
+		_, err = tx.Exec(context.Background(), `INSERT INTO partners(id,nombre,api_key_hash,requiere_evento) VALUES ($1,'Partner de prueba',$2,false)`, id, hash[:])
 		require.NoError(t, err)
 	}
 	_, err = tx.Exec(context.Background(), `INSERT INTO cuentas(id,alumno_id) VALUES ($1,$2)`, f.cuenta, nuevo())
@@ -135,7 +136,102 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 	require.NoError(t, db.Migrate(ctx)) // Desde base vacía y repetición segura.
 	var migraciones int
 	require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migraciones))
-	require.Equal(t, 2, migraciones)
+	require.Equal(t, 5, migraciones)
+	t.Run("CB02", func(t *testing.T) { verificarClub(t, db, dsn) })
+	t.Run("club_registro_adopta_cuenta_existente_y_no_duplica_credito", func(t *testing.T) {
+		f := nuevaFixture(t, db)
+		var user string
+		require.NoError(t, db.pool.QueryRow(ctx, `SELECT alumno_id::text FROM cuentas WHERE id=$1`, f.cuenta).Scan(&user))
+		_, err := db.pool.Exec(ctx, `UPDATE partners SET permite_registro=true WHERE id=$1`, f.partner)
+		require.NoError(t, err)
+		registry := application.NewRegistro(nil, db, f.app)
+		registrationID, err := (system.IDs{}).NewID()
+		require.NoError(t, err)
+		in := domain.CompletarRegistro{RegistroID: registrationID, EventoID: "registro-0001", PartnerID: f.partner, UsuarioID: user, ExternalUserID: f.usuario, Puntos: 150, Motivo: "Participación confirmada", Referencia: "registro-0001"}
+		balance, err := registry.CompletarRegistro(ctx, in)
+		require.NoError(t, err)
+		require.EqualValues(t, 150, balance)
+		balance, err = registry.CompletarRegistro(ctx, in)
+		require.NoError(t, err)
+		require.EqualValues(t, 150, balance)
+		var count int
+		require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM cuentas WHERE alumno_id=$1`, user).Scan(&count))
+		require.Equal(t, 1, count)
+		_, err = db.pool.Exec(ctx, `UPDATE partners SET permite_registro=false WHERE id=$1`, f.partner)
+		require.NoError(t, err)
+		_, err = registry.CompletarRegistro(ctx, in)
+		require.ErrorIs(t, err, domain.ErrPartnerNoAutorizado)
+	})
+	t.Run("club_evento_unico_independiente_de_clave", func(t *testing.T) {
+		f := nuevaFixture(t, db)
+		entrada := f.credito("evento-clave-001", 150)
+		entrada.EventoID = "participacion-001"
+		primera, err := f.app.Acreditar(ctx, entrada)
+		require.NoError(t, err)
+		entrada.Clave = "evento-clave-002"
+		replay, err := f.app.Acreditar(ctx, entrada)
+		require.NoError(t, err)
+		require.True(t, replay.Repetida)
+		require.Equal(t, primera.Resultado, replay.Resultado)
+		saldo, err := f.app.ConsultarSaldo(ctx, f.partner, f.usuario)
+		require.NoError(t, err)
+		require.EqualValues(t, 150, saldo)
+		entrada.Clave = "evento-clave-003"
+		entrada.Puntos++
+		_, err = f.app.Acreditar(ctx, entrada)
+		require.ErrorIs(t, err, domain.ErrConflictoIdempotencia)
+	})
+	t.Run("club_permisos_y_presupuesto_diario", func(t *testing.T) {
+		f := nuevaFixture(t, db)
+		_, err := db.pool.Exec(ctx, `UPDATE partners SET max_puntos_operacion=100,max_puntos_dia=150 WHERE id=$1`, f.partner)
+		require.NoError(t, err)
+		_, err = f.app.Acreditar(ctx, f.credito("limite-0001", 101))
+		require.ErrorIs(t, err, domain.ErrOperacionInvalida)
+		_, err = f.app.Acreditar(ctx, f.credito("limite-0002", 100))
+		require.NoError(t, err)
+		_, err = f.app.Acreditar(ctx, f.credito("limite-0003", 51))
+		require.ErrorIs(t, err, domain.ErrOperacionInvalida)
+		_, err = db.pool.Exec(ctx, `UPDATE partners SET permite_puntos=false,permite_consulta=false WHERE id=$1`, f.partner)
+		require.NoError(t, err)
+		_, err = f.app.Acreditar(ctx, f.credito("limite-0002", 100))
+		require.ErrorIs(t, err, domain.ErrPartnerNoAutorizado)
+		_, err = f.app.ConsultarSaldo(ctx, f.partner, f.usuario)
+		require.ErrorIs(t, err, domain.ErrPartnerNoAutorizado)
+		_, err = f.app.ListarMovimientos(ctx, f.partner, f.usuario, 1, 20)
+		require.ErrorIs(t, err, domain.ErrPartnerNoAutorizado)
+	})
+	t.Run("club_presupuesto_concurrente_entre_cuentas", func(t *testing.T) {
+		f := nuevaFixture(t, db)
+		otra := nuevaFixture(t, db)
+		_, err := db.pool.Exec(ctx, `INSERT INTO vinculaciones(partner_id,external_user_id,cuenta_id) VALUES ($1,'alumno-2',$2)`, f.partner, otra.cuenta)
+		require.NoError(t, err)
+		_, err = db.pool.Exec(ctx, `UPDATE partners SET max_puntos_dia=150 WHERE id=$1`, f.partner)
+		require.NoError(t, err)
+		resultados := make(chan error, 2)
+		inicio := make(chan struct{})
+		for i, usuario := range []string{f.usuario, "alumno-2"} {
+			entrada := f.credito(fmt.Sprintf("concurrente-%d", i), 100)
+			entrada.ExternalUserID = usuario
+			go func() {
+				<-inicio
+				_, err := f.app.Acreditar(ctx, entrada)
+				resultados <- err
+			}()
+		}
+		close(inicio)
+		aceptadas, rechazadas := 0, 0
+		for i := 0; i < 2; i++ {
+			err := <-resultados
+			if err == nil {
+				aceptadas++
+			} else {
+				require.ErrorIs(t, err, domain.ErrOperacionInvalida)
+				rechazadas++
+			}
+		}
+		require.Equal(t, 1, aceptadas)
+		require.Equal(t, 1, rechazadas)
+	})
 	t.Run("D3_usuario_no_accede_a_base_ajena", func(t *testing.T) {
 		otra := *conexion
 		otra.Path = "/benefits_db"

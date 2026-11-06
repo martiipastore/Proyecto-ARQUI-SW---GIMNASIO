@@ -4,16 +4,20 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
 	benefitshttp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/members"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application"
@@ -60,7 +64,16 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}
 
 	router := benefitshttp.NewRouter(log, cfg.HealthTimeout, health.Check{Name: "postgres", Fn: db.Ping})
-	benefitshttp.RegisterPartners(router, application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{}), application.NewAuthenticator(db), log)
+	benefits := application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{})
+	auth := application.NewAuthenticator(db)
+	benefitshttp.RegisterPartners(router, benefits, auth, log)
+	if cfg.ExternalRegistrationEnabled {
+		if len(cfg.ServiceKey) < 32 {
+			return fmt.Errorf("GYM_INTERNAL_SERVICE_KEY debe tener al menos 32 caracteres")
+		}
+		client := members.Client{URL: cfg.MembersURL, Secret: cfg.ServiceKey, HTTP: &http.Client{Timeout: 3500 * time.Millisecond}}
+		benefitshttp.RegisterRegistrations(router, application.NewRegistro(client, db, benefits), auth, cfg.ServiceKey, log)
+	}
 	router.NoRoute(benefitshttp.PartnerFallback)
 	router.NoMethod(benefitshttp.PartnerFallback)
 	return httpserver.Run(ctx, log, httpserver.Options{

@@ -44,4 +44,33 @@ Cada incorporación concreta debe distinguir el fundamento teórico, la herramie
 
 ## Próximo paso
 
+### Ampliación del Club — 06/11/2026
+
+El pedido del equipo autoriza los requisitos D-63 a D-69. No supone aprobación
+específica de los parámetros o mecanismos técnicos D-70. ADR-016/017/018 separan
+fundamento, alternativas, elección local y verificación pendiente. AES-GCM,
+tokens, bcrypt, cuotas y sesiones son elecciones concretas; no se afirma haberlas
+localizado en el apunte por reutilizar bibliotecas. CB-03 debe conciliar la seguridad
+con ADR-006 y CB-08 aportar evidencia nueva; no reciclar carga/trazas anteriores
+para acreditar el flujo ampliado. Se conserva la autorización académica previa.
+
 D13 tiene protocolo aprobado (D-50/D-57/D-59) y evidencia local completada en etapa 7; ADR-013 v2 conserva resultados, límites y alternativas. D-58 fija región/monedas y D-60 la demanda ilustrativa para costos; no se atribuyen estas cifras al teórico. Estabilidad de health checks aprobada según p. 87 (ADR-012 v2); verificar su implementación en la etapa de balanceo y mantener D9 pendiente del proveedor. La autorización específica de k6 no habilita otras excepciones ni demuestra implementación.
+
+## Revisión directa del PDF para el diseño web (06/11/2026)
+
+El brief v2 aplica p. 23 a propiedad de datos/API; pp. 90 y 97 a no agregar capas
+sin necesidad; pp. 104 y 110 a idempotencia y estados de resultado desconocido;
+p. 116 a fallback honesto y p. 118 a dependencias. La animación, estética y
+presupuestos visuales son propuestas propias, no reglas del apunte. Referencias
+complementarias verificables en docs/diseno/BRIEF_WEB_METAL_FITNESS_V2.md, §17.
+
+## CB-03: seguridad y recuperación verificadas (06/11/2026)
+
+JWT RS256 de 15 minutos, roles y bcrypt mínimo 12 aplican ADR-006 ya aceptado;
+no son algoritmos atribuidos al PDF. Se reutiliza la biblioteca estándar de Go
+para el perfil técnico acotado de tokens, sin herramientas nuevas. Gateway valida
+firma/claims y transmite identidad; los servicios aplican autorización propia.
+Propiedad y transacciones (pp. 23/27–28), recuperación e intención estable
+(pp. 103–105/110/113–116) y capas (pp. 118/120–124) fundamentan los límites.
+Pruebas locales con respuesta perdida tras commit y SMTP detenido/recuperado,
+resultados y fuentes primarias complementarias en docs/CB03_VALIDACION.md.

@@ -42,6 +42,13 @@ body {
   margin: 0;
 }
 
+.club-card { max-width: 480px; padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: grid; gap: 1rem; }
+.club-card label { display: grid; gap: .4rem; }
+.club-card input { width: 100%; padding: .7rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+.club-card .club-checkbox { display: flex; align-items: flex-start; gap: .7rem; }
+.club-checkbox input { width: auto; margin-top: .25rem; }
+.club-card button { padding: .7rem 1rem; font: inherit; cursor: pointer; }
+
 code {
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
   font-size: 0.9em;

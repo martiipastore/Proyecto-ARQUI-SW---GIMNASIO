@@ -1,0 +1,45 @@
+{
+  "stage": "CB-03",
+  "startedAtUtc": "2026-11-06T17:02:44Z",
+  "finishedAtUtc": "2026-11-06T17:04:30Z",
+  "passed": true,
+  "checks": [
+    {
+      "name": "servicios_reales_y_bases_aisladas_listos",
+      "passed": true
+    },
+    {
+      "name": "alta_nueva_puntos_SMTP_y_recuperacion_despues_del_commit",
+      "passed": true
+    },
+    {
+      "name": "activacion_unica_login_JWT_y_saldo_propio_sin_membresia",
+      "passed": true
+    },
+    {
+      "name": "roles_cabeceras_falsas_token_vencido_y_frontera_interna",
+      "passed": true
+    },
+    {
+      "name": "evento_compartido_registro_creditos_e_integracion_aislada",
+      "passed": true
+    },
+    {
+      "name": "cuenta_existente_prueba_de_correo_sin_reset_y_bcrypt_12",
+      "passed": true
+    },
+    {
+      "name": "SMTP_caido_reintenta_sin_perder_ni_repetir_puntos",
+      "passed": true
+    },
+    {
+      "name": "registro_sin_puntos_enlace_vencido_reenvio_y_rotacion",
+      "passed": true
+    },
+    {
+      "name": "logout_sin_revocacion_y_vencimiento_limitado_por_ADR006",
+      "passed": true
+    }
+  ],
+  "scope": "Local real HTTP services, isolated PostgreSQL 16, Mailpit v1.20 SMTP and injected lost callback response; no production or browser automation"
+}

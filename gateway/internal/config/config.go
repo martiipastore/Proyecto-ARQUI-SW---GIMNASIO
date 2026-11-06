@@ -37,11 +37,13 @@ type Route struct {
 
 // Config del gateway.
 type Config struct {
-	HTTPAddr        string
-	LogLevel        string
-	ShutdownTimeout time.Duration
-	StatusTimeout   time.Duration
-	CORSOrigins     []string
+	InternalServiceKey string
+	JWTPublicKey       string
+	HTTPAddr           string
+	LogLevel           string
+	ShutdownTimeout    time.Duration
+	StatusTimeout      time.Duration
+	CORSOrigins        []string
 	// Services en el orden en que aparecen en /api/v1/status.
 	Services []Service
 	// Routes ordenadas del prefijo más largo al más corto.
@@ -89,11 +91,13 @@ func LoadFromMap(values map[string]string) (Config, error) {
 
 func load(l *config.Loader) (Config, error) {
 	cfg := Config{
-		HTTPAddr:        l.String("GATEWAY_HTTP_ADDR", ":8080"),
-		LogLevel:        l.String("LOG_LEVEL", "info"),
-		ShutdownTimeout: l.Duration("SHUTDOWN_TIMEOUT", 10*time.Second),
-		StatusTimeout:   l.Duration("GATEWAY_STATUS_TIMEOUT", 2*time.Second),
-		CORSOrigins:     l.List("GATEWAY_CORS_ORIGINS", []string{"http://localhost:5173"}),
+		InternalServiceKey: l.String("GYM_INTERNAL_SERVICE_KEY", ""),
+		JWTPublicKey:       l.String("GATEWAY_JWT_PUBLIC_KEY", ""),
+		HTTPAddr:           l.String("GATEWAY_HTTP_ADDR", ":8080"),
+		LogLevel:           l.String("LOG_LEVEL", "info"),
+		ShutdownTimeout:    l.Duration("SHUTDOWN_TIMEOUT", 10*time.Second),
+		StatusTimeout:      l.Duration("GATEWAY_STATUS_TIMEOUT", 2*time.Second),
+		CORSOrigins:        l.List("GATEWAY_CORS_ORIGINS", []string{"http://localhost:5173"}),
 	}
 
 	var errs []error

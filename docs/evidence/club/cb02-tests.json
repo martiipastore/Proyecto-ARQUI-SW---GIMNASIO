@@ -1,0 +1,389 @@
+{
+    "stage":  "CB-02",
+    "startedAtUtc":  "2026-11-06T16:30:23.5755500Z",
+    "finishedAtUtc":  "2026-11-06T16:31:04.7408040Z",
+    "command":  "REQUIRE_DOCKER_TESTS=1 go test ./... -count=1 -json",
+    "goExitCode":  0,
+    "passed":  true,
+    "passedTests":  53,
+    "failedTests":  0,
+    "skippedTests":  0,
+    "packages":  [
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/cmd/api",
+                         "Action":  "skip",
+                         "Elapsed":  0
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/cmd/migrate",
+                         "Action":  "skip",
+                         "Elapsed":  0
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http",
+                         "Action":  "pass",
+                         "Elapsed":  0.533
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system",
+                         "Action":  "skip",
+                         "Elapsed":  0
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/config",
+                         "Action":  "skip",
+                         "Elapsed":  0
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/ports",
+                         "Action":  "skip",
+                         "Elapsed":  0
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/migrations",
+                         "Action":  "skip",
+                         "Elapsed":  0
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application",
+                         "Action":  "pass",
+                         "Elapsed":  1.156
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                         "Action":  "pass",
+                         "Elapsed":  1.213
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/members",
+                         "Action":  "pass",
+                         "Elapsed":  4.666
+                     },
+                     {
+                         "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                         "Action":  "pass",
+                         "Elapsed":  28.178
+                     }
+                 ],
+    "tests":  [
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http",
+                      "Test":  "TestCallbackInternoValidaCredencialYContrato",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http",
+                      "Test":  "TestCuotaResponde429SinEjecutarConsulta",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http",
+                      "Test":  "TestReady_ConPostgresDisponible",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http",
+                      "Test":  "TestReady_ConPostgresCaido",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application",
+                      "Test":  "TestEventoRepetidoNoGuardaMovimiento",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application",
+                      "Test":  "TestPermisoRevocadoImpideReplay",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application",
+                      "Test":  "TestRN26_LecturaSoloDeCuentaVinculada",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application",
+                      "Test":  "TestRN27_RechazoYReplaySinNuevosEfectos",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application",
+                      "Test":  "TestRN27_ClaveInvalidaNoIniciaOperacion",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestArquitectura_DomainSoloUsaBibliotecaEstandar",
+                      "Action":  "pass",
+                      "Elapsed":  0.01
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestArquitectura_DomainSinTagsDeSerializacion",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestArquitectura_ApplicationYPortsNoDependenDeAdaptadores",
+                      "Action":  "pass",
+                      "Elapsed":  0.02
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestCuenta_AcreditacionesExplicanSaldo",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestCuenta_OperacionInvalidaNoModificaSaldo",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestPoliticaAcreditacion/permiso_revocado",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestPoliticaAcreditacion/limite_exacto",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestPoliticaAcreditacion/operacion_excesiva",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestPoliticaAcreditacion/presupuesto_excedido",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestPoliticaAcreditacion/replay_presupuesto_agotado",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestPoliticaAcreditacion",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestEventoSegunIntegracion/cliente_previo_sin_evento",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestEventoSegunIntegracion/integracion_nueva_sin_evento",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestEventoSegunIntegracion/evento_valido",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestEventoSegunIntegracion/evento_demasiado_largo",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestEventoSegunIntegracion/evento_con_nulo",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain",
+                      "Test":  "TestEventoSegunIntegracion",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/members",
+                      "Test":  "TestContratoRegistroInternoYReciboExterno",
+                      "Action":  "pass",
+                      "Elapsed":  0.01
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/API_evento_repetido_conserva_JSON_y_precision",
+                      "Action":  "pass",
+                      "Elapsed":  0.12
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/evento_sobrevive_retencion_respuesta_HTTP",
+                      "Action":  "pass",
+                      "Elapsed":  0.05
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/cuota_atomica_solicitudes_y_revocacion",
+                      "Action":  "pass",
+                      "Elapsed":  0.07
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/migracion_desde_ledger_previo_con_historial",
+                      "Action":  "pass",
+                      "Elapsed":  0.55
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/evento_obligatorio_configurable_y_default_seguro",
+                      "Action":  "pass",
+                      "Elapsed":  0.11
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/mismo_evento_concurrente_distintas_keys",
+                      "Action":  "pass",
+                      "Elapsed":  0.2
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/evento_repetido_conserva_saldo_original_y_no_reasigna_usuario",
+                      "Action":  "pass",
+                      "Elapsed":  0.11
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02/presupuesto_diario_usa_fecha_argentina",
+                      "Action":  "pass",
+                      "Elapsed":  0.07
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/CB02",
+                      "Action":  "pass",
+                      "Elapsed":  1.28
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/club_registro_adopta_cuenta_existente_y_no_duplica_credito",
+                      "Action":  "pass",
+                      "Elapsed":  0.09
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/club_evento_unico_independiente_de_clave",
+                      "Action":  "pass",
+                      "Elapsed":  0.06
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/club_permisos_y_presupuesto_diario",
+                      "Action":  "pass",
+                      "Elapsed":  0.06
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/club_presupuesto_concurrente_entre_cuentas",
+                      "Action":  "pass",
+                      "Elapsed":  0.04
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/D3_usuario_no_accede_a_base_ajena",
+                      "Action":  "pass",
+                      "Elapsed":  0.02
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN22_RN27_replay_durable_con_saldo_original",
+                      "Action":  "pass",
+                      "Elapsed":  0.34
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN26_CL08c_saldo_total_historial_aislado",
+                      "Action":  "pass",
+                      "Elapsed":  0.25
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN27_CL08b_rechazo_original_tras_vincular",
+                      "Action":  "pass",
+                      "Elapsed":  0.11
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN27_concurrencia_misma_clave_y_claves_distintas",
+                      "Action":  "pass",
+                      "Elapsed":  0.53
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN22_RN27_restricciones_y_retencion_en_base",
+                      "Action":  "pass",
+                      "Elapsed":  0.12
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/D10_RN22_RN27_cancelacion_revierte_movimiento_saldo_y_resultado",
+                      "Action":  "pass",
+                      "Elapsed":  0.12
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN22_RN27_rollback_del_movimiento_y_la_clave",
+                      "Action":  "pass",
+                      "Elapsed":  0.09
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/RN27_payloads_distintos_con_la_misma_clave_concurrente",
+                      "Action":  "pass",
+                      "Elapsed":  0.1
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal/HU29_HU32_API_contrato_con_PostgreSQL",
+                      "Action":  "pass",
+                      "Elapsed":  0.48
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestLedger_PostgreSQLReal",
+                      "Action":  "pass",
+                      "Elapsed":  17.06
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestDB_PingContraBaseReal",
+                      "Action":  "pass",
+                      "Elapsed":  10.44
+                  },
+                  {
+                      "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres",
+                      "Test":  "TestDB_PingFallaSiLaBaseNoResponde",
+                      "Action":  "pass",
+                      "Elapsed":  0
+                  }
+              ],
+    "scope":  "Benefits unit/API/PostgreSQL isolated tests; not full Club E2E, SMTP, deployment, or performance acceptance"
+}

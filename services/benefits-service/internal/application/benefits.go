@@ -21,6 +21,7 @@ type AcreditarPuntos struct {
 	PartnerID, ExternalUserID, Clave string
 	Puntos                           int64
 	Motivo, Referencia               string
+	EventoID                         string
 }
 
 type RespuestaAcreditacion struct {
@@ -68,7 +69,11 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 		return respuesta, domain.ErrOperacionInvalida
 	}
 	// Incluye operación y cuenta: una key por partner no se reutiliza en otra ruta.
-	contenido, err := json.Marshal([]any{"CREDIT", entrada.ExternalUserID, entrada.Puntos, entrada.Motivo, entrada.Referencia})
+	campos := []any{"CREDIT", entrada.ExternalUserID, entrada.Puntos, entrada.Motivo, entrada.Referencia}
+	if entrada.EventoID != "" {
+		campos = append(campos, entrada.EventoID)
+	}
+	contenido, err := json.Marshal(campos)
 	if err != nil {
 		return respuesta, err
 	}
@@ -85,6 +90,9 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 		}
 		if !activo {
 			return domain.ErrPartnerNoAutorizado
+		}
+		if err := tx.AutorizarCredito(ctx, entrada.PartnerID, 0, entrada.EventoID, b.clock.Now().UTC()); err != nil {
+			return err
 		}
 		guardada, err := tx.TomarOperacion(ctx, entrada.PartnerID, entrada.Clave, hash, b.clock.Now().UTC())
 		if err != nil {
@@ -105,7 +113,7 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 			return nil
 		}
 		resultado := domain.ResultadoOperacion{}
-		if entrada.EntradaInvalida || !externalID.MatchString(entrada.ExternalUserID) || entrada.Puntos < 1 || entrada.Puntos > 1000000 || !domain.TextoValido(entrada.Motivo, 3, 200) || !domain.TextoValido(entrada.Referencia, 1, 100) {
+		if entrada.EntradaInvalida || (entrada.EventoID != "" && !domain.TextoValido(entrada.EventoID, 1, 128)) || !externalID.MatchString(entrada.ExternalUserID) || entrada.Puntos < 1 || entrada.Puntos > 1000000 || !domain.TextoValido(entrada.Motivo, 3, 200) || !domain.TextoValido(entrada.Referencia, 1, 100) {
 			resultado.Rechazo = domain.OperacionInvalida
 		} else {
 			cuenta, err := tx.CuentaVinculada(ctx, entrada.PartnerID, entrada.ExternalUserID)
@@ -114,11 +122,29 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 			} else if err != nil {
 				return err
 			} else {
+				if entrada.EventoID != "" {
+					original, existe, err := tx.EventoAcreditado(ctx, entrada.PartnerID, entrada.EventoID, hash)
+					if err != nil {
+						return err
+					}
+					if existe {
+						if err := tx.CompletarOperacion(ctx, entrada.PartnerID, entrada.Clave, original, entrada.Correlacion, nil); err != nil {
+							return err
+						}
+						respuesta = RespuestaAcreditacion{Resultado: original, Repetida: true, Correlacion: entrada.Correlacion}
+						return nil
+					}
+				}
+				if err := tx.AutorizarCredito(ctx, entrada.PartnerID, entrada.Puntos, entrada.EventoID, b.clock.Now().UTC()); err != nil {
+					return err
+				}
 				id, err := b.ids.NewID()
 				if err != nil {
 					return err
 				}
-				nueva, movimiento, err := cuenta.Acreditar(id, entrada.PartnerID, entrada.Puntos, entrada.Motivo, entrada.Referencia, b.clock.Now().UTC())
+				// PostgreSQL conserva microsegundos: usar esa precisión desde la
+				// primera respuesta evita alterar fechas al recuperar un evento.
+				nueva, movimiento, err := cuenta.Acreditar(id, entrada.PartnerID, entrada.Puntos, entrada.Motivo, entrada.Referencia, b.clock.Now().UTC().Truncate(time.Microsecond))
 				if errors.Is(err, domain.ErrOperacionInvalida) {
 					resultado.Rechazo = domain.OperacionInvalida
 				} else if err != nil {
@@ -126,6 +152,11 @@ func (b *Benefits) Acreditar(ctx context.Context, entrada AcreditarPuntos) (Resp
 				} else {
 					if err := tx.GuardarMovimiento(ctx, nueva, movimiento); err != nil {
 						return err
+					}
+					if entrada.EventoID != "" {
+						if err := tx.GuardarEvento(ctx, entrada.PartnerID, entrada.EventoID, hash, id); err != nil {
+							return err
+						}
 					}
 					resultado = domain.ResultadoOperacion{Movimiento: movimiento, Saldo: nueva.Saldo()}
 				}

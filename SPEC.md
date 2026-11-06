@@ -3,11 +3,23 @@
 > Especificación funcional del Trabajo Práctico Integrador de Arquitectura de Software (microservicios).
 > Este documento es la **referencia funcional** durante todo el desarrollo. No define tecnologías, lenguajes, frameworks ni modelos de base de datos.
 >
-> - Versión: 0.10 (aclaración del saldo del ledger)
-> - Fecha: 2026-10-16
+> - Versión: 0.11 preparada localmente (ampliación del Club; revisión de otro integrante pendiente)
+> - Fecha: 2026-11-06
 > - Convenciones: `HU-xx` = historia de usuario, `RN-xx` = regla de negocio, `CU-xx` = caso de uso, `CL-xx` = caso límite, `E2E-xx` = criterio de aceptación de punta a punta. Las palabras **DEBE**, **NO DEBE** y **PUEDE** tienen sentido normativo.
 
 ---
+
+## Actualización normativa del Club — 06/11/2026
+
+La [adenda funcional del Club](docs/SPEC_CLUB_BENEFICIOS.md) forma parte de esta
+revisión 0.11 y prevalece, para el Club, sobre exclusiones o restricciones anteriores
+que contradigan el pedido del equipo: personas externas sin membresía, registro y
+vinculación seguros por API, topes configurables, membresía por clases y recompensas
+diferenciadas. Los capítulos y el anexo v0.10 siguientes conservan el texto anterior
+para trazabilidad; no deben usarse para restablecer D-06/D-08/D-19/D-28 reemplazadas.
+La adenda define HU-CB-01 a HU-CB-08 y RN-CB-01 a RN-CB-15. Revisión por otro
+integrante, publicación e implementación integral siguen pendientes. Las reglas
+ajenas al Club no cambian.
 
 ## Índice
 

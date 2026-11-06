@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: Club de Beneficios — API de fidelización para partners
-  version: 1.1.1
+  version: 1.4.0
   summary: Acreditar, debitar y canjear puntos de fidelización y consultar saldo, movimientos y catálogo.
   description: |
     API pública del **Club de Beneficios** del Sistema de Gestión de Gimnasio (TPI Arquitectura de Software, UCC).
@@ -30,6 +30,11 @@ info:
     - Misma key mientras la primera solicitud se está procesando → `409 IDEMPOTENCY_IN_PROGRESS` (reintentable).
     - Las keys son únicas **por partner** y se conservan **30 días**. Las respuestas de error también se
       guardan: reintentar una operación rechazada con la misma key devuelve el mismo rechazo.
+    - En `credits`, `eventId` es obligatorio si la integración tiene `requiere_evento` activado.
+      Las integraciones existentes conservan compatibilidad; las nuevas lo exigen por defecto.
+      El evento es estable aunque cambie la key y no caduca con sus respuestas HTTP.
+    - Permisos y políticas vigentes se verifican antes del replay. Un rechazo de autorización,
+      cuota o política no reserva la key; corregir la configuración no vuelve a ejecutar un crédito confirmado.
 
     ## Errores
 
@@ -64,6 +69,98 @@ tags:
     description: Canjes de beneficios.
 
 paths:
+  /v1/external-register:
+    post:
+      operationId: registerExternalUser
+      tags: [Accounts]
+      summary: Solicitar alta o vinculación externa con puntos opcionales
+      description: La plataforma se identifica por la credencial. Respuesta asíncrona sin revelar si existía el correo. Cuentas existentes sin vinculación previa requieren confirmación por correo. Requiere permiso de registro y, si points es positivo, permiso de puntos. El mismo eventId no vuelve a acreditar aunque cambie la key.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalRegistration'
+            examples:
+              participation:
+                value:
+                  name: Persona de ejemplo
+                  email: persona@example.test
+                  externalUserId: estudiario-001
+                  eventId: participacion-001
+                  points: 150
+                  reason: Participación confirmada
+                  reference: participacion-001
+      responses:
+        '202':
+          description: Solicitud persistida; consultar su estado hasta completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationReceipt'
+              examples:
+                accepted:
+                  value:
+                    registrationId: 38ef723a-0a63-44a8-a828-9d7c491c61fb
+                    eventId: participacion-001
+                    externalUserId: estudiario-001
+                    status: accepted
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /v1/external-registrations/{eventId}:
+    get:
+      operationId: getExternalRegistration
+      tags: [Accounts]
+      summary: Consultar el estado de un registro de la integración autenticada
+      description: accepted indica procesamiento o verificación pendientes; completed indica que la cuenta fue vinculada y se procesaron sus puntos. No expone datos personales ni si el correo ya existía.
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          description: Identificador del evento enviado al registrar.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        '200':
+          description: Estado actual del registro.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationReceipt'
+              examples:
+                completed:
+                  value:
+                    registrationId: 38ef723a-0a63-44a8-a828-9d7c491c61fb
+                    eventId: participacion-001
+                    externalUserId: estudiario-001
+                    status: completed
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AccountNotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/Unavailable'
   /v1/accounts/{externalUserId}/credits:
     post:
       operationId: creditPoints
@@ -567,6 +664,11 @@ components:
       additionalProperties: false
       required: [points, reason, reference]
       properties:
+        eventId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Identificador único del evento por integración. En credits evita duplicados aunque cambie Idempotency-Key; reutilizarlo con otro contenido responde 409. Obligatorio en credits si requiere_evento está activo (por defecto para integraciones nuevas); omitirlo devuelve 400 INVALID_REQUEST. Las integraciones anteriores conservan compatibilidad sin evento; no se usa este campo para afirmar soporte de deduplicación en débitos/canjes pendientes.
         points:
           type: integer
           format: int32
@@ -583,6 +685,55 @@ components:
           minLength: 1
           maxLength: 100
           description: Identificador del hecho de origen en el sistema del partner (compra, turno, etc.).
+
+    ExternalRegistration:
+      type: object
+      additionalProperties: false
+      required: [name, email, eventId]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        externalUserId:
+          $ref: '#/components/schemas/ExternalUserId'
+        eventId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        points:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          default: 0
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 200
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 100
+    RegistrationReceipt:
+      type: object
+      additionalProperties: false
+      required: [registrationId, eventId, externalUserId, status]
+      properties:
+        registrationId:
+          type: string
+          format: uuid
+        eventId:
+          type: string
+          maxLength: 128
+        externalUserId:
+          $ref: '#/components/schemas/ExternalUserId'
+        status:
+          type: string
+          enum: [accepted, completed]
 
     OperationResult:
       type: object

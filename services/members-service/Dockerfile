@@ -16,6 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/members-service && go build -ldflags="-s -w" -o /out/members-service ./cmd/api
 
 FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
 RUN adduser -D -H -u 10001 app
 USER app
 COPY --from=build /out/members-service /app/members-service

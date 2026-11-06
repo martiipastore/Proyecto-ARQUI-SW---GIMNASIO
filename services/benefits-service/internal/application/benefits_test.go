@@ -19,22 +19,38 @@ type fixedIDs struct{}
 func (fixedIDs) NewID() (string, error) { return "movimiento", nil }
 
 type puertoPrueba struct {
-	operacion ports.OperacionGuardada
-	lectura   ports.SaldoConsultado
-	hash      string
-	guardados int
-	final     domain.ResultadoOperacion
+	cuenta       *domain.CuentaBeneficios
+	permisoError error
+	evento       domain.ResultadoOperacion
+	eventoExiste bool
+	operacion    ports.OperacionGuardada
+	lectura      ports.SaldoConsultado
+	hash         string
+	guardados    int
+	final        domain.ResultadoOperacion
 }
 
 func (p *puertoPrueba) EnTransaccion(ctx context.Context, fn func(ports.Transaction) error) error {
 	return fn(p)
 }
 func (p *puertoPrueba) PartnerActivo(context.Context, string) (bool, error) { return true, nil }
+func (p *puertoPrueba) AutorizarCredito(context.Context, string, int64, string, time.Time) error {
+	return p.permisoError
+}
+func (p *puertoPrueba) EventoAcreditado(context.Context, string, string, string) (domain.ResultadoOperacion, bool, error) {
+	return p.evento, p.eventoExiste, nil
+}
+func (p *puertoPrueba) GuardarEvento(context.Context, string, string, string, string) error {
+	return nil
+}
 func (p *puertoPrueba) TomarOperacion(_ context.Context, _, _, hash string, _ time.Time) (ports.OperacionGuardada, error) {
 	p.hash = hash
 	return p.operacion, nil
 }
 func (p *puertoPrueba) CuentaVinculada(context.Context, string, string) (domain.CuentaBeneficios, error) {
+	if p.cuenta != nil {
+		return *p.cuenta, nil
+	}
 	return domain.CuentaBeneficios{}, domain.ErrCuentaNoVinculada
 }
 func (p *puertoPrueba) GuardarMovimiento(context.Context, domain.CuentaBeneficios, domain.MovimientoPuntos) error {
@@ -54,6 +70,28 @@ func (p *puertoPrueba) ListarMovimientos(context.Context, string, string, int, i
 
 func comando() AcreditarPuntos {
 	return AcreditarPuntos{PartnerID: "partner", ExternalUserID: "alumno-1", Clave: "clave-0001", Puntos: 100, Motivo: "Compra", Referencia: "ref-1"}
+}
+
+// Club §5/12: el evento identifica el hecho independientemente de la key HTTP.
+func TestEventoRepetidoNoGuardaMovimiento(t *testing.T) {
+	cuenta, err := domain.NuevaCuenta("cuenta", 150, 1)
+	require.NoError(t, err)
+	p := &puertoPrueba{cuenta: &cuenta, operacion: ports.OperacionGuardada{Nueva: true}, eventoExiste: true, evento: domain.ResultadoOperacion{Saldo: 150}}
+	entrada := comando()
+	entrada.EventoID = "evento-001"
+	respuesta, err := New(p, fixedClock{}, fixedIDs{}).Acreditar(context.Background(), entrada)
+	require.NoError(t, err)
+	require.True(t, respuesta.Repetida)
+	require.EqualValues(t, 150, respuesta.Resultado.Saldo)
+	require.Zero(t, p.guardados)
+}
+
+func TestPermisoRevocadoImpideReplay(t *testing.T) {
+	p := &puertoPrueba{permisoError: domain.ErrPartnerNoAutorizado}
+	_, err := New(p, fixedClock{}, fixedIDs{}).Acreditar(context.Background(), comando())
+	require.ErrorIs(t, err, domain.ErrPartnerNoAutorizado)
+	require.Empty(t, p.hash)
+	require.Zero(t, p.guardados)
 }
 
 // RN-26: el adaptador entrega hechos; la aplicación decide el permiso.

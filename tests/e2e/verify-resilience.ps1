@@ -2,7 +2,8 @@
     [string]$BaseUrl = 'http://localhost:8080',
     [string]$BenefitsUrl = 'http://localhost:8083',
     [string]$JaegerUrl = 'http://localhost:16686',
-    [string]$EvidenceDirectory = 'docs/evidence/etapa6'
+    [string]$EvidenceDirectory = 'docs/evidence/etapa6',
+    [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$ComposeProject = 'gym'
 )
 # D10 / HU-29 / HU-32 / RN-22 / RN-26 / RN-27 / CL-08 y CL-08b.
 # Solo para el gimnasio local: detiene Benefits y pausa su PostgreSQL temporalmente.
@@ -12,7 +13,7 @@ Add-Type -AssemblyName System.Net.Http
 Push-Location (Resolve-Path (Join-Path $PSScriptRoot '../..'))
 $client = [System.Net.Http.HttpClient]::new()
 $client.Timeout = [TimeSpan]::FromSeconds(10)
-$baseCompose = @('compose', '--env-file', '.env', '-f', 'deploy/docker-compose.yml')
+$baseCompose = @('compose', '--env-file', '.env', '-p', $ComposeProject, '-f', 'deploy/docker-compose.yml')
 $faultCompose = $baseCompose + @('-f', 'tests/resilience/docker-compose.yml')
 $timeline = [Collections.Generic.List[object]]::new()
 $attempts = [Collections.Generic.List[object]]::new()
@@ -126,7 +127,7 @@ try {
     $apiKey = [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
     $credentialHash = Hash-Body $apiKey
     $keys = @(1..4 | ForEach-Object { [guid]::NewGuid().ToString() })
-    $seed = "BEGIN; INSERT INTO partners(id,nombre,api_key_hash) VALUES ('$partner','Fixture resiliencia',decode('$credentialHash','hex')); INSERT INTO cuentas(id,alumno_id) VALUES ('$account','$student'); INSERT INTO vinculaciones(partner_id,external_user_id,cuenta_id) VALUES ('$partner','$externalUser','$account'); COMMIT;"
+    $seed = "BEGIN; INSERT INTO partners(id,nombre,api_key_hash,requiere_evento) VALUES ('$partner','Fixture resiliencia',decode('$credentialHash','hex'),false); INSERT INTO cuentas(id,alumno_id) VALUES ('$account','$student'); INSERT INTO vinculaciones(partner_id,external_user_id,cuenta_id) VALUES ('$partner','$externalUser','$account'); COMMIT;"
     $null = SQL $seed
     $null = Snapshot 0
     $restoreRequired = $true

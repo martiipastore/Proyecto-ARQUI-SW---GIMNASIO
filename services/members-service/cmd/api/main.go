@@ -3,11 +3,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/access"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/config"
@@ -42,6 +46,48 @@ func run(cfg config.Config, log *slog.Logger) error {
 	defer db.Close()
 
 	router := handler.NewRouter(log, service.NewReadiness(db), cfg.HealthTimeout)
+	if cfg.IdentityEnabled {
+		if len(cfg.ServiceKey) < 32 {
+			return fmt.Errorf("GYM_INTERNAL_SERVICE_KEY debe tener al menos 32 caracteres")
+		}
+		signer, err := access.NewSigner(cfg.JWTPrivateKey)
+		if err != nil {
+			return fmt.Errorf("MEMBERS_JWT_PRIVATE_KEY inválida: requiere clave privada RSA PEM de al menos 2048 bits")
+		}
+		if err := db.Migrate(ctx); err != nil {
+			return err
+		}
+		identity, err := service.NewIdentity(db, repository.BenefitsHTTP{URL: cfg.BenefitsURL, Secret: cfg.ServiceKey, Client: &http.Client{Timeout: 4 * time.Second}}, repository.SMTP{Host: cfg.SMTPHost, Port: cfg.SMTPPort, From: cfg.SMTPFrom, Username: cfg.SMTPUser, Password: cfg.SMTPPassword, AllowPlaintext: cfg.SMTPAllowPlaintext}, cfg.ActivationKey, cfg.PublicURL, signer)
+		if err != nil {
+			return err
+		}
+		handler.RegisterIdentity(router, identity, cfg.ServiceKey)
+		memberships := service.NewMemberships(db, nil)
+		handler.RegisterMemberships(router, memberships, cfg.ServiceKey)
+		workerCtx, workerCancel := context.WithCancel(ctx)
+		workerDone := make(chan struct{})
+		defer func() { workerCancel(); <-workerDone }()
+		go func() {
+			defer close(workerDone)
+			ticker := time.NewTicker(2 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-workerCtx.Done():
+					return
+				case <-ticker.C:
+					workCtx, cancel := context.WithTimeout(workerCtx, 15*time.Second)
+					if _, err := memberships.Expire(workCtx); err != nil {
+						log.Warn("vencimiento de membresías pendiente; se reintentará")
+					}
+					if err := identity.Process(workCtx); err != nil {
+						log.Warn("registro o correo pendiente; se reintentará")
+					}
+					cancel()
+				}
+			}
+		}()
+	}
 	return httpserver.Run(ctx, log, httpserver.Options{
 		Addr:            cfg.HTTPAddr,
 		Handler:         router,

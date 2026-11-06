@@ -1,5 +1,12 @@
 # Plan de trabajo — Entrega 2
 
+> **Ampliación del 06/11/2026:** este plan conserva el alcance académico y las
+> evidencias históricas. El pedido integral del Club se organiza en
+> [CB-01 a CB-08](PLAN_CLUB_BENEFICIOS.md), con D-63 a D-70 y ADR-016/017/018.
+> Las etapas anteriores no se reinician ni acreditan automáticamente los cambios
+> nuevos. D9/etapa 5 sigue pendiente del proveedor; la fecha original de entrega
+> que figura debajo no es una nueva fecha comprometida para el Club ampliado.
+
 > **Entrega:** viernes 23 de octubre de 2026  
 > **Objetivo:** disponer de un flujo del dominio propio funcionando de punta a punta, con persistencia real, logs correlacionados, una primera traza distribuida y las decisiones arquitectónicas exigidas para la Entrega 2.  
 > **Estado inicial:** la Entrega 1 dejó un esqueleto ejecutable, contratos y decisiones de diseño. Los servicios todavía no implementan funcionalidades de negocio.
@@ -157,9 +164,9 @@ Diseño inicial de D6 aprobado el 16/10/2026 y registrado en ADR-014 y D-45: bú
 
 Diseño inicial de D12 aprobado el 16/10/2026 y registrado en ADR-012 y D-46: dos instancias de Booking detrás de Traefik, con igual peso, sin afinidad de sesión y health checks cada 5 s con timeout de 2 s. Implementación y evidencia de distribución pendientes.
 
-Diseño inicial de D10 aprobado el 16/10/2026 y registrado en ADR-010 y D-47: sin reintentos automáticos de escrituras en gateway, recuperación con la misma clave, fallo cerrado ante PostgreSQL y sin circuit breaker en el flujo inicial. Implementación y ejercicio de caída pendientes.
+Diseño inicial de D10 aprobado el 16/10/2026 y registrado en ADR-010 y D-47: sin reintentos automáticos de escrituras en gateway, recuperación con la misma clave, fallo cerrado ante PostgreSQL y sin circuit breaker en el flujo inicial. Implementación y ejercicio de caída completados en etapa 6; ver ADR-010 v2.
 
-Diseño inicial de D11 aprobado el 16/10/2026 y registrado en ADR-011 y D-48: logs JSON y trazas Gateway → Benefits → PostgreSQL con OTel, Collector y Jaeger; muestreo local 100 %, métricas y alertas iniciales. Instrumentación, primera traza y validación de umbrales pendientes.
+Diseño inicial de D11 aprobado el 16/10/2026 y registrado en ADR-011 y D-48: logs JSON y trazas Gateway → Benefits → PostgreSQL con OTel, Collector y Jaeger; muestreo local 100 %, métricas y alertas iniciales. Instrumentación y primera traza completadas en etapa 4; métricas continuas, alertas y validación de sus umbrales pendientes.
 
 Plan inicial de D13 aprobado el 16/10/2026 y registrado en ADR-013 y D-50: k6 como herramienta adicional justificada, 100 cuentas y escalones de 1/5/10 usuarios, cero duplicaciones y objetivos p95 de lecturas < 200 ms y escrituras < 500 ms. Mediciones, comparación de alternativas y cotización completadas en [etapa 7](ETAPA_7_CAPACIDAD_COSTOS.md), con límites locales explícitos. Se prioriza lo visto en clase; cualquier otra excepción debe justificarse y consultarse.
 
@@ -533,7 +540,7 @@ Los valores definitivos se validarán con la prueba. Como punto de partida:
 
 ## Etapa 8 — Revisión documental y preparación de la entrega
 
-**Estado:** Pendiente
+**Estado:** En curso (16/10/2026). [Revisión](ETAPA_8_REVISION_ENTREGA.md); pruebas frescas y decisiones de validación pendientes.
 
 ### Objetivo
 
@@ -576,8 +583,8 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 4. Observabilidad | Completada en workspace (16/10/2026) | [Evidencia](ETAPA_4_OBSERVABILIDAD.md): cinco spans y logs con el mismo trace_id; tests, vet y lint correctos | PR #3 integrado en main (8b0da47) |
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
 | 6. Resiliencia | Completada en workspace (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
-| 7. Capacidad y costos | Completada en workspace (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | aabe4e0 (scripts) y documentación en rama feature/entrega-2-etapa-07-capacidad-costos; PR pendiente |
-| 8. Revisión final | Pendiente | Checklist y guion de demostración | — |
+| 7. Capacidad y costos | Completada en workspace (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | PR #5 integrado en main (fb2a17c); incluye aabe4e0 y 05f7c0e |
+| 8. Revisión final | En curso | [Revisión](ETAPA_8_REVISION_ENTREGA.md), checks frescos y guion | Rama feature/entrega-2-etapa-08-revision-final |
 
 ### Línea base — 16/10/2026
 

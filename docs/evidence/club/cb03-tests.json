@@ -1,0 +1,642 @@
+{
+    "stage":  "CB-03",
+    "startedAtUtc":  "2026-11-06T17:02:11.4900815Z",
+    "finishedAtUtc":  "2026-11-06T17:04:29.8371786Z",
+    "passed":  true,
+    "modules":  [
+                    {
+                        "skippedTests":  0,
+                        "module":  "pkg",
+                        "failedTests":  0,
+                        "passedTests":  53,
+                        "vetExitCode":  0,
+                        "tests":  [
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/config",
+                                          "Test":  "TestLoader_ValoresPorDefectoYDefinidos",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/config",
+                                          "Test":  "TestLoader_AcumulaErrores",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/config",
+                                          "Test":  "TestLoader_DuracionNoPositivaEsInvalida",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RS256_ClaimsDuracionYFirma/ADMINISTRADOR",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RS256_ClaimsDuracionYFirma/ALUMNO",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RS256_ClaimsDuracionYFirma/PROFESOR",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RS256_ClaimsDuracionYFirma/NUTRICIONISTA",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RS256_ClaimsDuracionYFirma",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.91
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/emisor",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/audiencia",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/rol_desconocido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/sub_ausente",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.02
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/iat_ausente",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/exp_ausente",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/emitido_futuro",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/vida_excesiva",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato/vencido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestJWT_RechazaAlgoritmoClaimsYFormato",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.55
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/access",
+                                          "Test":  "TestClavesPEM_FallanCerradas",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.64
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestEvaluate_TodasLasDependenciasArriba",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestEvaluate_UnaDependenciaCaidaDejaNotReady",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestEvaluate_ParcialCaidaDejaDegraded",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestEvaluate_CriticaCaidaPrevaleceSobreParcial",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestEvaluate_RespetaElTimeout",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.05
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestEvaluate_SinChecksEstaReady",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestRegister_Live",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestRegister_ReadyOK",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestRegister_Degraded200",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/health",
+                                          "Test":  "TestRegister_Ready503ConDetalle",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestMiddleware_ConservaUnIDValido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestMiddleware_GeneraIDSiFaltaOEsInvalido/sin_header",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestMiddleware_GeneraIDSiFaltaOEsInvalido/muy_corto",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestMiddleware_GeneraIDSiFaltaOEsInvalido/con_espacios",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestMiddleware_GeneraIDSiFaltaOEsInvalido/inyección",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestMiddleware_GeneraIDSiFaltaOEsInvalido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestNewID_EsUUIDv4",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation",
+                                          "Test":  "TestTransport_PropagaElIDDelContext",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver",
+                                          "Test":  "TestServe_EsperaLasSolicitudesEnCursoAlApagar",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.3
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver",
+                                          "Test":  "TestRun_ErrorSiElPuertoEstaOcupado",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry",
+                                          "Test":  "TestTracePropagationAndSanitizedLogs",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.02
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry",
+                                          "Test":  "TestSetupDisabledAndRoute",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/httpx",
+                                          "Test":  "TestNewRouter_404EnFormatoProblem",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/httpx",
+                                          "Test":  "TestNewRouter_405EnFormatoProblem",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/httpx",
+                                          "Test":  "TestRecovery_500SinExponerElPanico",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/httpx",
+                                          "Test":  "TestAccessLog_IncluyeCorrelationID",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/logger",
+                                          "Test":  "TestNew_EscribeJSONConServicioYCorrelationID",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/logger",
+                                          "Test":  "TestNew_SinCorrelationIDNoAgregaElCampo",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/logger",
+                                          "Test":  "TestNew_RespetaElNivel",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/logger",
+                                          "Test":  "TestParseLevel",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/problem",
+                                          "Test":  "TestNew_DerivaElTypeDelCode",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/problem",
+                                          "Test":  "TestWriteHTTP_FormatoRFC7807",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/problem",
+                                          "Test":  "TestMarshalJSON_ExtensionesNoPisanCamposEstandar",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/pkg/problem",
+                                          "Test":  "TestInternal_NoExponeDetalles",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      }
+                                  ],
+                        "testExitCode":  0,
+                        "passed":  true
+                    },
+                    {
+                        "skippedTests":  0,
+                        "module":  "gateway",
+                        "failedTests":  0,
+                        "passedTests":  25,
+                        "vetExitCode":  0,
+                        "tests":  [
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config",
+                                          "Test":  "TestLoad_ValoresPorDefecto",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config",
+                                          "Test":  "TestLoad_TimeoutPorRutaConfigurable",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config",
+                                          "Test":  "TestLoad_RutasOrdenadasPorPrefijoMasLargo",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config",
+                                          "Test":  "TestLoad_URLInvalida",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config",
+                                          "Test":  "TestLoad_TimeoutInvalido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestCuentaPropiaJWTEliminaIdentidadFalsificada",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.15
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRutasPrivadasYRolesFallanCerrados",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.04
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestPartners_NoReintentaEscriturasAnte503",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.02
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestPartners_RutaCabecerasYQuery",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestPartners_Errores502Y504Contractuales/502",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestPartners_Errores502Y504Contractuales/504",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.02
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestPartners_Errores502Y504Contractuales",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.03
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_CadaPrefijoVaASuServicio",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.11
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_ReenviaLaRutaCompletaYElCorrelationID",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_GeneraCorrelationIDSiNoViene",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_InternalNoSeExpone",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_RutaDesconocida404",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_TimeoutPorRuta504",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.31
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestRouting_ServicioCaido502",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestStatus_TodosReady",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.02
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestStatus_DegradadoResponde200",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestStatus_NoDisponibleResponde503",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestCORS_PreflightDelFrontend",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestCORS_OrigenNoPermitido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.01
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server",
+                                          "Test":  "TestHealth_DelGateway",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      }
+                                  ],
+                        "testExitCode":  0,
+                        "passed":  true
+                    },
+                    {
+                        "skippedTests":  0,
+                        "module":  "services/members-service",
+                        "failedTests":  0,
+                        "passedTests":  22,
+                        "vetExitCode":  0,
+                        "tests":  [
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna/sin_actor",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna/JWT_directo_no_es_actor",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna/solo_clave",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna/rol_inventado",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna/clave_duplicada",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna/logout_sin_actor",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestCuentaPrivadaExigeActorConCredencialInterna",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestReady_ConPostgresDisponible",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestReady_ConPostgresCaido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler",
+                                          "Test":  "TestLive_SiempreOK",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/service",
+                                          "Test":  "TestRegistroValidaNormalizaYCifraToken",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/service",
+                                          "Test":  "TestRegistroRechazaIdentidadYEntradasMalformadas",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/service",
+                                          "Test":  "TestActivacionNoGuardaPasswordEnClaroYAplicaCuota",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.48
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestIdentidadExternaPostgres/nuevo_activacion_unica_reintento_y_login",
+                                          "Action":  "pass",
+                                          "Elapsed":  1.77
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestIdentidadExternaPostgres/existente_verifica_correo_sin_resetear_contraseña",
+                                          "Action":  "pass",
+                                          "Elapsed":  1.64
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestIdentidadExternaPostgres/fallo_remoto_no_pierde_registro_y_reintenta",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.05
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestIdentidadExternaPostgres/SMTP_caido_reintenta_sin_repetir_acreditacion",
+                                          "Action":  "pass",
+                                          "Elapsed":  0.07
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestIdentidadExternaPostgres/enlace_vencido_reenvio_y_rotacion",
+                                          "Action":  "pass",
+                                          "Elapsed":  1.93
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestIdentidadExternaPostgres",
+                                          "Action":  "pass",
+                                          "Elapsed":  18.81
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestPostgres_PingContraBaseReal",
+                                          "Action":  "pass",
+                                          "Elapsed":  6.33
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestPostgres_PingFallaSiLaBaseNoResponde",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      },
+                                      {
+                                          "Package":  "github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository",
+                                          "Test":  "TestNewPostgres_DSNInvalido",
+                                          "Action":  "pass",
+                                          "Elapsed":  0
+                                      }
+                                  ],
+                        "testExitCode":  0,
+                        "passed":  true
+                    }
+                ],
+    "scope":  "Unit, HTTP, PostgreSQL and vet for pkg/gateway/members; real multi-process SMTP E2E is separate in cb03-e2e.json"
+}

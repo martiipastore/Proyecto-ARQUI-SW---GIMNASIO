@@ -16,6 +16,7 @@ import (
 
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
 )
 
 func get(t *testing.T, path string, pingErr error) (int, health.Report) {
@@ -28,6 +29,26 @@ func get(t *testing.T, path string, pingErr error) (int, health.Report) {
 	var report health.Report
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &report))
 	return rec.Code, report
+}
+
+type quotaAuth struct{}
+
+func (quotaAuth) Autenticar(context.Context, string) (string, error) {
+	return "", domain.ErrLimiteSolicitudes
+}
+
+func TestCuotaResponde429SinEjecutarConsulta(t *testing.T) {
+	r := gin.New()
+	RegisterPartners(r, nil, quotaAuth{})
+	req := httptest.NewRequest(nethttp.MethodGet, "/v1/accounts/usuario/balance", nil)
+	req.Header.Set("X-API-Key", "secreto-no-publicar")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, 429, w.Code)
+	require.Equal(t, "60", w.Header().Get("Retry-After"))
+	require.Equal(t, "no-store", w.Header().Get("Cache-Control"))
+	require.Contains(t, w.Body.String(), "RATE_LIMITED")
+	require.NotContains(t, w.Body.String(), "secreto-no-publicar")
 }
 
 func TestReady_ConPostgresDisponible(t *testing.T) {
