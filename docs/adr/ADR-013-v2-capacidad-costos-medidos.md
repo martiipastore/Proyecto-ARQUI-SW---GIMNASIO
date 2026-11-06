@@ -18,7 +18,7 @@ Se conserva la decisión de medir Partner → Gateway → Benefits → PostgreSQ
 
 100 cuentas, 10 movimientos precargados por cuenta; read/write/replay/mixed sobre una cuenta y sobre 100 cuentas. Calentamiento 30 s; niveles 1/5/10 VU de 60 s; pausa 100 ms. D-59 agrega, tras la matriz, créditos sobre una cuenta sin pausa, con calentamiento 30 s y niveles de 30 s. D-57/D-59 contienen la aprobación de estos parámetros.
 
-[Procedimiento](../../tests/load/README.md), [informe y alternativas](../ETAPA_7_CAPACIDAD_COSTOS.md), [resultados de matriz](../evidence/etapa7/RESULTADOS.md), [experimento sin pausa](../evidence/etapa7/probe/RESULTADOS.md). Los JSON incluyen ambiente, percentiles, tasa de operaciones, errores, recursos y estado final comprobado por SQL. Se excluye calentamiento de las conclusiones de rendimiento, pero se incluyen sus créditos en integridad.
+[Procedimiento](../../tests/load/README.md), [informe y alternativas](../entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md), [resultados de matriz](../evidence/etapa7/RESULTADOS.md), [experimento sin pausa](../evidence/etapa7/probe/RESULTADOS.md). Los JSON incluyen ambiente, percentiles, tasa de operaciones, errores, recursos y estado final comprobado por SQL. Se excluye calentamiento de las conclusiones de rendimiento, pero se incluyen sus créditos en integridad.
 
 Las 36 fases terminaron sin fallas funcionales ni inconsistencias. Los niveles medidos cumplieron los objetivos iniciales. En la matriz con pausa, mayores p95 entre fases: lecturas 90,82 ms, créditos 146,10 ms y replay 239,12 ms. No son percentiles globales ni SLA.
 
@@ -42,7 +42,7 @@ No se selecciona ni implementa una optimización nueva en este ADR. La evidencia
 
 ## Dimensionamiento y costos
 
-D-58 fija São Paulo como referencia, USD y equivalente ARS fechado. [Estimación completa](../COSTOS_ENTREGA_2.md) con fuentes oficiales y respuestas públicas conservadas. Octubre: 744 h. Comparación CPU/RAM y 200 GB Balanced, antes de franquicias/impuestos: 2/12 USD 36,77 (ARS 56.441,95); 4/24 USD 65,04 (ARS 99.836,40), a ARS 1.535/USD BNA vendedor billete del 16/10/2026, 17:00.
+D-58 fija São Paulo como referencia, USD y equivalente ARS fechado. [Estimación completa](../entrega-2/COSTOS_ENTREGA_2.md) con fuentes oficiales y respuestas públicas conservadas. Octubre: 744 h. Comparación CPU/RAM y 200 GB Balanced, antes de franquicias/impuestos: 2/12 USD 36,77 (ARS 56.441,95); 4/24 USD 65,04 (ARS 99.836,40), a ARS 1.535/USD BNA vendedor billete del 16/10/2026, 17:00.
 
 La documentación Always Free y las bandas PAYG consultadas difieren; verificar beneficios efectivos, región principal y disponibilidad. La tabla bruta no predice una factura cuando aplican franquicias. Tampoco garantiza que el stack final quepa en esas formas. No se crearon recursos ni se eligió la forma mayor.
 

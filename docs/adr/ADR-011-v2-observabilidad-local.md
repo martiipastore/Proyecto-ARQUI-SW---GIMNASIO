@@ -36,4 +36,4 @@ Configuración práctica consultada: [instrumentación Go](https://opentelemetry
 
 ## Verificación
 
-Prueba automatizada de traceparent, relación padre-hijo y sanitización; acreditación real mediante Gateway; exportación de traza y logs vinculados. Evidencia exportada y comandos en [ETAPA_4_OBSERVABILIDAD.md](../ETAPA_4_OBSERVABILIDAD.md). Tests, vet y lint de los siete módulos correctos; E2E por gateway y sanitización de evidencia correctos.
+Prueba automatizada de traceparent, relación padre-hijo y sanitización; acreditación real mediante Gateway; exportación de traza y logs vinculados. Evidencia exportada y comandos en [ETAPA_4_OBSERVABILIDAD.md](../entrega-2/ETAPA_4_OBSERVABILIDAD.md). Tests, vet y lint de los siete módulos correctos; E2E por gateway y sanitización de evidencia correctos.

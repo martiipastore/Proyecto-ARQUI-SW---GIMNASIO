@@ -41,7 +41,7 @@ Esperado en el fixture de caída: saldo 400, cuatro movimientos y cuatro operaci
 
 ## 5. Capacidad y costos
 
-Mostrar [etapa 7](ETAPA_7_CAPACIDAD_COSTOS.md), sus tablas y [costos](COSTOS_ENTREGA_2.md). No repetir toda la matriz durante una exposición: tiene 28 minutos activos más preparación.
+Mostrar [etapa 7](entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md), sus tablas y [costos](entrega-2/COSTOS_ENTREGA_2.md). No repetir toda la matriz durante una exposición: tiene 28 minutos activos más preparación.
 
 La prueba con pausa limita el generador. Sin pausa se observó contención sobre una cuenta: a 10 VU, p95 472,24 ms y p99 superior a 1 s. No es capacidad garantizada en ARM. São Paulo identifica servidores; la conversión USD/ARS tiene fecha y fuente. No se contrató nube ni se midió demanda real; los 200 movimientos diarios son un supuesto aprobado.
 

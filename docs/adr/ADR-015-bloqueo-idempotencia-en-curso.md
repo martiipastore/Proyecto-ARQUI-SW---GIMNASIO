@@ -29,4 +29,4 @@ La clave de lock se calcula con un hash de 64 bits. Una colisión podría provoc
 
 ## Cómo se verifica
 
-Mantener el bloqueo desde otra transacción y comprobar 409 IDEMPOTENCY_IN_PROGRESS sin movimiento nuevo; liberar y comprobar que la operación pueda ejecutarse. Las pruebas concurrentes admiten éxito/replay o en curso; después del commit, la repetición recupera el original y un payload distinto produce conflicto. Ver ETAPA_3_API_BENEFITS.md.
+Mantener el bloqueo desde otra transacción y comprobar 409 IDEMPOTENCY_IN_PROGRESS sin movimiento nuevo; liberar y comprobar que la operación pueda ejecutarse. Las pruebas concurrentes admiten éxito/replay o en curso; después del commit, la repetición recupera el original y un payload distinto produce conflicto. Ver docs/entrega-2/ETAPA_3_API_BENEFITS.md.

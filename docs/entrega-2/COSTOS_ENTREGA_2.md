@@ -4,7 +4,7 @@ Referencia aprobada D-58: Oracle Cloud, São Paulo (`sa-saopaulo-1`), USD y equi
 
 ## Precios y cálculo reproducible
 
-Se conserva la respuesta pública de cada SKU con URL y fecha en [pricing-sources.json](evidence/etapa7/pricing-sources.json). Tarifas USD de la lista pública, sin descuentos negociados. Última actualización informada por la API: 08/10/2026. No es una oferta reservada ni se verificó disponibilidad de la cuenta en esa región.
+Se conserva la respuesta pública de cada SKU con URL y fecha en [pricing-sources.json](../evidence/etapa7/pricing-sources.json). Tarifas USD de la lista pública, sin descuentos negociados. Última actualización informada por la API: 08/10/2026. No es una oferta reservada ni se verificó disponibilidad de la cuenta en esa región.
 
 | Recurso | SKU | Precio unitario público USD | Fuente oficial |
 |---|---|---:|---|
@@ -51,7 +51,7 @@ El crecimiento se proyecta con `movimientos/día × bytes por movimiento`, más 
 
 RN-27 exige conservar idempotencia al menos 30 días. La implementación actual impide borrarla antes de ese plazo, pero no tiene purga automática; por eso ambos conjuntos continúan creciendo. No se presupuesta una meseta de 6.000 respuestas ni se propone borrar el ledger.
 
-Medición posterior a las cargas: 38.847 movimientos y 38.847 operaciones en toda la base local (incluye fixtures anteriores). Ledger: 13.877.248 bytes con índices, aproximadamente **357,23 bytes/fila**; idempotencia: 53.747.712 bytes con índices, aproximadamente **1.383,57 bytes/fila**. Base completa: **73,16 MiB**. [Consulta](../tests/load/storage.sql), [medición](evidence/etapa7/storage.json) y [cálculo](evidence/etapa7/storage-projection.json).
+Medición posterior a las cargas: 38.847 movimientos y 38.847 operaciones en toda la base local (incluye fixtures anteriores). Ledger: 13.877.248 bytes con índices, aproximadamente **357,23 bytes/fila**; idempotencia: 53.747.712 bytes con índices, aproximadamente **1.383,57 bytes/fila**. Base completa: **73,16 MiB**. [Consulta](../../tests/load/storage.sql), [medición](../evidence/etapa7/storage.json) y [cálculo](../evidence/etapa7/storage-projection.json).
 
 Con D-60, el crecimiento ilustrativo conjunto es `6.000 × (357,23 + 1.383,57) / 1.048.576 ≈ 9,96 MiB por 30 días`, o aproximadamente 121,19 MiB por 365 días sin purga. Se calculó con valores sin redondear. Es espacio asignado por fila observado: incluye índices, espacio libre y versiones muertas; no es costo marginal exacto. Cuerpos reales, índices, otras bases, WAL, logs, backups y retención cambian el resultado. Esta cifra no dimensiona por sí sola el disco de todo el stack.
 

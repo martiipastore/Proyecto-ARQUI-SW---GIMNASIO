@@ -59,4 +59,4 @@ Se reactivó Benefits, se despausó PostgreSQL, se restauró la URL directa del 
 
 El ejercicio no caracteriza carga sostenida, costo, todas las fallas de red ni la capacidad del proveedor externo. Esas conclusiones no se infieren de cuatro fallas sintéticas. Continúa etapa 7 para D13; la etapa 5/D9 espera proveedor. Métricas exportadas, alertas activas y retención productiva de trazas siguen pendientes según D11.
 
-Evidencia: [resultados](evidence/etapa6/results.json), [trazas](evidence/etapa6/traces.json), [logs](evidence/etapa6/logs.jsonl). Reproducción y restauración manual en [ETAPA_6_RESILIENCIA.md](ETAPA_6_RESILIENCIA.md).
+Evidencia: [resultados](evidence/etapa6/results.json), [trazas](evidence/etapa6/traces.json), [logs](evidence/etapa6/logs.jsonl). Reproducción y restauración manual en [ETAPA_6_RESILIENCIA.md](entrega-2/ETAPA_6_RESILIENCIA.md).
