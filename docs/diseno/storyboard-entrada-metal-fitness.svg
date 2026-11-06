@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">Fuerza en movimiento — storyboard de entrada para Metal Fitness</title>
+  <desc id="description">Propuesta conceptual, no captura del sitio ni logo oficial. Portada oscura con texto y botones disponibles desde el inicio. Cuatro cuadros muestran discos que descienden, se alinean sobre una barra y quedan quietos en 1,8 segundos. Hay versión estática con movimiento reducido.</desc>
+  <defs>
+    <linearGradient id="metal" x1="0" x2="1"><stop stop-color="#343b3d"/><stop offset=".45" stop-color="#939f9e"/><stop offset=".58" stop-color="#d9e2df"/><stop offset="1" stop-color="#414a4b"/></linearGradient>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#303737"/><stop offset="1" stop-color="#101515"/></linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#141a18"/><stop offset="1" stop-color="#080a0a"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#303b35" stroke-width=".5"/></pattern>
+    <g id="shaft"><rect x="-196" y="-7" width="392" height="14" rx="4" fill="url(#metal)"/><path d="M-68-6v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12m10-12v12" stroke="#354241" stroke-width="2"/></g>
+    <g id="disc"><path d="M0-65h13v130H0" fill="#424b40"/><ellipse cx="13" cy="0" rx="27" ry="65" fill="#19211a" stroke="#a7da00" stroke-width="2"/><ellipse cx="0" cy="0" rx="27" ry="65" fill="url(#surface)" stroke="#6a7563" stroke-width="2"/><ellipse cx="0" cy="0" rx="20" ry="54" fill="none" stroke="#a7da00" stroke-width="2"/><ellipse cx="0" cy="0" rx="6" ry="12" fill="#080a0a" stroke="#bfc4c3"/><path d="M-12-41q-9 30-6 54" stroke="#788377" stroke-width="3" fill="none" opacity=".5"/></g>
+    <g id="assembled"><use href="#shaft"/><use href="#disc" transform="translate(-124 0)"/><use href="#disc" transform="translate(113 0)"/></g>
+    <style>
+      text{font-family:Arial,Helvetica,sans-serif;fill:#fff}.muted{fill:#a5b0ab}.lime{fill:#a7da00}.label{font-size:13px;letter-spacing:2px}.caption{font-size:15px}.frameTitle{font-size:18px;font-weight:700}.body{font-size:18px}.cta{fill:#080a0a;font-size:13px;font-weight:700;letter-spacing:1px}
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#080a0a"/>
+  <text x="40" y="42" class="label lime">METAL FITNESS · DIRECCIÓN DE DISEÑO PROPUESTA</text>
+  <text x="40" y="83" font-size="34" font-weight="700">FUERZA EN MOVIMIENTO</text>
+  <text x="1400" y="43" text-anchor="end" class="label muted">STORYBOARD / 06.11.2026</text>
+  <text x="40" y="111" class="caption muted">Concepto ilustrado. No es el logo oficial, una foto del local ni una pantalla implementada.</text>
+
+  <rect x="40" y="138" width="1360" height="346" rx="12" fill="url(#hero)" stroke="#303a33"/>
+  <rect x="780" y="139" width="619" height="344" fill="url(#grid)" opacity=".5"/>
+  <path d="M930 139h114L878 483H764Z" fill="#a7da00" opacity=".055"/>
+  <text x="73" y="172" class="label muted">[ LOGO OFICIAL ]</text>
+  <text x="1085" y="172" class="label muted">ACTIVIDADES</text>
+  <text x="1240" y="172" class="label lime">INGRESAR →</text>
+  <text x="75" y="240" class="label lime">TU PRÓXIMO ENTRENAMIENTO</text>
+  <text x="72" y="300" font-size="56" font-weight="900" letter-spacing="-1">ACTIVÁ TU</text>
+  <text x="72" y="359" font-size="56" font-weight="900" letter-spacing="-1" class="lime">MEJOR VERSIÓN</text>
+  <text x="75" y="391" class="body muted">Texto y acciones disponibles desde el primer instante.</text>
+  <rect x="75" y="417" width="198" height="41" rx="3" fill="#a7da00"/>
+  <text x="174" y="443" text-anchor="middle" class="cta">CONOCÉ LOS PLANES</text>
+  <rect x="290" y="417" width="164" height="41" rx="3" fill="none" stroke="#77837a"/>
+  <text x="372" y="443" text-anchor="middle" font-size="13" font-weight="700">VER ACTIVIDADES</text>
+  <ellipse cx="1095" cy="418" rx="224" ry="16" fill="#000" opacity=".65"/>
+  <g transform="translate(1088 326) rotate(-12) scale(1.07)"><use href="#assembled"/></g>
+  <path d="M889 446h365" stroke="#a7da00" stroke-width="3"/>
+  <text x="1338" y="464" text-anchor="end" font-size="12" class="muted">Movimiento: desactivar · Repetir</text>
+
+  <text x="40" y="529" class="label lime">SECUENCIA BREVE · SILENCIOSA · SIN LOOP AUTOMÁTICO</text>
+  <g transform="translate(40 548)">
+    <rect width="328" height="229" rx="10" fill="#141719" stroke="#303a33"/>
+    <text x="18" y="31" class="frameTitle">01 / YA SE PUEDE USAR</text>
+    <text x="18" y="54" class="label lime">0 MS</text>
+    <g transform="translate(163 133) scale(.58)"><use href="#shaft" opacity=".4"/><use href="#disc" transform="translate(-151 -33)" opacity=".45"/><use href="#disc" transform="translate(145 -62)" opacity=".45"/></g>
+    <text x="18" y="204" class="caption muted">Espacio reservado. Copy y CTA visibles.</text>
+  </g>
+  <g transform="translate(384 548)">
+    <rect width="328" height="229" rx="10" fill="#141719" stroke="#303a33"/>
+    <text x="18" y="31" class="frameTitle">02 / DESCENSO DIAGONAL</text>
+    <text x="18" y="54" class="label lime">0–450 MS</text>
+    <g transform="translate(163 144) scale(.58)"><use href="#shaft"/><path d="M-176-96l30 40m307-71l-27 49" fill="none" stroke="#a7da00" stroke-width="3" stroke-dasharray="5 5"/><use href="#disc" transform="translate(-144 -25) rotate(-9)"/><use href="#disc" transform="translate(135 -48) rotate(8)"/></g>
+    <text x="18" y="204" class="caption muted">Todo ocurre dentro de su contenedor.</text>
+  </g>
+  <g transform="translate(728 548)">
+    <rect width="328" height="229" rx="10" fill="#141719" stroke="#303a33"/>
+    <text x="18" y="31" class="frameTitle">03 / ALINEAR Y FRENAR</text>
+    <text x="18" y="54" class="label lime">450–1200 MS</text>
+    <g transform="translate(163 135) scale(.58)"><use href="#shaft"/><use href="#disc" transform="translate(-128 -5)"/><use href="#disc" transform="translate(118 -8)"/></g>
+    <text x="18" y="204" class="caption muted">Desaceleración; sin sacudir la página.</text>
+  </g>
+  <g transform="translate(1072 548)">
+    <rect width="328" height="229" rx="10" fill="#171d13" stroke="#a7da00"/>
+    <text x="18" y="31" class="frameTitle">04 / TERMINAR EN QUIETO</text>
+    <text x="18" y="54" class="label lime">1200–1800 MS</text>
+    <g transform="translate(163 135) scale(.58)"><use href="#assembled"/></g>
+    <path d="M36 181h256" stroke="#a7da00" stroke-width="2"/>
+    <text x="18" y="204" class="caption muted">Trazo lima y composición estable.</text>
+  </g>
+  <path d="M40 808h1360" stroke="#303a33"/>
+  <text x="40" y="840" class="body lime">MOVIMIENTO REDUCIDO / RECURSO NO DISPONIBLE</text>
+  <text x="40" y="869" class="body muted">Mostrar directamente la composición final estática. Mismas acciones, mismo contenido y ningún tiempo de espera obligatorio.</text>
+</svg>

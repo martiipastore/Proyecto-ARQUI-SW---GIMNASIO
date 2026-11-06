@@ -124,6 +124,18 @@ services:
     environment:
       <<: *go-env
       MEMBERS_HTTP_ADDR: ":8081"
+      MEMBERS_IDENTITY_ENABLED: ${MEMBERS_IDENTITY_ENABLED:-false}
+      GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
+      MEMBERS_ACTIVATION_ENCRYPTION_KEY: ${MEMBERS_ACTIVATION_ENCRYPTION_KEY:-}
+      MEMBERS_JWT_PRIVATE_KEY: ${MEMBERS_JWT_PRIVATE_KEY:-}
+      MEMBERS_PUBLIC_URL: ${MEMBERS_PUBLIC_URL:-http://localhost:5173}
+      MEMBERS_BENEFITS_URL: http://benefits-service:8083
+      MEMBERS_SMTP_HOST: ${MEMBERS_SMTP_HOST:-mailpit}
+      MEMBERS_SMTP_PORT: ${MEMBERS_SMTP_PORT:-1025}
+      MEMBERS_SMTP_FROM: ${MEMBERS_SMTP_FROM:-gimnasio@gym.local}
+      MEMBERS_SMTP_USER: ${MEMBERS_SMTP_USER:-}
+      MEMBERS_SMTP_PASSWORD: ${MEMBERS_SMTP_PASSWORD:-}
+      MEMBERS_SMTP_ALLOW_PLAINTEXT: ${MEMBERS_SMTP_ALLOW_PLAINTEXT:-false}
       MEMBERS_DB_DSN: postgres://members_user:${MEMBERS_DB_PASSWORD}@postgres:5432/members_db?sslmode=disable
     ports:
       - "127.0.0.1:8081:8081"
@@ -180,6 +192,9 @@ services:
       <<: *go-env
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       BENEFITS_HTTP_ADDR: ":8083"
+      BENEFITS_EXTERNAL_REGISTRATION_ENABLED: ${BENEFITS_EXTERNAL_REGISTRATION_ENABLED:-false}
+      GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
+      BENEFITS_MEMBERS_URL: http://members-service:8081
       BENEFITS_DB_DSN: postgres://benefits_user:${BENEFITS_DB_PASSWORD}@postgres:5432/benefits_db?sslmode=disable
     ports:
       - "127.0.0.1:8083:8083"
@@ -237,6 +252,8 @@ services:
       <<: *go-env
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       GATEWAY_HTTP_ADDR: ":8080"
+      GATEWAY_JWT_PUBLIC_KEY: ${GATEWAY_JWT_PUBLIC_KEY:-}
+      GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
       GATEWAY_MEMBERS_URL: http://members-service:8081
       GATEWAY_BOOKING_URL: http://booking-service:8082
       GATEWAY_BOOKING_INDEXER_URL: http://booking-indexer:8086
@@ -266,6 +283,13 @@ services:
     healthcheck:
       <<: *healthcheck
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health/ready"]
+
+  mailpit:
+    image: axllent/mailpit:v1.20
+    profiles: [identity]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
 
   # ---------------------------------------------------------------- frontend
   web:

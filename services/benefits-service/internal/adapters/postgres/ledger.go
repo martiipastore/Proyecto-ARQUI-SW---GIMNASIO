@@ -135,6 +135,9 @@ func (d *DB) ConsultarSaldo(ctx context.Context, partner, usuario string) (ports
 		if !activo {
 			return nil
 		}
+		if err := t.autorizarConsulta(ctx, partner); err != nil {
+			return err
+		}
 		err = t.tx.QueryRow(ctx, `SELECT c.saldo,COALESCE((SELECT max(aplicado_en) FROM movimientos_puntos WHERE cuenta_id=c.id),c.creada_en) FROM cuentas c JOIN vinculaciones v ON v.cuenta_id=c.id WHERE v.partner_id=$1 AND v.external_user_id=$2`, partner, usuario).Scan(&r.Saldo, &r.ActualizadoEn)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
@@ -165,6 +168,9 @@ func (d *DB) ListarMovimientos(ctx context.Context, partner, usuario string, pag
 	}
 	if !r.PartnerActivo {
 		return r, tx.Commit(ctx)
+	}
+	if err := t.autorizarConsulta(ctx, partner); err != nil {
+		return r, err
 	}
 	var cuenta string
 	err = tx.QueryRow(ctx, `SELECT cuenta_id::text FROM vinculaciones WHERE partner_id=$1 AND external_user_id=$2`, partner, usuario).Scan(&cuenta)

@@ -1,0 +1,4 @@
+# Solo para la copia de revision: evitar el nombre global del mock original.
+services:
+  benefits-mock:
+    container_name: ${COMPOSE_PROJECT_NAME}-benefits-mock

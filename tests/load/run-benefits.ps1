@@ -109,7 +109,7 @@ try {
             $fixtureId = [guid]::NewGuid().ToString('N')
             $accounts = @()
             $seed = [Text.StringBuilder]::new()
-            $null = $seed.Append("BEGIN; INSERT INTO partners(id,nombre,api_key_hash) VALUES ('$partner','Fixture carga',decode('$(Hash $apiKey)','hex'));")
+            $null = $seed.Append("BEGIN; INSERT INTO partners(id,nombre,api_key_hash,requiere_evento) VALUES ('$partner','Fixture carga',decode('$(Hash $apiKey)','hex'),false);")
             foreach ($i in 0..99) {
                 $account = [guid]::NewGuid().ToString()
                 $student = [guid]::NewGuid().ToString()

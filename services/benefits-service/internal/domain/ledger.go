@@ -14,6 +14,7 @@ var (
 	ErrConflictoIdempotencia = errors.New("clave de idempotencia usada con otros datos")
 	ErrOperacionInvalida     = errors.New("operación inválida")
 	ErrOperacionEnCurso      = errors.New("operación en curso")
+	ErrLimiteSolicitudes     = errors.New("límite de solicitudes por integración")
 )
 
 // CuentaBeneficios protege el saldo y la secuencia del agregado (RN-22/42).

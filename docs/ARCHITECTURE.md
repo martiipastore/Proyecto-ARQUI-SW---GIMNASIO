@@ -2,9 +2,21 @@
 
 > Documento de referencia de la arquitectura del proyecto. La funcionalidad está definida en [SPEC.md](../SPEC.md); las decisiones estructurales están en [docs/adr/](adr/).
 >
-> - Versión: 1.6 (autenticación, autorización y frontera de confianza)
-> - Fecha: 2026-10-08
+> - Versión: 1.9 preparada localmente (CB-02/03 validadas, revisión pendiente)
+> - Fecha: 2026-11-06
 > - Incluye tres decisiones agregadas y aprobadas por el equipo (2026-10-07) para cubrir huecos con el SPEC: eventos `membresia.cancelada` y `usuario.desactivado`, consulta de asignaciones training → members y consulta de datos de alumnos booking → members. Registro completo en [Registro_de_Decisiones_Gimnasio.docx](../Registro_de_Decisiones_Gimnasio.docx) (D-20 a D-23).
+
+**Estado real:** Benefits implementa créditos, saldo y movimientos mediante Gateway/PostgreSQL, con idempotencia, logs y trazas. Resiliencia y carga tienen evidencia histórica exportada. CB-03 implementa JWT y outbox de correo con evidencia local posterior. Los diagramas y las demás interacciones describen el diseño objetivo: eventos de dominio/outbox AMQP, búsqueda, caché funcional y balanceo siguen pendientes. Ver [revisión de Entrega 2](ETAPA_8_REVISION_ENTREGA.md); D9 espera proveedor/contrato.
+
+**Ampliación local del 06/11/2026:** controles de integraciones/eventos y cuotas,
+registro persistente en Members, enlace de activación, outbox de correo y acceso
+propio tienen código y validación real local CB-02/03; flags apagados y sin despliegue. No
+reutilizar las mediciones anteriores como evidencia del nuevo flujo. ADR-016/017/018
+siguen propuestos en sus detalles técnicos. CB-03 corrigió D-70 implementando JWT
+RS256 900 s, roles persistidos y bcrypt mínimo 12 conforme al ADR-006, sin editarlo.
+El gateway verifica el JWT y reenvía solo actor/rol; Members no decodifica tokens.
+Logout v1 descarta en cliente, sin revocación. Revisión del equipo pendiente.
+Ver [plan y aceptación](PLAN_CLUB_BENEFICIOS.md).
 
 ---
 
@@ -42,7 +54,8 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 | **Validado en resiliencia** | Caída controlada 502/503/504 antes/después de commit, recuperación por misma clave y rollback previo al commit; proxy exclusivo de pruebas retirado al terminar. [Etapa 6](entrega-2/ETAPA_6_RESILIENCIA.md) y [postmortem](POSTMORTEM.md). |
 | **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
 | **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
-| **Pendiente de implementación** | Resto de operaciones de Benefits y casos de uso/persistencia de los demás servicios; JWT e inyección de identidad; rate limiting; eventos, outbox, reintentos y DLQ; OpenSearch y CQRS; Traefik y segunda réplica de booking; SMTP/Mailpit; métricas exportadas, logs centralizados y tableros. |
+| **Ampliación local pendiente de aceptación** | CB-02/03 validadas con PostgreSQL y SMTP Mailpit reales, tests/vet, build y Spectral. JWT/roles/bcrypt alineados con ADR-006; revisión, claves productivas y etapas restantes pendientes. [Detalle y evidencia](CB03_VALIDACION.md). |
+| **Pendiente de implementación** | Membresías, canjes, recompensas, reglas por acción y panel administrativo; conformidad de identidad/roles con ADR-006; eventos RabbitMQ y DLQ; caché/quotas Redis; OpenSearch/CQRS; balanceo Booking; métricas y tableros; verificación del nuevo flujo con bases/SMTP reales. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
 
 Salvo que una sección indique expresamente el estado actual, sus descripciones deben leerse como decisiones y comportamiento **objetivo**, no como funcionalidad ya disponible.
@@ -479,6 +492,7 @@ La traza atraviesa la frontera asíncrona: el productor guarda `traceparent` en 
 |---|---|---|
 | `VALIDACION` | 400 | §9 |
 | `NO_AUTENTICADO` / `SIN_PERMISO` | 401 / 403 | RN-30 |
+| `CONFLICTO_IDENTIDAD` | 409 | Club §2/12: vínculo externo o evento incompatible con el anterior |
 | `NO_ENCONTRADO` / `CUENTA_NO_ENCONTRADA` | 404 | RN-26 |
 | `MEMBRESIA_NO_VIGENTE` | 422 | RN-12 |
 | `CLASE_NO_FUTURA` / `CLASE_CANCELADA` | 422 | RN-12 |
@@ -718,7 +732,7 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-002 v2](adr/ADR-002-v2-patrones-internos.md) | D2 — Capas y Hexagonal; precisión de dependencias, puertos y adaptadores | Aceptado |
 | [ADR-003](adr/ADR-003-persistencia.md) | D3 — Persistencia por servicio (versión inicial) | Aceptado |
 | [ADR-004](adr/ADR-004-orden-movimientos-puntos.md) | D4 — Orden y atomicidad inicial | Reemplazado por ADR-004 v2 |
-| [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md) | D4 — Orden, atomicidad y suma íntegra del ledger | Aceptado como aclaración; implementación pendiente |
+| [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md) | D4 — Orden, atomicidad y suma íntegra del ledger | Aceptado; créditos y ledger implementados, reversión pendiente |
 | [ADR-005 original](adr/ADR-005-comunicacion.md) | D5 — Comunicación síncrona y asíncrona | Reemplazado por ADR-005 v2 |
 | [ADR-005 v2](adr/ADR-005-v2-comunicacion.md) | D5 — Comunicación y garantías entre servicios | Aceptado |
 | [ADR-006](adr/ADR-006-seguridad.md) | Seguridad — decisión adicional; la etiqueta D6 del archivo es un error histórico, D6 del TP corresponde a búsqueda | Aceptado |
@@ -737,5 +751,15 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md) | D13 — Mediciones y costos fechados | Aceptado; evidencia local y límites en etapa 7 |
 | [ADR-014](adr/ADR-014-busqueda-clases.md) | D6 — Búsqueda de clases | Aceptado como diseño inicial; implementación y mediciones pendientes |
 | [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md) | D4/D8 — Bloqueo por clave y operación en curso | Aceptado; implementado |
+| [ADR-016](adr/ADR-016-politicas-eventos-integraciones.md) | Club — Permisos, presupuesto y evento | Propuesto en detalles técnicos; CB-02 validada localmente, revisión pendiente |
+| [ADR-017](adr/ADR-017-registro-identidad-activacion.md) | Club — Identidad, activación y correo | Propuesto; CB-03 validada localmente con JWT según ADR-006; revisión pendiente |
+| [ADR-018](adr/ADR-018-contrato-club-ampliado.md) | D8 — Extensión compatible del Club | Propuesto; OpenAPI 1.4.0 local, Spectral correcto, revisión y flujos restantes pendientes |
 
 La revisión de la Entrega 2 se registra en [REVISION_ETAPA_1.md](REVISION_ETAPA_1.md), incluyendo patrones de acceso de Benefits y la traducción de los errores 502/504 del gateway ya implementada con el formato público. Las propuestas no cambian las decisiones aceptadas ni acreditan implementación.
+
+### Experiencia web futura (06/11/2026)
+
+ADR-019 está propuesto: conservar la aplicación actual y definir movimiento
+progresivo localizado con fallback estático, sin nuevas capas justificadas solo
+por el efecto visual. Brief y etapas FD-01–05 en docs/PLAN_DISENO_FRONTEND.md.
+D-71 confirma el pedido; D-72 contiene parámetros propuestos, no aprobados.

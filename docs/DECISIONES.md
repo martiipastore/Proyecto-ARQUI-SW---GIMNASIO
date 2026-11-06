@@ -4,6 +4,11 @@ METALFITNESS — Práctico Integrador · Arquitectura de Software 2026 (UCC)
 
 > Copia en texto de `Registro_de_Decisiones_Gimnasio.docx`. Es la versión que lee la IA; si se modifica el Word, actualizá también este archivo.
 
+Última actualización: **6 de noviembre de 2026**. D-63 a D-69 registran el alcance
+solicitado expresamente por el equipo en esta conversación. D-70 documenta una
+brecha técnica y su corrección local en CB-03 (D-74); no supone aprobación
+retroactiva de parámetros, revisión de equipo completada ni despliegue.
+
 ## Cómo usar este registro
 
 Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son la referencia para el SPEC.md, para los prompts que se le pasan a la IA y para la defensa. En el repo existe una copia en texto, docs/DECISIONES.md, que es la que lee la IA.
@@ -20,9 +25,7 @@ Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son 
 | D-02 | Cancelación de reservas | Hasta 1 hora antes del inicio. Los únicos límites de reservas son D-17 y D-18. |
 | D-03 | Membresía para reservar | Tiene que estar vigente al reservar y en la fecha de la clase. |
 | D-05 | Reservas sin asistencia | Al finalizar la clase, las reservas confirmadas sin ingreso válido (ver D-37) pasan automáticamente a AUSENTE y generan una penalización de hasta -100 puntos, sin saldo negativo. No existe regularización manual. |
-| D-06 | Usuarios de los partners | Solo alumnos del gimnasio vinculados al partner. |
 | D-07 | Qué ve el partner | El saldo total y solo los movimientos que hizo él. |
-| D-08 | Límites de los partners | Sin tope de puntos. Los identificadores de operación se guardan al menos 30 días. |
 | D-09 | Alumnos que ve cada profesional | El profesor ve a sus asignados y a los que reservaron en sus clases; los planes de entrenamiento, solo de sus asignados. La nutricionista ve solo a sus pacientes. |
 | D-10 | Nutricionista | No dicta clases ni arma planes de entrenamiento. Carga planes alimenticios, registra mediciones y responde consultas de sus pacientes. |
 | D-11 | Avisos al alumno | No se le avisa cuando se cancela una clase o su membresía. |
@@ -33,14 +36,12 @@ Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son 
 | D-16 | Consultas a la nutricionista | Una pregunta con una sola respuesta. Para repreguntar, el alumno manda una consulta nueva. Sin adjuntos ni chat en vivo. |
 | D-17 | Musculación por día | Máximo 1 turno de Musculación por alumno por día. Si lo cancela, puede reservar otro turno del mismo día. |
 | D-18 | Reservas que se pisan | No se permiten, ni entre actividades distintas ni con los turnos de Musculación. Una clase que termina a las 20:00 no se pisa con una que empieza a las 20:00. |
-| D-19 | Tipos de membresía iniciales | Mensual (1 mes), Trimestral (3 meses) y Anual (12 meses). |
 | D-20 | Cancelación de reservas por membresía o baja (arquitectura) | members-service publica los eventos membresia.cancelada y usuario.desactivado; booking-service los consume y cancela las reservas futuras del alumno (RN-04, RN-34). Ver docs/ARCHITECTURE.md §6–7 y ADR-005. |
 | D-22 | Nombres de alumnos en los listados (arquitectura) | booking-service le pide a members-service los nombres de los alumnos de una clase. Si members-service no responde, el listado se muestra con los IDs y sin nombres (HU-21). Ver ADR-005. |
 | D-24 | Retención de claves de idempotencia API de partners | 30 días (no 24 h), por partner, como fija la RN-27 y D-08. Se guardan también las respuestas de error. Ver docs/contracts/README.md y ADR-008. |
 | D-25 | Códigos de error adicionales en la API de partners | Además de los pedidos se agregan BENEFIT_NOT_FOUND (404), BENEFIT_NOT_AVAILABLE (422) e IDEMPOTENCY_IN_PROGRESS (409, reintentable con la misma key). |
-| D-26 | Máximo de puntos por operación | De 1 a 1.000.000 puntos por operación. Es un límite técnico de validación del contrato, no un tope de negocio (D-08 sigue vigente). |
+| D-26 | Máximo técnico de puntos por operación | Se conserva el rango técnico de 1 a 1.000.000 para créditos. Desde el 06/11/2026 se aplican además los límites configurados de D-64; la frase anterior que mantenía D-08 sin topes comerciales queda sin efecto. |
 | D-27 | Ruta pública de la API de partners | En producción: https://<host>/partner-api/v1/... a través del api-gateway. En el mock local: http://localhost:4010/v1/... Contrato en inglés y camelCase (excepción a la convención interna). |
-| D-28 | Vinculación de usuarios de partners | Solo el administrador del gimnasio vincula cada alumno con el externalUserId del partner (HU-10). El partner no puede vincular por la API; si opera sobre un usuario no vinculado recibe 404 ACCOUNT_NOT_FOUND. |
 | D-29 | Rutas públicas del api-gateway (arquitectura) | Los prefijos públicos van en inglés: /api/v1/auth, users, memberships, activities, classes, bookings, check-ins, benefits, training y nutrition, más /partner-api/v1. El dominio, el código y los campos JSON siguen en español y snake_case. Ver docs/ARCHITECTURE.md §5.2. |
 | D-30 | Estructura de los servicios hexagonales (arquitectura) | booking-service y benefits-service usan internal/domain (solo biblioteca estándar, sin tags), internal/application (casos de uso y puertos de entrada), internal/ports (puertos de salida) e internal/adapters (http, postgres...). Lo verifican tests de arquitectura. Ver ADR-002. |
 | D-31 | Puntos y penalización por asistencia | Cada ingreso válido registra la asistencia y suma 500 puntos. Si una reserva confirmada termina sin ingreso válido, pasa a AUSENTE y se descuentan hasta 100 puntos; el saldo nunca queda por debajo de 0. La penalización se aplica una sola vez mediante el evento inasistencia.registrada. |
@@ -56,7 +57,7 @@ Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son 
 | D-41 | Proveedor de nube | Oracle Cloud Free Tier: una VM ARM "Always Free" con Docker Compose (completa D-34). |
 | D-42 | Alcance del servicio operativo para la Entrega 2 | Según confirmación de la cátedra comunicada por el equipo el 16/10/2026, benefits-service alcanza tanto para el servicio operativo como para la capacidad propia compartida. Se implementa el flujo de acreditación, saldo, movimientos e idempotencia con PostgreSQL; no se exige un segundo servicio para este requisito de la Entrega 2. Ver docs/entrega-2/PLAN_ENTREGA_2.md §3. |
 | D-43 | Presupuesto inicial de Benefits | Aprobado el 16/10/2026: Benefits limita su operación de aplicación y PostgreSQL a 4 segundos, o al tiempo restante del contexto si es menor, dentro de los 5 segundos del gateway. Implementado en etapa 3 y validado en etapa 6 con la tolerancia de medición D-56, sin cambiar el presupuesto. Ver ADR-010 v2. |
-| D-44 | Errores de borde del contrato de partners | Aprobado el 16/10/2026: OpenAPI 1.1.0 documenta 502 UNAVAILABLE y 504 TIMEOUT con formato de partners y correlationId; 502 incluye Retry-After. Reintento con la misma Idempotency-Key, sin asumir rollback ante timeout. La traducción del gateway fue implementada en la etapa 3 y validada en la etapa 6. Ver ADR-008 v2. |
+| D-44 | Errores de borde del contrato de partners | Aprobado el 16/10/2026: OpenAPI 1.1.0 documenta 502 UNAVAILABLE y 504 TIMEOUT con formato de partners y correlationId; 502 incluye Retry-After. Reintento con la misma Idempotency-Key, sin asumir rollback ante timeout. Alineación implementada en etapa 3 y ejercitada en etapa 6; contrato vigente 1.1.1/ADR-008 v3. La revisión de etapa 8 corrige el estado documental, sin cambiar la decisión. |
 | D-45 | Diseño inicial de búsqueda de clases (D6) | Aprobado el 16/10/2026: OpenSearch con filtros por actividad, fecha, franja y disponibilidad; orden por inicio ascendente; 20 resultados por página por defecto, máximo 100. Objetivo de actualización menor a 2 segundos en condiciones normales. La reserva confirma el cupo en PostgreSQL. Implementación y medición pendientes. Ver ADR-014. |
 | D-46 | Diseño inicial de balanceo de Booking (D12) | Aprobado el 16/10/2026: dos instancias de booking-service detrás de Traefik, con igual peso y sin afinidad de sesión. Health checks cada 5 segundos con timeout de 2 segundos; retirar destinos caídos y reincorporarlos al recuperarse. Implementación y evidencia de distribución pendientes. Ver ADR-012. |
 | D-47 | Diseño inicial de resiliencia de Benefits (D10) | Aprobado el 16/10/2026: el gateway no reintenta escrituras automáticamente; el partner recupera el resultado reintentando con la misma Idempotency-Key. Benefits falla cerrado si PostgreSQL no permite confirmar la operación; un resultado de commit indeterminado no implica rollback. Se conserva el presupuesto D-43 y no se incorpora circuit breaker al flujo inicial Gateway → Benefits. Implementado y validado en etapa 6: 502/503/504, recuperación de respuesta confirmada y ausencia de duplicados. Ver ADR-010 v2 y POSTMORTEM. |
@@ -73,6 +74,42 @@ Acá quedan las decisiones de negocio y de alcance que va tomando el grupo. Son 
 | D-58 | Región y monedas de la estimación de nube | Aprobado el 16/10/2026: São Paulo, Brasil (sa-saopaulo-1), como región de referencia de Oracle Cloud; presentar USD y equivalente ARS con tipo de cambio, fecha y fuente explícitos. La región es la ubicación de los servidores, independiente de que el gimnasio opere en Córdoba. Solo estimación: no crea ni contrata recursos. Motivo: cotización reproducible y comprensible para el equipo; disponibilidad, franquicias, impuestos y suficiencia se verifican por separado. Fundamento: criterios de costos/capacidad, pp. 29–30 y 143; región y monedas son elecciones del proyecto. |
 | D-59 | Experimento adicional de escrituras sin pausa | Aprobado el 16/10/2026, condicionado a que la matriz con pausa no identifique saturación: medir créditos únicos sobre una cuenta, sin pausa, con 1/5/10 VU durante 30 s por nivel. Conservar precarga y calentamiento; ejecutar después y guardar evidencia separada. Motivo: distinguir el techo del generador de un límite del servicio. Sin cambiar código productivo, timeouts, pool ni invariantes. Fundamento: capacidad y límites, pp. 29–30, 86 y 101–102; los niveles y duración son parámetros propios aprobados, no cifras del teórico. |
 | D-60 | Supuesto de demanda para estimar almacenamiento | Aprobado el 16/10/2026: escenario ilustrativo de 100 cuentas y 2 movimientos diarios por cuenta (200 movimientos/día), usando tamaños medidos. No es demanda real confirmada ni compromiso de capacidad. Conservar movimientos y respuestas idempotentes al menos 30 días; hoy no existe purga automática, por lo que no se presupone una meseta de almacenamiento. Motivo: hacer explícita la demanda de la proyección sin inventar usuarios reales. Fundamento: dimensionamiento y costos, pp. 29–30 y 143; cantidades propias aprobadas para el cálculo de etapa 7. |
+| D-61 | Validacion final con una copia aislada | Aprobado el 16/10/2026: detener temporalmente el gimnasio original sin borrar sus volumenes; levantar un proyecto Compose nuevo con volumenes nuevos; verificar migraciones y tablas vacias, flujo contractual y caida controlada; restaurar el gimnasio original al terminar. Conservar evidencia y volumenes de prueba para inspeccion. Motivo: comprobar reproduccion desde cero sin borrar datos anteriores. Fundamento: transacciones e invariantes, pp. 27–28; pruebas de fallas, pp. 113–116. El aislamiento concreto por proyecto/volumen es un procedimiento propio, no una herramienta nueva ni una configuracion prescripta por el teorico. |
+| D-62 | Actualizar Vite por avisos de seguridad | Aprobado el 16/10/2026: actualizar Vite 5.4.11 a 6.4.3, conservando React y el diseno, y verificar instalacion, TypeScript, build y Docker antes de comitear. Motivo: avisos concretos de Vite/esbuild; la sugerencia de parche dentro de Vite 5 no resuelve todos los rangos afectados. Node 20 y plugin-react 4.3.4 declaran compatibilidad. Es mantenimiento de una herramienta ya elegida, no un concepto nuevo atribuido al teorico; fuente tecnica: aviso oficial GHSA-fx2h-pf6j-xcff y metadatos npm. No se usa audit fix --force ni se cambian tecnologias sin consulta. |
+
+### Ampliación del Club autorizada el 06/11/2026
+
+La autorización procede del pedido detallado del equipo y de su instrucción de
+continuar las correcciones y actualizar etapas, ADR y registro. Autorizar requisitos
+no equivale a declarar aprobada su implementación, sus parámetros o su despliegue.
+
+| ID | Tema | Decisión |
+|---|---|---|
+| D-63 | Usuarios externos sin membresía | Reemplaza D-06. Una persona puede tener cuenta y puntos sin haber asistido ni contratado membresía. La integración autorizada puede solicitar alta o reutilizar la cuenta existente; no se crean duplicados. Registro externo identificado por bandera y vínculo de origen. Implementación local parcial y validación integral pendiente. Ver HU-CB-01 y ADR-017. |
+| D-64 | Permisos, límites y eventos externos | Reemplaza D-08 en la ausencia de topes, conservando la retención mínima histórica de respuestas. Cada integración tiene credencial y permisos propios, estado, cuota y límites configurables por operación/período. El evento es único por integración, independiente de la key HTTP y sin purga que permita reacreditar. D-26 conserva su techo técnico. Controles locales implementados y validados en PostgreSQL real en CB-02 (D-73); reglas por acción y administración pendientes. Ver ADR-016 y RN-CB-04/05/06. |
+| D-65 | Vinculación y primera contraseña | Reemplaza D-28. Se permite external register por API autorizada; para vincular una cuenta previa no basta declarar su correo: se exige prueba de control, sin cambiar su contraseña. Una cuenta nueva recibe bienvenida y enlace de activación de un solo uso; no se envía contraseña en texto plano. La primera contraseña se establece solo una vez. Implementado localmente, con pruebas de base y correo pendientes. Ver ADR-017 y HU-CB-01/02. |
+| D-66 | Cuenta, membresía y puntos independientes | Aclara D-13 sin retirar la ausencia histórica de vencimiento de puntos. Vencer, cancelar, renovar o cambiar membresía no modifica saldo ni historial. Solo acreditaciones, canjes o ajustes válidos pueden modificarlo, transaccionalmente y con justificación. El ledger existe; los escenarios de membresía y canje siguen pendientes. Ver RN-CB-01/02 y HU-CB-03. |
+| D-67 | Tipos y vigencia de membresía | Reemplaza D-19. Contemplar mensual, trimestral, anual y por clases; conservar historial y distinguir cuenta de membresía activa/inactiva y sus causas de estado. Cupos de clases, precios, fechas y restricciones se configuran; no se inventan como reglas definitivas. Implementación pendiente en Members. Ver HU-CB-03 y RN-CB-08. |
+| D-68 | Beneficios y recompensas diferenciados | Separar puntos, recompensa especial, descuento y período promocional de membresía. Configurar elegibilidad por tipo/estado de membresía, vigencia, condiciones y restricciones, incluida la integración y acción autorizadas. Los ejemplos de porcentajes y mes gratuito no son promociones comerciales fijas. Implementación pendiente. Ver HU-CB-04/05 y RN-CB-09/10; ADR específico requerido antes de implementarlas. |
+| D-69 | Plan ampliado y despliegue controlado | El mínimo académico de Entrega 2 (D-42) no prueba que el Club integral esté terminado. Se agrega el plan CB-01 a CB-08 con diez escenarios de aceptación, sin borrar evidencia anterior. Revisar conexión GitHub/Vercel, variables y colaboradores; no modificar producción, permisos de terceros ni despliegues sin informar previamente las modificaciones necesarias. D-34/D-41 no se reemplazan por suponer que Vercel aloja el backend. Ver PLAN_CLUB_BENEFICIOS.md. |
+
+### Diseño web solicitado el 06/11/2026
+
+| ID | Tema | Decisión |
+|---|---|---|
+| D-71 | Diseño web futuro y movimiento de entrada | Pedido confirmado el 06/11/2026: revisar y completar el brief aportado con el teórico y dejar definida una propuesta de movimiento al abrir la página, antes de la etapa de frontend. Conservar el proyecto y los flujos existentes. Ver docs/PLAN_DISENO_FRONTEND.md y brief v2; no implica aprobar parámetros visuales ni iniciar ahora la implementación. |
+
+### Decisión técnica local pendiente de conciliación
+
+| ID | Tema | Decisión / estado |
+|---|---|---|
+| D-70 | Seguridad implementada frente al diseño aceptado | Brecha detectada en el borrador (sesiones opacas 8 h y bcrypt 10), corregida localmente en CB-03 aplicando ADR-006: JWT RS256 900 s, roles persistidos y bcrypt mínimo 12. 100 resultados test/subtest y vet, nueve escenarios HTTP/PostgreSQL/SMTP locales y build frontend aprobados. ADR-006 no se editó; ADR-017 y configuración de claves requieren revisión del equipo, sin aprobación automática ni despliegue. Flags apagados por defecto. Ver D-74 y CB03_VALIDACION.md. |
+
+| ID | Tema | Estado |
+|---|---|---|
+| D-72 | Experiencia web y animación progresiva | Propuesta para revisión, no ratificada: mantener React/TypeScript/Vite/CSS y cliente HTTP existentes; escena localizada SVG/CSS de discos que se alinean en una barra, duración sugerida 1,8 s, contenido inmediato y alternativa estática. Sin dependencias nuevas ni despliegue. ADR-019 propuesto y etapas FD-01–05. Paleta, fuentes, presupuestos y assets requieren validación. D-70 sigue pendiente. |
+| D-73 | Exigencia de evento y validación CB-02 | Concreción técnica local para revisión de D-64: migración 005 agrega requiere_evento, false para filas anteriores y true por defecto para nuevas integraciones; credits lo verifica realmente y responde 400 si falta. Se corrigen fechas nuevas/replay a UTC y microsegundos. Contrato 1.4.0, 53 resultados test/subtest aprobados sin omisiones en PostgreSQL aislado, vet y Spectral correctos. ADR-016/018 siguen propuestos; no es aprobación del equipo, cierre integral ni despliegue. Ver CB02_VALIDACION.md e informe generado. D-70 fue corregida posteriormente en CB-03; ver D-74 y su revisión pendiente. |
+| D-74 | Aplicación del ADR-006 y validación CB-03 | Implementación local para revisión: JWT RS256 15 min con perfil acotado en bibliotecas estándar de Go, RSA PEM >=2048 bits; clave privada solo en Members y pública en Gateway. Roles de base, nuevas cuentas ALUMNO, bcrypt 12 y actualización de hashes anteriores al login válido. Logout descarta en cliente sin revocación según v1. Recursos privados no implementados restringidos a ADMINISTRADOR hasta definir su matriz. 100 resultados test/subtest, vet, nueve escenarios E2E reales locales y build aprobados. Revisión de equipo y habilitación pendientes; no sustituye ADR-006 ni agrega dependencias. Continúa CB-04. |
 
 ## Justificación teórica de las decisiones de la Entrega 2
 
@@ -93,6 +130,8 @@ Referencias a páginas del PDF de 149 páginas aportado por el equipo. Se distin
 | D-58 | Criterios de costos y capacidad: pp. 29–30 y 143. | Fuentes, fecha, región y conversión hacen revisable la estimación. El teórico no prescribe Oracle, São Paulo ni una cotización cambiaria. |
 | D-59 | Capacidad y límites: pp. 29–30, 86 y 101–102. | Experimento acotado sin pausa para distinguir pacing de contención o recursos. No garantiza encontrar capacidad máxima ni autoriza ampliar concurrencia sin consulta. |
 | D-60 | Dimensionamiento y costos: pp. 29–30 y 143. | Relacionar tasa supuesta con bytes medidos y retención efectiva. El supuesto no reemplaza una previsión real ni prueba rendimiento con ese historial. |
+| D-61 | Invariantes/transacciones, pp. 27–28; ensayo de fallas, pp. 113–116. | Verificar una base nueva y restaurar el estado previo; proyecto y volumenes independientes son un procedimiento del equipo. |
+| D-62 | Mantenimiento del build existente; no se atribuye una version o vulnerabilidad al PDF. | Fuente tecnica oficial y aprobacion expresa del equipo, conforme a D-49; conserva herramientas y diseno, con validacion antes del commit. |
 
 ## Decisiones reemplazadas
 
@@ -101,11 +140,21 @@ Referencias a páginas del PDF de 149 páginas aportado por el equipo. Se distin
 | D-04 | Registro de asistencia (reemplazada) | Reemplazada por D-36 y D-37 el 08/10/2026. Decisión anterior: el alumno ingresaba su DNI durante la clase, el sistema validaba membresía y reserva, registraba la asistencia y sumaba 500 puntos. |
 | D-21 | Asignaciones en training-service (reemplazada) | Reemplazada por D-33 el 08/10/2026. Decisión anterior: training-service consultaba a members-service antes de cada operación y cacheaba la asignación durante 60 segundos. |
 | D-23 | Despliegue en la nube (reemplazada) | Reemplazada por D-34 el 08/10/2026. Decisión anterior: el stack se desplegaba en una VM con Docker Compose y se describía al api-gateway como único componente expuesto por HTTPS. |
+| D-06 | Usuarios de los partners (reemplazada) | Reemplazada por D-63 el 06/11/2026. Antes: solo alumnos del gimnasio vinculados al partner; excluía personas externas. |
+| D-08 | Límites de los partners (reemplazada parcialmente) | D-64 reemplaza el 06/11/2026 la ausencia de topes comerciales. Antes: sin tope de puntos y retención de operaciones al menos 30 días. Se conserva esta retención, precisada por D-24, y se añade identidad de evento duradera. |
+| D-19 | Tipos de membresía (reemplazada) | Reemplazada por D-67 el 06/11/2026. Antes: solo mensual, trimestral y anual. Se agrega por clases sin borrar los tipos anteriores. |
+| D-28 | Vinculación exclusiva del administrador (reemplazada) | Reemplazada por D-65 el 06/11/2026. Antes: solamente el administrador vinculaba y el partner no podía solicitarlo por API. Se conserva la autorización por vínculo para consultar u operar. |
 
 ## Historial de cambios
 
 | Fecha | Cambio |
 |---|---|
+| 06/11/2026 | CB-03 implementada y validada localmente; D-70 registra su corrección conforme al ADR-006 sin editarlo y D-74 detalla implementación para revisión. JWT/roles/bcrypt, nueve E2E con SMTP local, 100 resultados test/subtest y vet, build correcto. Etapas y Word sincronizados; sigue CB-04, sin habilitación productiva. |
+| 06/11/2026 | CB-02 implementada y validada localmente con PostgreSQL real; D-73 registra política de evento y corrección de fechas para revisión. Migración 005, contrato 1.4.0, evidencia de 53 resultados sin tests omitidos, vet y Spectral; próxima etapa técnica CB-03 con D-70 abierto. Se sincronizan registro y Word de etapas/prompts. |
+| 06/11/2026 | D-71 registra el pedido de diseño futuro; D-72 y ADR-019 documentan la propuesta visual/técnica pendiente. Brief v2, storyboard y etapas FD-01–05 agregados sin iniciar implementación. |
+| 06/11/2026 | Requisitos del Club registrados en D-63 a D-69; D-06/D-08/D-19/D-28 pasan a historia y D-26 se aclara. D-70 explicita la divergencia técnica pendiente del ADR-006. Se sincronizan Word, adenda funcional, ADR-016/017/018 y plan CB-01 a CB-08; evidencia anterior no acredita el código ampliado. |
+| 16/10/2026 | D-61/D-62 aprobadas: validacion aislada con restauracion y actualizacion de Vite 6.4.3; ejecucion y comprobaciones en etapa 8. |
+| 16/10/2026 | Revisión de etapa 8 iniciada: D-44 refleja errores del gateway ya implementados; PR #5 integra etapa 7. Validación aislada y actualización de Vite consultadas, todavía sin aprobación; etapa no cerrada. |
 | 16/10/2026 | D-50: etapa 7 completada con 36 fases, invariantes, límite explorado, alternativas y costos; ADR-013 v2 conserva la historia. |
 | 16/10/2026 | D-60: supuesto ilustrativo de 200 movimientos diarios aprobado para proyectar almacenamiento medido. |
 | 16/10/2026 | D-59: experimento adicional sin pausa aprobado si la matriz inicial no identifica saturación; evidencia separada. |

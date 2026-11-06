@@ -32,6 +32,9 @@ type OperacionGuardada struct {
 // El adaptador decide cómo implementar la atomicidad, nunca las reglas del saldo.
 type Transaction interface {
 	PartnerActivo(context.Context, string) (bool, error)
+	AutorizarCredito(context.Context, string, int64, string, time.Time) error
+	EventoAcreditado(context.Context, string, string, string) (domain.ResultadoOperacion, bool, error)
+	GuardarEvento(context.Context, string, string, string, string) error
 	TomarOperacion(context.Context, string, string, string, time.Time) (OperacionGuardada, error)
 	CuentaVinculada(context.Context, string, string) (domain.CuentaBeneficios, error)
 	GuardarMovimiento(context.Context, domain.CuentaBeneficios, domain.MovimientoPuntos) error

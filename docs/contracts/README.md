@@ -1,11 +1,17 @@
 # Club de Beneficios — Guía para integrar la API de fidelización
 
+> Estado real del backend (2026-11-06): están implementados créditos, saldo e
+> historial, registro externo y consulta de su procesamiento (estos dos últimos
+> requieren habilitar identidad). Débitos, catálogo y canjes siguen pendientes.
+> Ver [revisión y ejemplos ejecutables](../CLUB_BENEFICIOS_REVISION.md).
+> El alta, la activación y sus variables se describen en [Registro externo](../CLUB_REGISTRO_EXTERNO.md).
+
 Esta guía es para equipos de **otros sistemas** que quieran sumar puntos de fidelización a su flujo: acreditar puntos cuando un cliente compra o cumple un turno, debitarlos cuando los usa, canjearlos por beneficios y mostrar su saldo.
 
 | | |
 |---|---|
 | **Contrato** | [benefits-api.v1.yaml](benefits-api.v1.yaml) (OpenAPI 3.1) |
-| **Versión vigente** | **v1.0.0** |
+| **Versión vigente** | **v1.4.0** |
 | **Mock local** | `http://localhost:4010` (ver [Probar con el mock](#probar-con-el-mock)) |
 | **Producción** | `https://<host>/partner-api` — *URL pública a confirmar (proveedor de nube sin definir)* |
 | **Formato** | JSON (UTF-8); errores en `application/problem+json` (RFC 7807) |
@@ -26,7 +32,7 @@ Esta guía es para equipos de **otros sistemas** que quieran sumar puntos de fid
 ### Conceptos clave
 
 - **Cuenta = (partner, `externalUserId`).** El `externalUserId` es **tu** identificador del usuario (1 a 64 caracteres: letras, números y `. _ : @ -`). No necesitás conocer IDs internos del gimnasio.
-- **Las cuentas se vinculan antes de usarse.** Las personas son alumnos del gimnasio; el administrador del gimnasio vincula cada alumno con tu `externalUserId`. Si operás sobre un usuario no vinculado a vos recibís `404 ACCOUNT_NOT_FOUND`.
+- **Las cuentas se vinculan antes de usarse.** Una persona puede tener cuenta sin membresía. Una integración con permiso de registro puede solicitar alta/vinculación por `POST /v1/external-register`; una cuenta previa exige prueba de control del correo. El administrador también puede gestionar vínculos. Si operás sobre un usuario no vinculado a vos recibís `404 ACCOUNT_NOT_FOUND`. El registro sigue condicionado a resolver CB-03 antes de habilitar identidad.
 - **Saldo compartido, historial propio.** El saldo es el total de la cuenta (incluye, por ejemplo, puntos que el alumno ganó por asistir a clases). En `movements` ves **solo los movimientos que hiciste vos**.
 - **Los movimientos son inmutables.** No hay endpoint para borrar ni editar. Si hubo un error, el gimnasio lo corrige con un movimiento compensatorio (`REVERSAL`) y el original queda `REVERTED`.
 - **El saldo nunca es negativo.** Un débito o canje que no alcanza se rechaza entero.
@@ -35,7 +41,7 @@ Esta guía es para equipos de **otros sistemas** que quieran sumar puntos de fid
 
 1. Pedí el alta como partner a cualquier integrante del equipo (ver [Equipo](../../README.md#equipo)) o abriendo un *issue* en este repositorio con el título `Alta de partner: <nombre de tu sistema>`. Indicá un contacto técnico.
 2. El administrador del gimnasio crea el partner y te entrega la **API key una sola vez**. Guardala como secreto (variable de entorno o gestor de secretos); nunca en el código ni en el frontend.
-3. Coordiná la **vinculación de usuarios**: para cada alumno que también sea usuario tuyo, el administrador registra tu `externalUserId`.
+3. Coordiná permisos, límites y **vinculación de usuarios**. Si tenés permiso de registro, seguí el flujo de registro externo y su recibo; en otro caso coordiná el vínculo administrativo. Confirmá si tu integración exige `eventId` (por defecto para nuevas altas).
 4. Si la key se filtra, pedí que se revoque; se emite una nueva y la anterior deja de funcionar de inmediato.
 
 > En el **mock** cualquier valor de `X-API-Key` es aceptado y cualquier `externalUserId` responde.
@@ -270,6 +276,39 @@ Lo que esperamos de tu cliente para que los cambios compatibles no te rompan:
 **Deprecación:** cuando salga `/v2`, `/v1` se mantiene **al menos 60 días** (o hasta el fin de la cursada, lo que ocurra primero). Durante ese período las respuestas de `/v1` incluyen los headers `Deprecation: true` y `Sunset: <fecha>`, y el cambio se anuncia en este CHANGELOG y a los contactos técnicos de cada partner.
 
 ## CHANGELOG del contrato
+
+### v1.4.0 — 2026-11-06
+
+- Política `requiere_evento` validada en backend: integraciones nuevas requieren
+  `eventId` en créditos; las existentes conservan su comportamiento anterior.
+  No se cambia la ruta ni el esquema global de campos requeridos para clientes previos.
+- Evento ausente cuando es obligatorio: 400 `INVALID_REQUEST`, sin acreditar.
+  Un mismo evento con otra key conserva movimiento y saldo originales; otro
+  usuario o contenido provoca 409. Permisos/cuotas/políticas siguen vigentes en replay.
+- Fechas de créditos en UTC con precisión de microsegundos desde su primera
+  respuesta para conservar su representación al recuperar eventos de PostgreSQL.
+- La cuota 429 se verifica con `Retry-After`; los rechazos de política previos a
+  tomar la key no son resultados de una acreditación confirmada ni reservan esa key.
+
+### v1.3.0 — 2026-11-06
+
+- `POST /v1/external-register`: registro/vinculación con identidad verificada,
+  puntos opcionales y recibo asíncrono persistente.
+- `GET /v1/external-registrations/{eventId}`: consulta privada de procesamiento.
+- Permiso independiente de registro, desactivado por defecto. Cuota por integración
+  configurable; agotarla devuelve 429 `RATE_LIMITED` con `Retry-After`.
+- La plataforma se identifica por su credencial. El mismo evento se deduplica
+  también entre el registro y el endpoint de acreditaciones.
+
+### v1.2.0 — 2026-11-06
+
+- `credits` acepta `eventId` opcional (1–128 caracteres), único por integración,
+  para evitar una segunda acreditación aunque cambie `Idempotency-Key`.
+- Permisos separados para consulta y puntos, límite por operación y presupuesto
+  diario configurables en backend. Permiso retirado: 403; tope excedido: 400.
+- Cuerpo de acreditación limitado a 16 KiB. Se conservan solicitudes anteriores
+  sin `eventId`; para nuevas integraciones enviarlo siempre.
+- Los endpoints previstos de registro, débito y canje no se anuncian como ejecutables.
 
 ### v1.1.1 — 2026-10-16
 

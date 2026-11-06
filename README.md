@@ -1,5 +1,12 @@
 # METALFITNESS
 
+> **Actualización del Club (06/11/2026):** [plan CB-01 a CB-08](docs/PLAN_CLUB_BENEFICIOS.md),
+> [adenda funcional](docs/SPEC_CLUB_BENEFICIOS.md) y D-63 a D-70 distinguen lo
+> implementado localmente de lo pendiente. Registro, activación, correo y acceso
+> tienen código y validación local con PostgreSQL/SMTP reales. CB-03 corrigió
+> D-70 según ADR-006; flags apagados y revisión del equipo pendiente. Sigue CB-04.
+> No se declara el Club completo ni desplegado. [Evidencia](docs/CB03_VALIDACION.md).
+
 Trabajo Práctico Integrador de **Arquitectura de Software**: METALFITNESS es un sistema de microservicios para gestionar alumnos, membresías, clases y reservas, asistencia, entrenamiento, nutrición y un **Club de Beneficios** con puntos que también usan sistemas de otros grupos.
 
 > Estado actual: **esqueleto ejecutable del proyecto**. Los servicios exponen health checks, verifican sus bases y reportan su estado en una pantalla web. Benefits ya tiene dominio, casos de uso y persistencia de créditos, saldo y movimientos con idempotencia, probados contra PostgreSQL real; ya están expuestos por /partner-api/v1 a través del gateway con API key. El gateway ya realiza routing, correlación y timeouts. El contrato de la API de partners está publicado con un mock ejecutable.
@@ -78,7 +85,8 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | **Observabilidad del flujo mínimo** | Logs JSON correlacionados y traza Gateway → Benefits → PostgreSQL; Collector y Jaeger local en memoria. [Evidencia y reproducción](docs/entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
 | **Capacidad y costos medidos** | Matriz k6 y experimento sobre cuenta compartida, sin errores funcionales ni inconsistencias; límites locales y comparación de costos USD/ARS. [Resultados y reproducción](docs/entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md). |
 | **Desplegado como infraestructura, todavía sin uso funcional** | Redis y RabbitMQ. |
-| **Pendiente** | Resto de operaciones de Benefits y las demás funcionalidades de negocio; autenticación JWT e identidad; rate limiting; publicación y consumo de eventos con outbox; caché; búsqueda en OpenSearch; dos instancias de booking detrás de Traefik; emails; métricas exportadas y tableros; consumo de la capacidad externa que se defina con otro grupo. |
+| **Ampliación local, pendiente de aceptación** | Integraciones y ledger CB-02, identidad/activación/JWT/roles y correo CB-03 validados en PostgreSQL/SMTP local; [guía](docs/CLUB_REGISTRO_EXTERNO.md) y [evidencia](docs/CB03_VALIDACION.md). D-70 corregida en local; revisión/configuración productiva pendientes. |
+| **Pendiente** | Membresías, beneficios/recompensas, reglas por acción, canjes y panel con roles; conformidad JWT/bcrypt del ADR-006; mensajería RabbitMQ; caché/OpenSearch/balanceo Booking; observabilidad ampliada y proveedor externo D9. |
 
 ## Cómo ejecutarlo localmente
 
@@ -99,7 +107,7 @@ Recursos: ~4 GB de RAM y **unos 6 GB libres en disco** para imágenes y builds d
 cp .env.example .env && make up
 ```
 
-`make up` construye las imágenes, levanta todos los contenedores y **espera a que estén healthy**. Después:
+`make up` construye las imágenes y levanta los contenedores; espera los health checks declarados. Collector y Jaeger se comprueban mediante la demostración de trazas. Después:
 
 - Abrí **http://localhost:5173**: la pantalla "Estado del sistema" debe mostrar todos los servicios en **Listo**.
 - O consultá el gateway: `curl http://localhost:8080/api/v1/status` → `"status": "ready"`.
@@ -127,6 +135,7 @@ Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d -
 | http://localhost:8080 | api-gateway — único punto de entrada |
 | http://localhost:8080/api/v1/status | Estado agregado de todos los servicios |
 | http://localhost:4010 | Mock de la API de partners (Prism) |
+| http://localhost:16686 | Jaeger local; historial volátil en memoria |
 | http://localhost:15672 | RabbitMQ management (usuario y contraseña en `.env`) |
 | http://127.0.0.1:8081/health/ready | members-service (acceso directo solo para depurar; no prueba autenticación) |
 | http://127.0.0.1:8082/health/ready | booking-service |
@@ -136,7 +145,7 @@ Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d -
 | http://127.0.0.1:8086/health/ready | booking-indexer |
 | `127.0.0.1:5432` / `127.0.0.1:27017` / `127.0.0.1:6379` | PostgreSQL / MongoDB / Redis (credenciales en `.env`) |
 
-Mailpit, Jaeger, Grafana, Traefik y OpenSearch se suman en las etapas que los usan.
+Collector y Jaeger ya participan en el flujo mínimo. Mailpit, Grafana, Traefik y OpenSearch se suman en las etapas que los usan.
 
 ## Mock de la API de partners (disponible ya)
 
@@ -166,6 +175,7 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | [docs/entrega-2/VALIDACION_ENTREGA_2.md](docs/entrega-2/VALIDACION_ENTREGA_2.md) | Validación reproducible de tests, contrato, stack, flujo principal, observabilidad y resiliencia de la Entrega 2 |
 | [docs/entrega-2/Guía_Entrega2.md](docs/entrega-2/Guía_Entrega2.md) | Preparación y recorrido sugerido para demostrar la Entrega 2 sin reemplazar las evidencias versionadas |
 | [Registro_de_Decisiones_Gimnasio.docx](Registro_de_Decisiones_Gimnasio.docx) | Registro de decisiones del grupo (D-01 en adelante) |
+| [docs/ETAPA_8_REVISION_ENTREGA.md](docs/ETAPA_8_REVISION_ENTREGA.md) | Revisión de requisitos, decisiones, evidencia y pendientes de Entrega 2 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Ramas, commits, PR y revisión |
 | [CLAUDE.md](CLAUDE.md) | Contexto y reglas para asistentes de IA en este repo |
 
@@ -178,3 +188,8 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | Viti | María Guadalupe | 2426038 |
 
 Observabilidad del flujo mínimo: [etapa 4](docs/entrega-2/ETAPA_4_OBSERVABILIDAD.md), con logs correlacionados y primera traza Gateway → Benefits → PostgreSQL. Jaeger local: http://localhost:16686; historial en memoria y evidencia exportada.
+
+Diseño web futuro: [brief revisado](docs/diseno/BRIEF_WEB_METAL_FITNESS_V2.md),
+[storyboard](docs/diseno/storyboard-entrada-metal-fitness.svg) y
+[etapas FD-01–05](docs/PLAN_DISENO_FRONTEND.md). Documentación preparada;
+implementación y validación visual pendientes (D-71/D-72, ADR-019 propuesto).

@@ -80,6 +80,10 @@ func newFixture(t *testing.T, env map[string]string) *fixture {
 	if env == nil {
 		env = map[string]string{}
 	}
+	if _, set := env["GATEWAY_JWT_PUBLIC_KEY"]; !set {
+		_, public := testJWTKeys(t)
+		env["GATEWAY_JWT_PUBLIC_KEY"] = public
+	}
 	for name, key := range map[string]string{
 		gwconfig.Members:      "GATEWAY_MEMBERS_URL",
 		gwconfig.Booking:      "GATEWAY_BOOKING_URL",
@@ -139,7 +143,7 @@ func TestRouting_CadaPrefijoVaASuServicio(t *testing.T) {
 		"/api/v1/users/../memberships/": gwconfig.Members,
 	}
 	for path, want := range cases {
-		rec := f.do(http.MethodGet, path, nil)
+		rec := f.do(http.MethodGet, path, adminHeaders(t))
 		assert.Equal(t, http.StatusOK, rec.Code, path)
 		assert.Equal(t, want, rec.Body.String(), path)
 	}
@@ -147,7 +151,9 @@ func TestRouting_CadaPrefijoVaASuServicio(t *testing.T) {
 
 func TestRouting_ReenviaLaRutaCompletaYElCorrelationID(t *testing.T) {
 	f := newFixture(t, nil)
-	rec := f.do(http.MethodGet, "/api/v1/bookings/123", map[string]string{correlation.Header: "corr-12345678"})
+	headers := adminHeaders(t)
+	headers[correlation.Header] = "corr-12345678"
+	rec := f.do(http.MethodGet, "/api/v1/bookings/123", headers)
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "corr-12345678", rec.Header().Get(correlation.Header))
@@ -158,7 +164,7 @@ func TestRouting_ReenviaLaRutaCompletaYElCorrelationID(t *testing.T) {
 
 func TestRouting_GeneraCorrelationIDSiNoViene(t *testing.T) {
 	f := newFixture(t, nil)
-	rec := f.do(http.MethodGet, "/api/v1/users", nil)
+	rec := f.do(http.MethodGet, "/api/v1/users", adminHeaders(t))
 	id := rec.Header().Get(correlation.Header)
 	require.True(t, correlation.Valid(id))
 	assert.Equal(t, []string{id}, f.upstreams[gwconfig.Members].corr)
@@ -201,7 +207,7 @@ func TestRouting_TimeoutPorRuta504(t *testing.T) {
 	b.mu.Unlock()
 
 	start := time.Now()
-	rec := f.do(http.MethodGet, "/api/v1/classes", nil)
+	rec := f.do(http.MethodGet, "/api/v1/classes", adminHeaders(t))
 
 	assert.Less(t, time.Since(start), 250*time.Millisecond, "debe cortar en el timeout de la ruta")
 	assert.Equal(t, http.StatusGatewayTimeout, rec.Code)
@@ -212,7 +218,7 @@ func TestRouting_TimeoutPorRuta504(t *testing.T) {
 
 func TestRouting_ServicioCaido502(t *testing.T) {
 	f := newFixture(t, map[string]string{"GATEWAY_TRAINING_URL": "http://127.0.0.1:1"})
-	rec := f.do(http.MethodGet, "/api/v1/training/plans", nil)
+	rec := f.do(http.MethodGet, "/api/v1/training/plans", adminHeaders(t))
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
 	var body map[string]any
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))

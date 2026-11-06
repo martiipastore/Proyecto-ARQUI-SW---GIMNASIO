@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	gwconfig "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/access"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpx"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/problem"
@@ -30,8 +31,10 @@ type route struct {
 
 // Proxy reenvía solicitudes a los servicios internos.
 type Proxy struct {
-	routes []route
-	log    *slog.Logger
+	serviceKey string
+	verifier   *access.Verifier
+	routes     []route
+	log        *slog.Logger
 }
 
 // New crea el proxy a partir de la configuración. transport puede ser nil (usa http.DefaultTransport).
@@ -39,7 +42,14 @@ func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*P
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
-	p := &Proxy{log: log}
+	p := &Proxy{log: log, serviceKey: cfg.InternalServiceKey}
+	if cfg.JWTPublicKey != "" {
+		verifier, err := access.NewVerifier(cfg.JWTPublicKey)
+		if err != nil {
+			return nil, errors.New("GATEWAY_JWT_PUBLIC_KEY inválida: requiere clave pública RSA PEM de al menos 2048 bits")
+		}
+		p.verifier = verifier
+	}
 	for _, r := range cfg.Routes {
 		svc, ok := cfg.Service(r.Service)
 		if !ok {
@@ -107,6 +117,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		problem.WriteHTTP(w, r, problem.NotFound("No existe el recurso "+r.URL.Path+"."))
 		return
+	}
+	if strings.HasPrefix(cleaned, "/api/v1/") && !publicAuth(r.Method, cleaned) {
+		if !p.authenticate(w, r, cleaned) {
+			return
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), rt.timeout)

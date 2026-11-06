@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -54,15 +55,30 @@ func TestDB_PingFallaSiLaBaseNoResponde(t *testing.T) {
 	assert.Error(t, db.Ping(ctx))
 }
 
-// requireDocker saltea el test si Docker no está disponible. En testcontainers 0.34,
-// SkipIfProviderIsNotHealthy entra en pánico (en lugar de saltear) si no encuentra
-// el daemon; acá ese pánico se convierte en un skip.
+// En CI y en la validación de etapa Docker es obligatorio. El modo local común
+// conserva el skip explícito, sin confundirlo con evidencia de integración.
 func requireDocker(t *testing.T) {
 	t.Helper()
+	mandatory := os.Getenv("REQUIRE_DOCKER_TESTS") == "1" || os.Getenv("CI") == "true"
+	unavailable := func(reason any) {
+		if mandatory {
+			t.Fatalf("Docker obligatorio para integración: %v", reason)
+		}
+		t.Skipf("Docker no disponible: %v", reason)
+	}
 	defer func() {
 		if r := recover(); r != nil {
-			t.Skipf("Docker no disponible: %v", r)
+			unavailable(r)
 		}
 	}()
-	testcontainers.SkipIfProviderIsNotHealthy(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	provider, err := testcontainers.ProviderDocker.GetProvider()
+	if err != nil {
+		unavailable(err)
+		return
+	}
+	if err := provider.Health(ctx); err != nil {
+		unavailable(err)
+	}
 }

@@ -1,0 +1,25 @@
+{
+  "checked_on": "2026-10-16",
+  "installed_vite": "5.4.11",
+  "audit_totals": {
+    "moderate": 1,
+    "high": 1,
+    "total": 2
+  },
+  "affected_packages": [
+    "vite",
+    "esbuild"
+  ],
+  "official_advisory": "https://github.com/vitejs/vite/security/advisories/GHSA-fx2h-pf6j-xcff",
+  "proposed_vite": "6.4.3",
+  "proposal_status": "approved D-62; installed, lint/build passed",
+  "node_engines": "^18.0.0 || ^20.0.0 || >=22.0.0",
+  "plugin_react_4_3_4_peer_vite": "^4.2.0 || ^5.0.0 || ^6.0.0",
+  "compatibility_metadata_source": "npm registry, npm view vite@6.4.3 and @vitejs/plugin-react@4.3.4",
+  "note": "npm audit patch suggestion alone does not resolve advisories whose affected range includes all Vite <=6.4.2",
+  "updated_vite": "6.4.3",
+  "audit_totals_after": {
+    "total": 0
+  },
+  "docker_validation": "running"
+}
