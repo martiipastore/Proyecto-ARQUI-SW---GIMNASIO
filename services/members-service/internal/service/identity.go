@@ -52,7 +52,12 @@ type Identity struct {
 
 func NewIdentity(repo IdentityRepository, benefits BenefitsClient, mailer Mailer, secret, publicURL string, signers ...*access.Signer) (*Identity, error) {
 	u, err := url.Parse(publicURL)
-	if len(secret) < 32 || err != nil || u.Host == "" || u.User != nil || (u.Scheme != "https" && !(u.Scheme == "http" && (u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1" || u.Hostname() == "::1"))) || u.Fragment != "" || u.RawQuery != "" {
+	if err != nil {
+		return nil, fmt.Errorf("configuración de identidad inválida")
+	}
+	loopback := u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1" || u.Hostname() == "::1"
+	allowedScheme := u.Scheme == "https" || (u.Scheme == "http" && loopback)
+	if len(secret) < 32 || u.Host == "" || u.User != nil || !allowedScheme || u.Fragment != "" || u.RawQuery != "" {
 		return nil, fmt.Errorf("configuración de identidad inválida")
 	}
 	key := sha256.Sum256([]byte(secret))

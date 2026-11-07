@@ -1,0 +1,65 @@
+{
+  "stage": "CB-04",
+  "startedAtUtc": "2026-11-06T22:44:13Z",
+  "finishedAtUtc": "2026-11-06T22:46:41Z",
+  "passed": true,
+  "checks": [
+    {
+      "name": "servicios_reales_y_bases_aisladas_listos",
+      "passed": true
+    },
+    {
+      "name": "alta_nueva_puntos_SMTP_y_recuperacion_despues_del_commit",
+      "passed": true
+    },
+    {
+      "name": "activacion_unica_login_JWT_y_saldo_propio_sin_membresia",
+      "passed": true
+    },
+    {
+      "name": "roles_cabeceras_falsas_token_vencido_y_frontera_interna",
+      "passed": true
+    },
+    {
+      "name": "evento_compartido_registro_creditos_e_integracion_aislada",
+      "passed": true
+    },
+    {
+      "name": "cuenta_existente_prueba_de_correo_sin_reset_y_bcrypt_12",
+      "passed": true
+    },
+    {
+      "name": "SMTP_caido_reintenta_sin_perder_ni_repetir_puntos",
+      "passed": true
+    },
+    {
+      "name": "registro_sin_puntos_enlace_vencido_reenvio_y_rotacion",
+      "passed": true
+    },
+    {
+      "name": "logout_sin_revocacion_y_vencimiento_limitado_por_ADR006",
+      "passed": true
+    },
+    {
+      "name": "CB04_cuenta_sin_membresia_y_autorizacion_propia",
+      "passed": true
+    },
+    {
+      "name": "CB04_membresia_vencida_conserva_300_puntos_y_movimientos",
+      "passed": true
+    },
+    {
+      "name": "CB04_retorno_y_renovacion_idempotente_sin_perdida",
+      "passed": true
+    },
+    {
+      "name": "CB04_cambio_de_tipo_clases_snapshot_e_historial_preservados",
+      "passed": true
+    },
+    {
+      "name": "CB04_renovacion_programada_paginacion_y_outbox_atomico",
+      "passed": true
+    }
+  ],
+  "scope": "Local real HTTP services, isolated PostgreSQL 16, Mailpit v1.20 SMTP and injected lost callback response; no production or browser automation; membership expiry, return, type changes, ledger preservation and authorization"
+}

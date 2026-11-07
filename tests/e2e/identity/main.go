@@ -47,7 +47,7 @@ type report struct {
 var result = report{Stage: "CB-03", Started: time.Now().UTC().Format(time.RFC3339), Scope: "Local real HTTP services, isolated PostgreSQL 16, Mailpit v1.20 SMTP and injected lost callback response; no production or browser automation"}
 var client = &http.Client{Timeout: 5 * time.Second}
 var ctx context.Context
-var withMemberships = flag.Bool("memberships",false,"agregar escenarios CB-04 reutilizando el flujo CB-03")
+var withMemberships = flag.Bool("memberships", false, "agregar escenarios CB-04 reutilizando el flujo CB-03")
 
 func must(err error) {
 	if err != nil {
@@ -489,68 +489,84 @@ func run() {
 	ensure(status == 200, "No respeta JWT sin revocación de ADR-006")
 	mark("logout_sin_revocacion_y_vencimiento_limitado_por_ADR006")
 	if *withMemberships {
-		studentID:=user["id"].(string)
-		status,empty:=request(gatewayURL,"GET","/api/v1/memberships/me",userHeaders,nil)
-		ensure(status==200 && empty["activa"]==false && empty["total"]==float64(0),"Cuenta sin membresía no consultable")
-		status,_=request(gatewayURL,"POST","/api/v1/memberships",userHeaders,map[string]any{})
-		ensure(status==403,"Alumno asigna membresías")
-		status,_=request(gatewayURL,"GET","/api/v1/memberships/users/"+existingID,userHeaders,nil)
-		ensure(status==403,"Consulta membresías ajenas")
+		studentID := user["id"].(string)
+		status, empty := request(gatewayURL, "GET", "/api/v1/memberships/me", userHeaders, nil)
+		ensure(status == 200 && empty["activa"] == false && empty["total"] == float64(0), "Cuenta sin membresía no consultable")
+		status, _ = request(gatewayURL, "POST", "/api/v1/memberships", userHeaders, map[string]any{})
+		ensure(status == 403, "Alumno asigna membresías")
+		status, _ = request(gatewayURL, "GET", "/api/v1/memberships/users/"+existingID, userHeaders, nil)
+		ensure(status == 403, "Consulta membresías ajenas")
 		mark("CB04_cuenta_sin_membresia_y_autorizacion_propia")
-		adminID:=uuid()
-		sql("members_db",fmt.Sprintf("INSERT INTO usuarios(id,nombre,email,rol,password_hash) VALUES('%s','Admin fixture','admin@example.test','ADMINISTRADOR',decode('%x','hex'));",adminID,oldHash))
-		adminJWT:=login("admin@example.test",passwordUser,200)
-		adminHeaders:=func(key string)map[string]string{return map[string]string{"Authorization":"Bearer "+adminJWT,"Idempotency-Key":key}}
-		today:=sql("members_db",`SELECT (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date;`)
-		calendar,err:=time.Parse("2006-01-02",today);must(err)
-		end:=calendar.AddDate(0,0,29).Format("2006-01-02")
-		status,_=request(gatewayURL,"POST","/partner-api/v1/accounts/new-user/credits",partnerHeaders("credit-preserve-300"),map[string]any{"eventId":"preserve-300","points":150,"reason":"Prueba conservación","reference":"preserve-300"})
-		ensure(status==201,"No prepara saldo de 300")
-		ledgerSQL:=fmt.Sprintf("SELECT string_agg(m.id::text||':'||m.puntos::text,',' ORDER BY m.secuencia) FROM movimientos_puntos m JOIN cuentas c ON c.id=m.cuenta_id WHERE c.alumno_id='%s';",studentID)
-		originalLedger:=sql("benefits_db",ledgerSQL)
-		checkPoints:=func(){status,body:=request(gatewayURL,"GET","/api/v1/benefits/me",userHeaders,nil);ensure(status==200&&body["balance"]==float64(300),"Membresía alteró saldo");ensure(sql("benefits_db",ledgerSQL)==originalLedger,"Membresía alteró movimientos")}
-		oldMembership:=uuid()
-		sql("members_db",fmt.Sprintf("INSERT INTO membresias(id,usuario_id,tipo_codigo,tipo_snapshot,fecha_inicio,fecha_vencimiento,estado,motivo,modificada_por,actualizada_en) SELECT '%s','%s',codigo,to_jsonb(t)-ARRAY['modificada_por','motivo','actualizada_en'],CURRENT_DATE-40,CURRENT_DATE-1,'ACTIVA','Fixture histórica','%s',now() FROM tipos_membresia t WHERE codigo='MENSUAL';",oldMembership,studentID,adminID))
-		eventually("vencimiento materializado",func()bool{return sql("members_db",fmt.Sprintf("SELECT estado FROM membresias WHERE id='%s';",oldMembership))=="VENCIDA"})
-		status,expiredPage:=request(gatewayURL,"GET","/api/v1/memberships/me",userHeaders,nil)
-		ensure(status==200&&expiredPage["activa"]==false,"Membresía vencida sigue vigente");checkPoints()
+		adminID := uuid()
+		sql("members_db", fmt.Sprintf("INSERT INTO usuarios(id,nombre,email,rol,password_hash) VALUES('%s','Admin fixture','admin@example.test','ADMINISTRADOR',decode('%x','hex'));", adminID, oldHash))
+		adminJWT := login("admin@example.test", passwordUser, 200)
+		adminHeaders := func(key string) map[string]string {
+			return map[string]string{"Authorization": "Bearer " + adminJWT, "Idempotency-Key": key}
+		}
+		today := sql("members_db", `SELECT (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date;`)
+		calendar, err := time.Parse("2006-01-02", today)
+		must(err)
+		end := calendar.AddDate(0, 0, 29).Format("2006-01-02")
+		status, _ = request(gatewayURL, "POST", "/partner-api/v1/accounts/new-user/credits", partnerHeaders("credit-preserve-300"), map[string]any{"eventId": "preserve-300", "points": 150, "reason": "Prueba conservación", "reference": "preserve-300"})
+		ensure(status == 201, "No prepara saldo de 300")
+		ledgerSQL := fmt.Sprintf("SELECT string_agg(m.id::text||':'||m.puntos::text,',' ORDER BY m.secuencia) FROM movimientos_puntos m JOIN cuentas c ON c.id=m.cuenta_id WHERE c.alumno_id='%s';", studentID)
+		originalLedger := sql("benefits_db", ledgerSQL)
+		checkPoints := func() {
+			status, body := request(gatewayURL, "GET", "/api/v1/benefits/me", userHeaders, nil)
+			ensure(status == 200 && body["balance"] == float64(300), "Membresía alteró saldo")
+			ensure(sql("benefits_db", ledgerSQL) == originalLedger, "Membresía alteró movimientos")
+		}
+		oldMembership := uuid()
+		sql("members_db", fmt.Sprintf("INSERT INTO membresias(id,usuario_id,tipo_codigo,tipo_snapshot,fecha_inicio,fecha_vencimiento,estado,motivo,modificada_por,actualizada_en) SELECT '%s','%s',codigo,to_jsonb(t)-ARRAY['modificada_por','motivo','actualizada_en'],CURRENT_DATE-40,CURRENT_DATE-1,'ACTIVA','Fixture histórica','%s',now() FROM tipos_membresia t WHERE codigo='MENSUAL';", oldMembership, studentID, adminID))
+		eventually("vencimiento materializado", func() bool {
+			return sql("members_db", fmt.Sprintf("SELECT estado FROM membresias WHERE id='%s';", oldMembership)) == "VENCIDA"
+		})
+		status, expiredPage := request(gatewayURL, "GET", "/api/v1/memberships/me", userHeaders, nil)
+		ensure(status == 200 && expiredPage["activa"] == false, "Membresía vencida sigue vigente")
+		checkPoints()
 		mark("CB04_membresia_vencida_conserva_300_puntos_y_movimientos")
-		renewBody:=map[string]any{"tipo_codigo":"MENSUAL","fecha_vencimiento":end,"motivo":"Retorno al gimnasio"}
-		status,renewed:=request(gatewayURL,"POST","/api/v1/memberships/users/"+studentID+"/renew",adminHeaders("membership-renew-001"),renewBody)
-		ensure(status==201,"No renueva al retornar")
-		renewedMembership:=renewed["membresia"].(map[string]any)
-		ensure(renewedMembership["fecha_inicio"]==today&&renewedMembership["activa"]==true,"Inicio de retorno incorrecto")
-		status,replayed:=request(gatewayURL,"POST","/api/v1/memberships/users/"+studentID+"/renew",adminHeaders("membership-renew-001"),renewBody)
-		ensure(status==201&&replayed["membresia"].(map[string]any)["id"]==renewedMembership["id"],"Renovación duplicada")
-		checkPoints();mark("CB04_retorno_y_renovacion_idempotente_sin_perdida")
-		status,_=request(gatewayURL,"POST","/api/v1/memberships",adminHeaders("membership-overlap-001"),map[string]any{"usuario_id":studentID,"tipo_codigo":"ANUAL","fecha_inicio":today,"fecha_vencimiento":end,"motivo":"Prueba solapamiento"})
-		ensure(status==409,"No rechaza períodos superpuestos")
-		status,_=request(gatewayURL,"POST","/api/v1/memberships/"+renewedMembership["id"].(string)+"/cancel",adminHeaders("membership-cancel-001"),map[string]any{"motivo":"Cambio de tipo solicitado"})
-		ensure(status==200,"No cancela para cambio de tipo")
-		status,_=request(gatewayURL,"PUT","/api/v1/memberships/types/CLASES",adminHeaders("membership-type-001"),map[string]any{"nombre":"Clases de prueba","duracion_dias":30,"clases":8,"habilitado":true,"motivo":"Condición sintética E2E"})
-		ensure(status==200,"No configura tipo por clases")
-		status,classResult:=request(gatewayURL,"POST","/api/v1/memberships",adminHeaders("membership-class-001"),map[string]any{"usuario_id":studentID,"tipo_codigo":"CLASES","fecha_inicio":today,"fecha_vencimiento":end,"motivo":"Cambio a clases"})
-		ensure(status==201,"No asigna membresía por clases")
-		classMembership:=classResult["membresia"].(map[string]any)
-		ensure(classMembership["tipo"].(map[string]any)["clases"]==float64(8),"Cupo incorrecto")
-		status,_=request(gatewayURL,"PUT","/api/v1/memberships/types/CLASES",adminHeaders("membership-type-002"),map[string]any{"nombre":"Nueva condición de prueba","duracion_dias":60,"clases":12,"habilitado":true,"motivo":"Otra condición sintética"})
-		ensure(status==200,"No permite reconfigurar catálogo")
-		status,page:=request(gatewayURL,"GET","/api/v1/memberships/me",userHeaders,nil)
-		ensure(status==200&&page["total"]==float64(3)&&page["membresia_vigente"].(map[string]any)["tipo"].(map[string]any)["clases"]==float64(8),"Configuración reescribe membresías previas")
-		checkPoints();mark("CB04_cambio_de_tipo_clases_snapshot_e_historial_preservados")
-		status,future:=request(gatewayURL,"POST","/api/v1/memberships/users/"+studentID+"/renew",adminHeaders("membership-annual-001"),map[string]any{"tipo_codigo":"ANUAL","fecha_vencimiento":calendar.AddDate(0,0,400).Format("2006-01-02"),"motivo":"Renovación futura de prueba"})
-		ensure(status==201&&future["membresia"].(map[string]any)["condicion"]=="PROGRAMADA","Renovación futura incorrecta")
-		status,page=request(gatewayURL,"GET","/api/v1/memberships/me?pagina=2&tamano=2",userHeaders,nil)
-		ensure(status==200&&page["total"]==float64(4)&&len(page["items"].([]any))==2,"Historial no pagina correctamente")
-		ensure(sql("members_db",fmt.Sprintf("SELECT count(*) FROM outbox_membresias o JOIN membresias m ON m.id=o.membresia_id WHERE m.usuario_id='%s';",studentID))=="5","Eventos de membresía perdidos o duplicados")
-		checkPoints();mark("CB04_renovacion_programada_paginacion_y_outbox_atomico")
+		renewBody := map[string]any{"tipo_codigo": "MENSUAL", "fecha_vencimiento": end, "motivo": "Retorno al gimnasio"}
+		status, renewed := request(gatewayURL, "POST", "/api/v1/memberships/users/"+studentID+"/renew", adminHeaders("membership-renew-001"), renewBody)
+		ensure(status == 201, "No renueva al retornar")
+		renewedMembership := renewed["membresia"].(map[string]any)
+		ensure(renewedMembership["fecha_inicio"] == today && renewedMembership["activa"] == true, "Inicio de retorno incorrecto")
+		status, replayed := request(gatewayURL, "POST", "/api/v1/memberships/users/"+studentID+"/renew", adminHeaders("membership-renew-001"), renewBody)
+		ensure(status == 201 && replayed["membresia"].(map[string]any)["id"] == renewedMembership["id"], "Renovación duplicada")
+		checkPoints()
+		mark("CB04_retorno_y_renovacion_idempotente_sin_perdida")
+		status, _ = request(gatewayURL, "POST", "/api/v1/memberships", adminHeaders("membership-overlap-001"), map[string]any{"usuario_id": studentID, "tipo_codigo": "ANUAL", "fecha_inicio": today, "fecha_vencimiento": end, "motivo": "Prueba solapamiento"})
+		ensure(status == 409, "No rechaza períodos superpuestos")
+		status, _ = request(gatewayURL, "POST", "/api/v1/memberships/"+renewedMembership["id"].(string)+"/cancel", adminHeaders("membership-cancel-001"), map[string]any{"motivo": "Cambio de tipo solicitado"})
+		ensure(status == 200, "No cancela para cambio de tipo")
+		status, _ = request(gatewayURL, "PUT", "/api/v1/memberships/types/CLASES", adminHeaders("membership-type-001"), map[string]any{"nombre": "Clases de prueba", "duracion_dias": 30, "clases": 8, "habilitado": true, "motivo": "Condición sintética E2E"})
+		ensure(status == 200, "No configura tipo por clases")
+		status, classResult := request(gatewayURL, "POST", "/api/v1/memberships", adminHeaders("membership-class-001"), map[string]any{"usuario_id": studentID, "tipo_codigo": "CLASES", "fecha_inicio": today, "fecha_vencimiento": end, "motivo": "Cambio a clases"})
+		ensure(status == 201, "No asigna membresía por clases")
+		classMembership := classResult["membresia"].(map[string]any)
+		ensure(classMembership["tipo"].(map[string]any)["clases"] == float64(8), "Cupo incorrecto")
+		status, _ = request(gatewayURL, "PUT", "/api/v1/memberships/types/CLASES", adminHeaders("membership-type-002"), map[string]any{"nombre": "Nueva condición de prueba", "duracion_dias": 60, "clases": 12, "habilitado": true, "motivo": "Otra condición sintética"})
+		ensure(status == 200, "No permite reconfigurar catálogo")
+		status, page := request(gatewayURL, "GET", "/api/v1/memberships/me", userHeaders, nil)
+		ensure(status == 200 && page["total"] == float64(3) && page["membresia_vigente"].(map[string]any)["tipo"].(map[string]any)["clases"] == float64(8), "Configuración reescribe membresías previas")
+		checkPoints()
+		mark("CB04_cambio_de_tipo_clases_snapshot_e_historial_preservados")
+		status, future := request(gatewayURL, "POST", "/api/v1/memberships/users/"+studentID+"/renew", adminHeaders("membership-annual-001"), map[string]any{"tipo_codigo": "ANUAL", "fecha_vencimiento": calendar.AddDate(0, 0, 400).Format("2006-01-02"), "motivo": "Renovación futura de prueba"})
+		ensure(status == 201 && future["membresia"].(map[string]any)["condicion"] == "PROGRAMADA", "Renovación futura incorrecta")
+		status, page = request(gatewayURL, "GET", "/api/v1/memberships/me?pagina=2&tamano=2", userHeaders, nil)
+		ensure(status == 200 && page["total"] == float64(4) && len(page["items"].([]any)) == 2, "Historial no pagina correctamente")
+		ensure(sql("members_db", fmt.Sprintf("SELECT count(*) FROM outbox_membresias o JOIN membresias m ON m.id=o.membresia_id WHERE m.usuario_id='%s';", studentID)) == "5", "Eventos de membresía perdidos o duplicados")
+		checkPoints()
+		mark("CB04_renovacion_programada_paginacion_y_outbox_atomico")
 	}
 	result.Passed = true
 }
 
 func main() {
 	flag.Parse()
-	if *withMemberships {result.Stage="CB-04";result.Scope+="; membership expiry, return, type changes, ledger preservation and authorization"}
+	if *withMemberships {
+		result.Stage = "CB-04"
+		result.Scope += "; membership expiry, return, type changes, ledger preservation and authorization"
+	}
 	failed := false
 	func() {
 		defer func() {
@@ -565,7 +581,10 @@ func main() {
 		run()
 	}()
 	result.Finished = time.Now().UTC().Format(time.RFC3339)
-	file:="cb03-e2e.json";if *withMemberships{file="cb04-e2e.json"}
+	file := "cb03-e2e.json"
+	if *withMemberships {
+		file = "cb04-e2e.json"
+	}
 	path := filepath.Join("docs", "evidence", "club", file)
 	must(os.MkdirAll(filepath.Dir(path), 0755))
 	data, err := json.MarshalIndent(result, "", "  ")
@@ -575,5 +594,5 @@ func main() {
 		fmt.Fprintln(os.Stderr, result.Stage+" E2E falló; consultar el último escenario aprobado del informe. No se imprimen credenciales ni cuerpos.")
 		os.Exit(1)
 	}
-	fmt.Printf("%s E2E: %d escenarios aprobados. Informe: %s\n",result.Stage, len(result.Checks), path)
+	fmt.Printf("%s E2E: %d escenarios aprobados. Informe: %s\n", result.Stage, len(result.Checks), path)
 }
