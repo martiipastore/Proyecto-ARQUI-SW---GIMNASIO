@@ -44,7 +44,7 @@ func (c Client) request(ctx context.Context, method, path string, in any) (domai
 	if err != nil {
 		return domain.ReciboRegistro{}, ports.ErrAlmacenNoDisponible
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	switch res.StatusCode {
 	case 200, 202:
 	case 400:

@@ -64,9 +64,10 @@ func NewSigner(raw string) (*Signer, error) {
 		return nil, ErrKey
 	}
 	var key *rsa.PrivateKey
-	if block.Type == "RSA PRIVATE KEY" {
+	switch block.Type {
+	case "RSA PRIVATE KEY":
 		key, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
-	} else if block.Type == "PRIVATE KEY" {
+	case "PRIVATE KEY":
 		parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err == nil {
 			key, _ = parsed.(*rsa.PrivateKey)

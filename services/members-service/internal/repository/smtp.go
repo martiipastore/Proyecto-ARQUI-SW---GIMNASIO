@@ -35,7 +35,7 @@ func (s SMTP) Send(ctx context.Context, m model.Email) error {
 	if err != nil {
 		return fmt.Errorf("SMTP no disponible")
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	deadline := time.Now().Add(10 * time.Second)
 	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
 		deadline = d
@@ -49,7 +49,7 @@ func (s SMTP) Send(ctx context.Context, m model.Email) error {
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	encrypted := false
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		if err = client.StartTLS(&tls.Config{ServerName: s.Host, MinVersion: tls.VersionTLS12}); err != nil {

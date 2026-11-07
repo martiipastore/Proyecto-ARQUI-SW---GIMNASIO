@@ -34,7 +34,7 @@ func (b BenefitsHTTP) Fulfill(ctx context.Context, f model.Fulfillment) (int64, 
 	if err != nil {
 		return 0, fmt.Errorf("benefits no disponible")
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != 200 {
 		return 0, fmt.Errorf("benefits rechazó la operación: %d", res.StatusCode)
 	}
