@@ -44,7 +44,7 @@ type report struct {
 	Scope    string  `json:"scope"`
 }
 
-var result = report{Stage: "CB-03", Started: time.Now().UTC().Format(time.RFC3339), Scope: "Local real HTTP services, isolated PostgreSQL 16, Mailpit v1.20 SMTP and injected lost callback response; no production or browser automation"}
+var result = report{Stage: "CB-03", Started: time.Now().UTC().Format(time.RFC3339), Scope: "Local real HTTP services, partner API v2, isolated PostgreSQL 16, Mailpit v1.20 SMTP and injected lost callback response; no production or browser automation"}
 var client = &http.Client{Timeout: 5 * time.Second}
 var ctx context.Context
 var withMemberships = flag.Bool("memberships", false, "agregar escenarios CB-04 reutilizando el flujo CB-03")
@@ -371,7 +371,7 @@ func run() {
 	}
 	waitRegistration := func(event string) {
 		eventually("registro completado", func() bool {
-			status, body := request(gatewayURL, "GET", "/partner-api/v1/external-registrations/"+event, map[string]string{"X-API-Key": apiKey}, nil)
+			status, body := request(gatewayURL, "GET", "/partner-api/v2/external-registrations/"+event, map[string]string{"X-API-Key": apiKey}, nil)
 			return status == 200 && body["status"] == "completed"
 		})
 	}
@@ -389,7 +389,7 @@ func run() {
 		return body["access_token"].(string)
 	}
 	newBody := register("new@example.test", "new-001", "new-user", 150)
-	status, receipt := request(gatewayURL, "POST", "/partner-api/v1/external-register", partnerHeaders("register-new-001"), newBody)
+	status, receipt := request(gatewayURL, "POST", "/partner-api/v2/external-register", partnerHeaders("register-new-001"), newBody)
 	ensure(status == 202, "No acepta registro nuevo")
 	waitRegistration("new-001")
 	_, text := mail(mailURL, "new@example.test", "")
@@ -423,24 +423,24 @@ func run() {
 	status, _ = request(gatewayURL, "GET", "/internal/v1/session", userHeaders, nil)
 	ensure(status == 404, "Expone ruta interna")
 	mark("roles_cabeceras_falsas_token_vencido_y_frontera_interna")
-	status, replay := request(gatewayURL, "POST", "/partner-api/v1/external-register", partnerHeaders("register-new-002"), newBody)
+	status, replay := request(gatewayURL, "POST", "/partner-api/v2/external-register", partnerHeaders("register-new-002"), newBody)
 	ensure(status == 202 && replay["registrationId"] == receipt["registrationId"], "No reutiliza recibo del evento")
-	status, _ = request(gatewayURL, "POST", "/partner-api/v1/accounts/new-user/credits", partnerHeaders("credit-replay-001"), map[string]any{"eventId": "new-001", "points": 150, "reason": "Participación E2E", "reference": "new-001"})
+	status, _ = request(gatewayURL, "POST", "/partner-api/v2/accounts/new-user/credits", partnerHeaders("credit-replay-001"), map[string]any{"eventId": "new-001", "points": 150, "reason": "Participación E2E", "reference": "new-001"})
 	ensure(status == 201, "No recupera evento del registro")
-	status, _ = request(gatewayURL, "GET", "/partner-api/v1/accounts/new-user/balance", map[string]string{"X-API-Key": apiKey}, nil)
+	status, _ = request(gatewayURL, "GET", "/partner-api/v2/accounts/new-user/balance", map[string]string{"X-API-Key": apiKey}, nil)
 	ensure(status == 200, "Saldo para integración autorizada")
 	ensure(sql("benefits_db", "SELECT count(*) FROM movimientos_puntos;") == "1", "Evento duplicado entre endpoints")
-	status, _ = request(gatewayURL, "GET", "/partner-api/v1/accounts/new-user/balance", map[string]string{"X-API-Key": otherKey}, nil)
+	status, _ = request(gatewayURL, "GET", "/partner-api/v2/accounts/new-user/balance", map[string]string{"X-API-Key": otherKey}, nil)
 	ensure(status == 404, "Otra integración consulta saldo ajeno")
 	mark("evento_compartido_registro_creditos_e_integracion_aislada")
 	existingID := uuid()
 	oldHash, err := bcrypt.GenerateFromPassword([]byte(passwordUser), 10)
 	must(err)
 	sql("members_db", fmt.Sprintf("INSERT INTO usuarios(id,nombre,email,password_hash) VALUES('%s','Preexistente','existing@example.test',decode('%x','hex'));", existingID, oldHash))
-	status, _ = request(gatewayURL, "POST", "/partner-api/v1/external-register", partnerHeaders("register-existing-001"), register("existing@example.test", "existing-001", "existing-user", 100))
+	status, _ = request(gatewayURL, "POST", "/partner-api/v2/external-register", partnerHeaders("register-existing-001"), register("existing@example.test", "existing-001", "existing-user", 100))
 	ensure(status == 202, "No acepta cuenta existente")
 	_, verification := mail(mailURL, "existing@example.test", "")
-	status, _ = request(gatewayURL, "GET", "/partner-api/v1/accounts/existing-user/balance", map[string]string{"X-API-Key": apiKey}, nil)
+	status, _ = request(gatewayURL, "GET", "/partner-api/v2/accounts/existing-user/balance", map[string]string{"X-API-Key": apiKey}, nil)
 	ensure(status == 404, "Vinculó correo no confirmado")
 	activate(activation(verification), "password-intento-reset", 200)
 	waitRegistration("existing-001")
@@ -458,7 +458,7 @@ func run() {
 	ensure(status == 200 && balance["balance"] == float64(100), "Saldo preexistente incorrecto")
 	mark("cuenta_existente_prueba_de_correo_sin_reset_y_bcrypt_12")
 	docker("", "stop", mailName)
-	status, _ = request(gatewayURL, "POST", "/partner-api/v1/external-register", partnerHeaders("register-smtp-001"), register("smtp@example.test", "smtp-001", "smtp-user", 150))
+	status, _ = request(gatewayURL, "POST", "/partner-api/v2/external-register", partnerHeaders("register-smtp-001"), register("smtp@example.test", "smtp-001", "smtp-user", 150))
 	ensure(status == 202, "No persiste con SMTP caído")
 	waitRegistration("smtp-001")
 	ensure(sql("members_db", "SELECT count(*) FROM correos_pendientes c JOIN registros_externos r ON r.id=c.registro_id WHERE r.evento_id='smtp-001' AND c.enviado_en IS NULL;") == "1", "No conservó correo pendiente")
@@ -467,7 +467,7 @@ func run() {
 	ensure(strings.Contains(smtpText, "150 puntos"), "No recupera bienvenida")
 	ensure(sql("benefits_db", "SELECT count(*) FROM eventos_acreditados WHERE evento_id='smtp-001';") == "1", "SMTP duplicó acreditación")
 	mark("SMTP_caido_reintenta_sin_perder_ni_repetir_puntos")
-	status, _ = request(gatewayURL, "POST", "/partner-api/v1/external-register", partnerHeaders("register-zero-001"), register("zero@example.test", "zero-001", "zero-user", 0))
+	status, _ = request(gatewayURL, "POST", "/partner-api/v2/external-register", partnerHeaders("register-zero-001"), register("zero@example.test", "zero-001", "zero-user", 0))
 	ensure(status == 202, "No acepta registro sin puntos")
 	waitRegistration("zero-001")
 	mailID, zeroText := mail(mailURL, "zero@example.test", "")
@@ -507,7 +507,7 @@ func run() {
 		calendar, err := time.Parse("2006-01-02", today)
 		must(err)
 		end := calendar.AddDate(0, 0, 29).Format("2006-01-02")
-		status, _ = request(gatewayURL, "POST", "/partner-api/v1/accounts/new-user/credits", partnerHeaders("credit-preserve-300"), map[string]any{"eventId": "preserve-300", "points": 150, "reason": "Prueba conservación", "reference": "preserve-300"})
+		status, _ = request(gatewayURL, "POST", "/partner-api/v2/accounts/new-user/credits", partnerHeaders("credit-preserve-300"), map[string]any{"eventId": "preserve-300", "points": 150, "reason": "Prueba conservación", "reference": "preserve-300"})
 		ensure(status == 201, "No prepara saldo de 300")
 		ledgerSQL := fmt.Sprintf("SELECT string_agg(m.id::text||':'||m.puntos::text,',' ORDER BY m.secuencia) FROM movimientos_puntos m JOIN cuentas c ON c.id=m.cuenta_id WHERE c.alumno_id='%s';", studentID)
 		originalLedger := sql("benefits_db", ledgerSQL)
@@ -581,9 +581,9 @@ func main() {
 		run()
 	}()
 	result.Finished = time.Now().UTC().Format(time.RFC3339)
-	file := "cb03-e2e.json"
+	file := "cb03-v2-e2e.json"
 	if *withMemberships {
-		file = "cb04-e2e.json"
+		file = "cb04-v2-e2e.json"
 	}
 	path := filepath.Join("docs", "evidence", "club", file)
 	must(os.MkdirAll(filepath.Dir(path), 0755))

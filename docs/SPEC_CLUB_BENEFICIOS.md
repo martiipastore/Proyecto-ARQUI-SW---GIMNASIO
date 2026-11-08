@@ -1,5 +1,11 @@
 # Adenda funcional del Club de Beneficios — SPEC 0.11
 
+> **Actualización de alcance, 08/11/2026:** el equipo descartó débitos, catálogo
+> y canjes. Las historias y reglas sobre esas operaciones debajo son históricas;
+> la capacidad exportada vigente es registro externo, acreditación, saldo y
+> movimientos según [OpenAPI v2](contracts/benefits-api.v2.yaml). Las reglas de
+> seguridad, identidad, límites, idempotencia y conservación de puntos siguen vigentes.
+
 Fecha: 6 de noviembre de 2026. Requisitos autorizados por el pedido del equipo;
 cambio preparado localmente para revisión por otro integrante y PR conforme a
 CONTRIBUTING. No certifica implementación ni publicación del SPEC.

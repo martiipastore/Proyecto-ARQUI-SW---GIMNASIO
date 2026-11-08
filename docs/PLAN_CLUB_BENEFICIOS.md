@@ -1,5 +1,10 @@
 # Plan de corrección integral del Club de Beneficios
 
+> **Decisión de alcance del 08/11/2026:** débitos, catálogo y canjes no se
+> implementarán ni se exportarán. Las filas CB-05 a CB-07 conservan propuestas
+> anteriores para trazabilidad; no deben leerse como compromisos de la capacidad
+> compartida. El contrato operativo es [v2](contracts/benefits-api.v2.yaml).
+
 Actualizado: 6 de noviembre de 2026. Fuente: pedido del equipo, D-63 a D-70 y
 [adenda funcional](SPEC_CLUB_BENEFICIOS.md). No fija una nueva fecha de entrega.
 

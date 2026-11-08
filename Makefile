@@ -4,7 +4,7 @@
 COMPOSE := docker compose --env-file .env -f deploy/docker-compose.yml
 MOCK_COMPOSE := docker compose -f deploy/docker-compose.mock.yml
 SPECTRAL_IMAGE := stoplight/spectral:6.14.3
-CONTRACT := docs/contracts/benefits-api.v1.yaml
+CONTRACT := docs/contracts/benefits-api.v2.yaml
 RULESET := docs/contracts/.spectral.yaml
 
 GO_MODULES := pkg gateway \

@@ -1,19 +1,19 @@
 # Club de Beneficios — Guía para integrar la API de fidelización
 
-> Estado real del backend (2026-11-06): están implementados créditos, saldo e
-> historial, registro externo y consulta de su procesamiento (estos dos últimos
-> requieren habilitar identidad). Débitos, catálogo y canjes siguen pendientes.
-> Ver [revisión y ejemplos ejecutables](../CLUB_BENEFICIOS_REVISION.md).
-> El alta, la activación y sus variables se describen en [Registro externo](../CLUB_REGISTRO_EXTERNO.md).
+> Capacidad ofrecida al grupo consumidor: registro externo, acreditación, saldo e
+> historial de movimientos. El registro requiere habilitar identidad y correo.
+> La URL pública HTTPS todavía no está disponible.
+> Detalles de activación y configuración: [Registro externo](../CLUB_REGISTRO_EXTERNO.md).
 
-Esta guía es para equipos de **otros sistemas** que quieran sumar puntos de fidelización a su flujo: acreditar puntos cuando un cliente compra o cumple un turno, debitarlos cuando los usa, canjearlos por beneficios y mostrar su saldo.
+Esta guía es para equipos de **otros sistemas** que quieran registrar a sus usuarios en el Club, acreditarles puntos por acciones de su sistema y consultar el saldo y los movimientos.
 
 | | |
 |---|---|
-| **Contrato** | [benefits-api.v1.yaml](benefits-api.v1.yaml) (OpenAPI 3.1) |
-| **Versión vigente** | **v1.4.0** |
+| **Contrato operativo** | [benefits-api.v2.yaml](benefits-api.v2.yaml) (OpenAPI 3.1) |
+| **Versión vigente** | **v2.0.0** (`/v2`) |
+| **Contrato anterior** | [benefits-api.v1.yaml](benefits-api.v1.yaml), histórico; contiene operaciones que no se implementaron y no debe usarse para una integración nueva |
 | **Mock local** | `http://localhost:4010` (ver [Probar con el mock](#probar-con-el-mock)) |
-| **Producción** | `https://<host>/partner-api` — *URL pública a confirmar (proveedor de nube sin definir)* |
+| **Producción** | URL HTTPS pendiente de publicación y prueba desde una red externa |
 | **Formato** | JSON (UTF-8); errores en `application/problem+json` (RFC 7807) |
 
 ---
@@ -22,26 +22,25 @@ Esta guía es para equipos de **otros sistemas** que quieran sumar puntos de fid
 
 | Operación | Método y ruta | Para qué |
 |---|---|---|
-| Acreditar puntos | `POST /v1/accounts/{externalUserId}/credits` | Premiar algo que hizo el usuario en tu sistema |
-| Debitar puntos | `POST /v1/accounts/{externalUserId}/debits` | Descontar puntos que el usuario usa en tu negocio |
-| Consultar saldo | `GET /v1/accounts/{externalUserId}/balance` | Mostrar cuántos puntos tiene |
-| Listar movimientos | `GET /v1/accounts/{externalUserId}/movements?page=1&size=20` | Mostrar el historial de lo que hiciste con esa cuenta |
-| Ver catálogo | `GET /v1/benefits` | Ofrecer beneficios canjeables |
-| Canjear beneficio | `POST /v1/accounts/{externalUserId}/redemptions` | Cambiar puntos por un beneficio del catálogo |
+| Acreditar puntos | `POST /v2/accounts/{externalUserId}/credits` | Premiar algo que hizo el usuario en tu sistema |
+| Consultar saldo | `GET /v2/accounts/{externalUserId}/balance` | Mostrar los puntos actuales de la cuenta |
+| Listar movimientos | `GET /v2/accounts/{externalUserId}/movements?page=1&size=20` | Mostrar las acreditaciones hechas por tu integración |
+| Registrar o vincular usuario | `POST /v2/external-register` | Crear o vincular una cuenta, con puntos opcionales |
+| Consultar registro | `GET /v2/external-registrations/{eventId}` | Saber si terminó el alta y la acreditación inicial |
 
 ### Conceptos clave
 
 - **Cuenta = (partner, `externalUserId`).** El `externalUserId` es **tu** identificador del usuario (1 a 64 caracteres: letras, números y `. _ : @ -`). No necesitás conocer IDs internos del gimnasio.
-- **Las cuentas se vinculan antes de usarse.** Una persona puede tener cuenta sin membresía. Una integración con permiso de registro puede solicitar alta/vinculación por `POST /v1/external-register`; una cuenta previa exige prueba de control del correo. El administrador también puede gestionar vínculos. Si operás sobre un usuario no vinculado a vos recibís `404 ACCOUNT_NOT_FOUND`. El registro sigue condicionado a resolver CB-03 antes de habilitar identidad.
+- **Las cuentas se vinculan antes de usarse.** Una persona puede tener cuenta sin membresía. Una integración con permiso de registro puede solicitar alta/vinculación por `POST /v2/external-register`; una cuenta previa exige prueba de control del correo. Si operás sobre un usuario no vinculado a vos recibís `404 ACCOUNT_NOT_FOUND`. En el despliegue, identidad y registro deben estar habilitados.
 - **Saldo compartido, historial propio.** El saldo es el total de la cuenta (incluye, por ejemplo, puntos que el alumno ganó por asistir a clases). En `movements` ves **solo los movimientos que hiciste vos**.
-- **Los movimientos son inmutables.** No hay endpoint para borrar ni editar. Si hubo un error, el gimnasio lo corrige con un movimiento compensatorio (`REVERSAL`) y el original queda `REVERTED`.
-- **El saldo nunca es negativo.** Un débito o canje que no alcanza se rechaza entero.
+- **Los movimientos son inmutables.** No hay endpoint público para borrar ni editar una acreditación.
+- **El saldo nunca es negativo.** Esta capacidad solo suma puntos; no ofrece débitos ni canjes.
 
 ## Cómo obtener una API key
 
 1. Pedí el alta como partner a cualquier integrante del equipo (ver [Equipo](../../README.md#equipo)) o abriendo un *issue* en este repositorio con el título `Alta de partner: <nombre de tu sistema>`. Indicá un contacto técnico.
 2. El administrador del gimnasio crea el partner y te entrega la **API key una sola vez**. Guardala como secreto (variable de entorno o gestor de secretos); nunca en el código ni en el frontend.
-3. Coordiná permisos, límites y **vinculación de usuarios**. Si tenés permiso de registro, seguí el flujo de registro externo y su recibo; en otro caso coordiná el vínculo administrativo. Confirmá si tu integración exige `eventId` (por defecto para nuevas altas).
+3. Coordiná permisos y límites. Para vincular usuarios, usá el registro externo. Las integraciones nuevas deben enviar `eventId` en cada crédito.
 4. Si la key se filtra, pedí que se revoque; se emite una nueva y la anterior deja de funcionar de inmediato.
 
 > En el **mock** cualquier valor de `X-API-Key` es aceptado y cualquier `externalUserId` responde.
@@ -63,7 +62,7 @@ Opcional: mandá `X-Correlation-Id` (UUID) para rastrear una solicitud en los lo
 
 ## Idempotencia
 
-Las operaciones que modifican puntos (`credits`, `debits`, `redemptions`) **exigen** el header `Idempotency-Key`. Así podés reintentar ante un timeout sin acreditar dos veces.
+Las escrituras (`external-register` y `credits`) **exigen** el header `Idempotency-Key`. Así podés reintentar ante un timeout sin registrar o acreditar dos veces. `eventId` identifica el hecho de negocio y también impide repetir la acreditación con otra key.
 
 | Caso | Resultado |
 |---|---|
@@ -71,12 +70,12 @@ Las operaciones que modifican puntos (`credits`, `debits`, `redemptions`) **exig
 | Misma key + **mismo body** | Se devuelve **la respuesta original** (mismo status y body) con `Idempotent-Replayed: true`. No se aplica de nuevo. |
 | Misma key + **body distinto** | `409 IDEMPOTENCY_CONFLICT` |
 | Misma key mientras la primera todavía se procesa | `409 IDEMPOTENCY_IN_PROGRESS` → reintentá en unos segundos con la misma key |
-| Reintento de una operación que fue rechazada (ej. saldo insuficiente) | Se devuelve **el mismo rechazo**. Para intentar de nuevo, usá una key nueva. |
+| Reintento de un crédito rechazado y persistido | Se devuelve **el mismo rechazo**. Para una operación distinta, usá otra key. |
 
 Reglas prácticas:
 
 - Generá **una key por operación lógica** (recomendado: UUID v4) y guardala junto a tu registro de origen (la compra, el turno). Entre 8 y 128 caracteres: letras, números y `. _ : -`.
-- Las keys son únicas **por partner** y se conservan **30 días**. Después de ese plazo, la misma key se trata como nueva.
+- Las keys de créditos son únicas **por partner** y se conservan **al menos 30 días**. Conservá también el `eventId`: su deduplicación no caduca con la key HTTP.
 - Las consultas (`GET`) son seguras de reintentar y no usan key.
 
 ## Errores
@@ -85,12 +84,12 @@ Todos los errores tienen este formato:
 
 ```json
 {
-  "type": "https://gimnasio.example.com/problems/insufficient-balance",
-  "title": "Saldo insuficiente",
-  "status": 422,
-  "detail": "Se pidieron 5000 puntos y el saldo disponible es 770.",
-  "instance": "/v1/accounts/cli-10045/debits",
-  "code": "INSUFFICIENT_BALANCE",
+  "type": "https://gimnasio.example.com/problems/account-not-found",
+  "title": "Cuenta no encontrada",
+  "status": 404,
+  "detail": "La cuenta no está vinculada a este partner.",
+  "instance": "/partner-api/v2/accounts/cli-10045/balance",
+  "code": "ACCOUNT_NOT_FOUND",
   "correlationId": "3c5e7a9b-1d2f-4a6b-8c0d-2e4f6a8b0c1d"
 }
 ```
@@ -103,11 +102,8 @@ Programá contra el campo **`code`** (estable); `title` y `detail` son texto par
 | `UNAUTHORIZED` | 401 | API key ausente, inválida o revocada. | **No.** Revisá la credencial. |
 | `FORBIDDEN` | 403 | Partner suspendido o sin permiso. | **No.** Contactá al gimnasio. |
 | `ACCOUNT_NOT_FOUND` | 404 | El `externalUserId` no está vinculado a tu partner. | **No.** Pedí la vinculación. |
-| `BENEFIT_NOT_FOUND` | 404 | El `benefitId` no existe. | **No.** Volvé a leer el catálogo. |
 | `IDEMPOTENCY_CONFLICT` | 409 | Reusaste una key con otro body. | **No.** Usá una key nueva si es otra operación. |
 | `IDEMPOTENCY_IN_PROGRESS` | 409 | La operación original con esa key todavía está en curso. | **Sí**, con la misma key, tras 1–2 s. |
-| `INSUFFICIENT_BALANCE` | 422 | El saldo no alcanza. No se aplicó nada. | **No** con la misma key. |
-| `BENEFIT_NOT_AVAILABLE` | 422 | Beneficio vencido, inactivo o no habilitado para partners. | **No.** Volvé a leer el catálogo. |
 | `RATE_LIMITED` | 429 | Superaste el límite de uso. | **Sí**, después de `Retry-After` segundos. |
 | `INTERNAL` | 500 | Error inesperado de nuestro lado. | **Sí**, con backoff exponencial y la **misma key**. |
 | `UNAVAILABLE` | 502 / 503 | Servicio caído o en mantenimiento. | **Sí**, después de `Retry-After`, con la **misma key**. |
@@ -120,13 +116,14 @@ Programá contra el campo **`code`** (estable); `title` y `detail` son texto par
 
 | Límite | Valor |
 |---|---|
-| Solicitudes por API key | 20 por segundo, ráfagas de hasta 40 |
+| Solicitudes por API key | 120 por minuto por defecto, configurable por integración (ventana de minuto calendario) |
 | Puntos por operación | 1 a 1.000.000 (entero) |
 | `reason` | 3 a 200 caracteres |
 | `reference` | 1 a 100 caracteres |
 | Página de movimientos (`size`) | 1 a 100 (por defecto 20) |
 | Retención de `Idempotency-Key` | 30 días |
-| Timeout del lado del servidor | 5 s |
+| Timeout público del gateway | 5 s |
+| Timeout de Benefits para estas solicitudes | 4 s |
 
 Los límites de tasa pueden ajustarse; cualquier cambio se anuncia en el [CHANGELOG](#changelog-del-contrato).
 
@@ -148,7 +145,7 @@ Para pedir una respuesta de error concreta, usá el header `Prefer` de Prism:
 
 | Header | Efecto |
 |---|---|
-| `Prefer: code=422` | Devuelve la respuesta 422 de la operación |
+| `Prefer: code=404` | Devuelve la respuesta 404 de la operación |
 | `Prefer: example=idempotencyInProgress` | Devuelve el ejemplo con ese nombre |
 | `Prefer: dynamic=true` | Genera datos aleatorios válidos según el esquema |
 
@@ -162,20 +159,34 @@ API_KEY=demo-partner-key
 USER_ID=cli-10045
 ```
 
-### 1. Ver el catálogo de beneficios
+### 1. Registrar o vincular a una persona
 
 ```bash
-curl -s "$BASE/v1/benefits" -H "X-API-Key: $API_KEY"
+curl -s -X POST "$BASE/v2/external-register" \
+  -H "X-API-Key: $API_KEY" \
+  -H "Idempotency-Key: registro-ORDER-A-7781" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Persona de ejemplo","email":"persona@example.test","externalUserId":"cli-10045","eventId":"alta-ORDER-A-7781","points":0}'
 ```
 
-### 2. Acreditar puntos por una compra
+El servicio real devuelve `202` con `registrationId`, `eventId`, `externalUserId` y `status: "accepted"`. Si la cuenta ya existía, su titular debe confirmar el enlace recibido por correo. El mock devuelve un ejemplo fijo y no envía correos. Conservá el `externalUserId` devuelto si no lo enviaste.
+
+### 2. Consultar el resultado del registro
 
 ```bash
-curl -s -X POST "$BASE/v1/accounts/$USER_ID/credits" \
+curl -s "$BASE/v2/external-registrations/alta-ORDER-A-7781" -H "X-API-Key: $API_KEY"
+```
+
+En el servicio real, esperá `status: "completed"` antes de consultar el saldo o acreditar un evento nuevo. Respetá `Retry-After` si recibís 429. El mock no cambia de estado.
+
+### 3. Acreditar puntos por una compra
+
+```bash
+curl -s -X POST "$BASE/v2/accounts/$USER_ID/credits" \
   -H "X-API-Key: $API_KEY" \
   -H "Idempotency-Key: 9f1b6c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b" \
   -H "Content-Type: application/json" \
-  -d '{"points": 150, "reason": "Compra en tienda online", "reference": "ORDER-A-7781"}'
+  -d '{"eventId":"ORDER-A-7781","points":150,"reason":"Compra en tienda online","reference":"ORDER-A-7781"}'
 ```
 
 Respuesta `201`:
@@ -193,55 +204,22 @@ Respuesta `201`:
 }
 ```
 
-Si se corta la conexión, repetí **exactamente el mismo comando** (misma key): no se acredita dos veces.
+Si se corta la conexión, repetí **exactamente el mismo comando**, con la misma key y el mismo `eventId`: no se acredita dos veces.
 
-### 3. Consultar el saldo
+### 4. Consultar el saldo
 
 ```bash
-curl -s "$BASE/v1/accounts/$USER_ID/balance" -H "X-API-Key: $API_KEY"
+curl -s "$BASE/v2/accounts/$USER_ID/balance" -H "X-API-Key: $API_KEY"
 ```
 
 ```json
 { "externalUserId": "cli-10045", "balance": 1270, "updatedAt": "2026-10-07T18:42:10Z" }
 ```
 
-### 4. Debitar puntos
+### 5. Ver los movimientos
 
 ```bash
-curl -s -X POST "$BASE/v1/accounts/$USER_ID/debits" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Idempotency-Key: 2b7d4e91-0c6a-4f3e-9b8d-7a1c5e2f0d34" \
-  -H "Content-Type: application/json" \
-  -d '{"points": 500, "reason": "Descuento aplicado en compra", "reference": "ORDER-A-7790"}'
-```
-
-### 5. Manejar saldo insuficiente
-
-```bash
-curl -s -X POST "$BASE/v1/accounts/$USER_ID/debits" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Idempotency-Key: 5e8a1f20-7b3c-4d9e-a6f1-2c0b9d8e7a65" \
-  -H "Content-Type: application/json" \
-  -H "Prefer: code=422" \
-  -d '{"points": 5000, "reason": "Descuento aplicado en compra", "reference": "ORDER-A-7795"}'
-```
-
-Respuesta `422` con `"code": "INSUFFICIENT_BALANCE"`. El header `Prefer` solo hace falta en el mock; en producción el 422 aparece cuando el saldo realmente no alcanza.
-
-### 6. Canjear un beneficio
-
-```bash
-curl -s -X POST "$BASE/v1/accounts/$USER_ID/redemptions" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Idempotency-Key: a4c9e2f7-1b8d-4a6e-9c3f-5d2b7e0a1f86" \
-  -H "Content-Type: application/json" \
-  -d '{"benefitId": "0e5f6a7b-8c9d-4e1f-a2b3-c4d5e6f70812", "reference": "CANJE-POS-118"}'
-```
-
-### 7. Ver los movimientos
-
-```bash
-curl -s "$BASE/v1/accounts/$USER_ID/movements?page=1&size=20" -H "X-API-Key: $API_KEY"
+curl -s "$BASE/v2/accounts/$USER_ID/movements?page=1&size=20" -H "X-API-Key: $API_KEY"
 ```
 
 > En PowerShell, reemplazá `\` por `` ` `` al final de cada línea y usá `curl.exe` en lugar de `curl`.
@@ -252,30 +230,47 @@ El contrato se valida con **Spectral** usando las reglas de [.spectral.yaml](.sp
 
 ```bash
 docker run --rm -v "$PWD:/work" -w /work stoplight/spectral:6.14.3 \
-  lint docs/contracts/benefits-api.v1.yaml --ruleset docs/contracts/.spectral.yaml --fail-severity=warn
+  lint docs/contracts/benefits-api.v2.yaml --ruleset docs/contracts/.spectral.yaml --fail-severity=warn
 ```
 
 Con `make`: `make contract-lint`. La CI corre el mismo comando en cada PR que toque `docs/contracts/`.
 
+La [prueba E2E local de v2](../evidence/club/cb04-v2-e2e.json) aprobó 14 escenarios
+con Gateway, Benefits, Members, PostgreSQL y Mailpit reales el 08/11/2026.
+Incluye registro, crédito, aislamiento, fallos SMTP y conservación de puntos al
+cambiar la membresía. Esta evidencia local no acredita todavía una URL pública.
+
 ## Política de versionado
 
-El contrato sigue **Semantic Versioning** (`MAYOR.MENOR.PARCHE`, en `info.version`). La versión **mayor** va en la ruta (`/v1/...`).
+El contrato sigue **Semantic Versioning** (`MAYOR.MENOR.PARCHE`, en `info.version`). La versión **mayor** va en la ruta (`/v2/...`).
 
 | Tipo de cambio | Ejemplos | Versión | Ruta |
 |---|---|---|---|
-| **Compatible** | Nuevo endpoint; nuevo campo **opcional** en el request; nuevo campo en la respuesta; nuevo `code` de error; nuevo valor de `type` en movimientos | MENOR (1.1.0) | Sigue `/v1` |
-| **Corrección** | Descripciones, ejemplos, errores tipográficos | PARCHE (1.0.1) | Sigue `/v1` |
-| **Incompatible** | Quitar o renombrar un campo o endpoint; volver obligatorio un campo; cambiar tipos, formatos o semántica; achicar límites | MAYOR (2.0.0) | Nueva ruta `/v2` |
+| **Compatible** | Nuevo endpoint o campo opcional; nuevo campo en la respuesta; nuevo código de error | MENOR (2.1.0) | Sigue `/v2` |
+| **Corrección** | Aclarar descripciones o ejemplos sin cambiar el comportamiento | PARCHE (2.0.1) | Sigue `/v2` |
+| **Incompatible** | Quitar o renombrar un campo o endpoint; volver obligatorio un campo; cambiar tipos, formatos o semántica; achicar límites | MAYOR (3.0.0) | Nueva ruta `/v3` |
 
 Lo que esperamos de tu cliente para que los cambios compatibles no te rompan:
 
 - **Ignorá campos desconocidos** en las respuestas.
-- **Tratá valores de enum desconocidos** (por ejemplo, un nuevo `type` de movimiento) sin fallar.
+- **Tratá valores de enum desconocidos** sin fallar.
 - Manejá códigos de error nuevos por su status HTTP.
 
-**Deprecación:** cuando salga `/v2`, `/v1` se mantiene **al menos 60 días** (o hasta el fin de la cursada, lo que ocurra primero). Durante ese período las respuestas de `/v1` incluyen los headers `Deprecation: true` y `Sunset: <fecha>`, y el cambio se anuncia en este CHANGELOG y a los contactos técnicos de cada partner.
+**Versión anterior:** `/v1` permanece en el código y el contrato 1.4.0 se conserva como historial. Ese contrato incluía rutas nunca implementadas; por eso no debe usarse para una integración nueva. La v2 es la primera versión ajustada al alcance que se ofrecerá públicamente. Una futura retirada de una versión operativa requerirá aviso previo, período de coexistencia y fecha de fin documentada.
 
 ## CHANGELOG del contrato
+
+### v2.0.0 — 2026-11-08
+
+- Contrato operativo para registro externo, consulta de su recibo, acreditación,
+  saldo y movimientos. La ruta pública cambia a `/partner-api/v2`; el gateway
+  adapta esa ruta a los handlers actuales de Benefits.
+- Débitos, catálogo y canjes se retiran del contrato vigente por decisión del
+  equipo. Se conserva el contrato v1 como historial de lo anunciado antes.
+- Los ejemplos de créditos incluyen `eventId`, requerido por defecto para
+  integraciones nuevas. La cuota documentada se ajusta al código: 120/minuto
+  por defecto, configurable por integración.
+- La publicación HTTPS y las pruebas desde una red externa siguen pendientes.
 
 ### v1.4.0 — 2026-11-06
 

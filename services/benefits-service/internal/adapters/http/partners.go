@@ -40,36 +40,38 @@ func RegisterPartners(r *gin.Engine, casos application.CasosDeUso, auth Authenti
 	if len(logs) > 0 {
 		h.log = logs[0]
 	}
-	grupo := r.Group("/v1", func(c *gin.Context) {
-		c.Request = problem.PartnerRequest(c.Request)
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
-		defer cancel()
-		c.Request = c.Request.WithContext(ctx)
-		c.Header(correlation.Header, correlation.FromContext(c.Request.Context()))
-		c.Header("Cache-Control", "no-store")
-		defer func() {
-			if recover() != nil {
-				h.fallo(c, http.StatusInternalServerError, "INTERNAL", "Ocurrió un error inesperado.", "")
+	for _, version := range []string{"/v1", "/v2"} {
+		grupo := r.Group(version, func(c *gin.Context) {
+			c.Request = problem.PartnerRequest(c.Request)
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
+			defer cancel()
+			c.Request = c.Request.WithContext(ctx)
+			c.Header(correlation.Header, correlation.FromContext(c.Request.Context()))
+			c.Header("Cache-Control", "no-store")
+			defer func() {
+				if recover() != nil {
+					h.fallo(c, http.StatusInternalServerError, "INTERNAL", "Ocurrió un error inesperado.", "")
+				}
+			}()
+			if len(c.Request.Header.Values("X-API-Key")) != 1 {
+				h.fallo(c, 401, "UNAUTHORIZED", "Falta una credencial válida.", "")
+				return
 			}
-		}()
-		if len(c.Request.Header.Values("X-API-Key")) != 1 {
-			h.fallo(c, 401, "UNAUTHORIZED", "Falta una credencial válida.", "")
-			return
-		}
-		id, err := auth.Autenticar(c.Request.Context(), c.GetHeader("X-API-Key"))
-		if err != nil {
-			h.error(c, err, "")
-			return
-		}
-		c.Set("partnerID", id)
-		c.Next()
-		if h.log != nil {
-			h.log.InfoContext(c.Request.Context(), "solicitud de integración", slog.String("partner_id", id), slog.String("route", c.FullPath()), slog.Int("status", c.Writer.Status()))
-		}
-	})
-	grupo.POST("/accounts/:externalUserId/credits", h.acreditar)
-	grupo.GET("/accounts/:externalUserId/balance", h.balance)
-	grupo.GET("/accounts/:externalUserId/movements", h.movimientos)
+			id, err := auth.Autenticar(c.Request.Context(), c.GetHeader("X-API-Key"))
+			if err != nil {
+				h.error(c, err, "")
+				return
+			}
+			c.Set("partnerID", id)
+			c.Next()
+			if h.log != nil {
+				h.log.InfoContext(c.Request.Context(), "solicitud de integración", slog.String("partner_id", id), slog.String("route", c.FullPath()), slog.Int("status", c.Writer.Status()))
+			}
+		})
+		grupo.POST("/accounts/:externalUserId/credits", h.acreditar)
+		grupo.GET("/accounts/:externalUserId/balance", h.balance)
+		grupo.GET("/accounts/:externalUserId/movements", h.movimientos)
+	}
 }
 
 func (h *PartnersAPI) fallo(c *gin.Context, status int, code, detail, originalCorrelation string) {
@@ -251,7 +253,7 @@ func (h *PartnersAPI) movimientos(c *gin.Context) {
 
 // PartnerFallback conserva salud y errores internos, y adapta las rutas públicas.
 func PartnerFallback(c *gin.Context) {
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/") {
+	if strings.HasPrefix(c.Request.URL.Path, "/v1/") || strings.HasPrefix(c.Request.URL.Path, "/v2/") {
 		c.Request = problem.PartnerRequest(c.Request)
 		problem.WritePartnerHTTP(c.Writer, c.Request, problem.New(400, "INVALID_REQUEST", "Solicitud inválida", "Ruta o método no disponible en el flujo publicado."))
 		c.Abort()

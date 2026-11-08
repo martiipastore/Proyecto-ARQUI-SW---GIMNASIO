@@ -232,7 +232,7 @@ flowchart LR
 - **Por qué hexagonal:** es la capacidad publicada a otros grupos; su contrato (API v1) debe mantenerse estable aunque cambie la infraestructura, y el ledger tiene invariantes estrictas (RN-22 a RN-27).
 - **Ledger:** `movimientos_puntos` es append-only; todas las escrituras bloquean la fila de la cuenta y reciben una `account_sequence` creciente. El saldo se mantiene en `cuentas.saldo`, actualizado en la misma transacción que inserta el movimiento, con `CHECK (saldo >= 0)`. La reversión inserta un movimiento compensatorio. Ver [ADR-004](adr/ADR-004-orden-movimientos-puntos.md).
 - **Cuentas:** el alta confirmada en `members-service` registra `alumno.creado` mediante outbox; `benefits-service` consume el evento y crea eventualmente una única cuenta con saldo 0. El alta no espera ni se revierte si benefits está caído. No se crean cuentas para personas que no sean alumnos; una vinculación o una operación posterior nunca crea una cuenta por sí sola.
-- **API v1 de partners:** `/partner-api/v1/...` con API key (`X-API-Key`, guardada como hash) e `Idempotency-Key` obligatorio en escrituras. Contrato publicado: [docs/contracts/benefits-api.v1.yaml](contracts/benefits-api.v1.yaml) (OpenAPI 3.1, v1.0.0), guía para consumidores en [docs/contracts/README.md](contracts/README.md) y decisión en [ADR-008](adr/ADR-008-contrato-propio.md). Las rutas públicas son `/partner-api/v1/accounts/{externalUserId}/...` y usan inglés y `camelCase` (excepción a §12.2).
+- **API de partners:** la versión operativa preparada es `/partner-api/v2/...`, con API key (`X-API-Key`, guardada como hash) e `Idempotency-Key` obligatorio en escrituras. Cubre registro externo, créditos, saldo y movimientos; el gateway adapta v2 a los handlers existentes de Benefits. Contrato vigente: [benefits-api.v2.yaml](contracts/benefits-api.v2.yaml), guía para consumidores en [docs/contracts/README.md](contracts/README.md). La v1 se conserva como historial del contrato original; su mock incluía operaciones que no se implementaron. La URL HTTPS pública y la habilitación productiva del registro siguen pendientes.
 - **Idempotencia de asistencia e inasistencia:** restricciones únicas sobre `movimientos_puntos.origen_asistencia_id` y `movimientos_puntos.origen_reserva_id` además del registro de mensajes procesados. La penalización se calcula como `min(100, saldo_actual)` bajo el bloqueo de la cuenta; con saldo 0 se registra un movimiento de 0 para cerrar el efecto de forma auditable.
 
 #### training-service — Capas
@@ -642,7 +642,7 @@ Estados por servicio: `ready`, `degraded`, `not_ready` (respondió 503) o `unrea
 │   ├── ARCHITECTURE.md
 │   ├── adr/
 │   ├── api/                        # OpenAPI interno por servicio
-│   ├── contracts/                  # Contratos públicos: benefits-api.v1.yaml + guía + reglas Spectral
+│   ├── contracts/                  # Contrato operativo v2, contrato histórico v1, guía y reglas Spectral
 │   └── events/                     # JSON Schema de cada evento
 └── tests/
     ├── load/                       # scripts k6

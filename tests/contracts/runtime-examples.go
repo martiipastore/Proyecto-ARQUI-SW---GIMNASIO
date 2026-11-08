@@ -20,7 +20,7 @@ func run() error {
 	if len(os.Args) != 3 {
 		return fmt.Errorf("uso: runtime-examples <respuestas.json> <openapi-temporal.json>")
 	}
-	contents, err := os.ReadFile("docs/contracts/benefits-api.v1.yaml")
+	contents, err := os.ReadFile("docs/contracts/benefits-api.v2.yaml")
 	if err != nil {
 		return err
 	}
