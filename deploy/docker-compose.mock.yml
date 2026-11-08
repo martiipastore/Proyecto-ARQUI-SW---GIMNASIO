@@ -1,5 +1,5 @@
-# Mock ejecutable del contrato público del Club de Beneficios (API v1 para partners).
-# Sirve docs/contracts/benefits-api.v1.yaml con Prism en http://localhost:4010.
+# Mock ejecutable del contrato público del Club de Beneficios (API v2 para partners).
+# Sirve docs/contracts/benefits-api.v2.yaml con Prism en http://localhost:4010.
 #
 # Levantar:  docker compose -f deploy/docker-compose.mock.yml up -d
 # Bajar:     docker compose -f deploy/docker-compose.mock.yml down
@@ -17,7 +17,7 @@ services:
       --host 0.0.0.0
       --port 4010
       --multiprocess false
-      /contracts/benefits-api.v1.yaml
+      /contracts/benefits-api.v2.yaml
     volumes:
       - ../docs/contracts:/contracts:ro
     ports:

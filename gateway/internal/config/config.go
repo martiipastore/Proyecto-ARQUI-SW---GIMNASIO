@@ -77,6 +77,7 @@ var routeDefs = []struct {
 	{"/api/v1/training", Training, "TRAINING", 0},
 	{"/api/v1/nutrition", Training, "NUTRITION", 0},
 	{"/partner-api/v1", Benefits, "PARTNER_API", 5 * time.Second},
+	{"/partner-api/v2", Benefits, "PARTNER_API", 5 * time.Second},
 }
 
 // Load lee la configuración del entorno.

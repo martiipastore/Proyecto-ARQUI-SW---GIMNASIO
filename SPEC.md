@@ -1,17 +1,24 @@
 # SPEC — METALFITNESS
 
+> **Alcance del Club actualizado el 08/11/2026:** la capacidad que se ofrecerá a
+> otros grupos comprende registro/vinculación externa, acreditación de puntos,
+> consulta de saldo y movimientos. El equipo descartó implementar débitos,
+> catálogo y canjes. Los apartados históricos que los describen se conservan
+> para trazabilidad y no definen la capacidad exportada vigente. Ver
+> [contrato v2](docs/contracts/benefits-api.v2.yaml).
+
 > Especificación funcional del Trabajo Práctico Integrador de Arquitectura de Software (microservicios).
 > Este documento es la **referencia funcional** durante todo el desarrollo. No define tecnologías, lenguajes, frameworks ni modelos de base de datos.
 >
-> - Versión: 0.11 preparada localmente (ampliación del Club; revisión de otro integrante pendiente)
-> - Fecha: 2026-11-06
+> - Versión: 0.12 preparada localmente (alcance exportado del Club ajustado; revisión de otro integrante pendiente)
+> - Fecha: 2026-11-08
 > - Convenciones: `HU-xx` = historia de usuario, `RN-xx` = regla de negocio, `CU-xx` = caso de uso, `CL-xx` = caso límite, `E2E-xx` = criterio de aceptación de punta a punta. Las palabras **DEBE**, **NO DEBE** y **PUEDE** tienen sentido normativo.
 
 ---
 
 ## Actualización normativa del Club — 06/11/2026
 
-La [adenda funcional del Club](docs/SPEC_CLUB_BENEFICIOS.md) forma parte de esta
+La [adenda funcional del Club](docs/SPEC_CLUB_BENEFICIOS.md) forma parte de la
 revisión 0.11 y prevalece, para el Club, sobre exclusiones o restricciones anteriores
 que contradigan el pedido del equipo: personas externas sin membresía, registro y
 vinculación seguros por API, topes configurables, membresía por clases y recompensas

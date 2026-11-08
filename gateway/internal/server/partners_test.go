@@ -44,6 +44,18 @@ func TestPartners_RutaCabecerasYQuery(t *testing.T) {
 	require.Equal(t, 200, response.Code)
 }
 
+func TestPartners_V2EnrutaAlProveedorActual(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/v2/external-register", r.URL.Path)
+		require.Equal(t, "api-key-de-prueba", r.Header.Get("X-API-Key"))
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer upstream.Close()
+	f := newFixture(t, map[string]string{"GATEWAY_BENEFITS_URL": upstream.URL})
+	response := f.do("POST", "/partner-api/v2/external-register", map[string]string{"X-API-Key": "api-key-de-prueba"})
+	require.Equal(t, http.StatusAccepted, response.Code)
+}
+
 func TestPartners_Errores502Y504Contractuales(t *testing.T) {
 	for _, timeout := range []bool{false, true} {
 		t.Run(map[bool]string{false: "502", true: "504"}[timeout], func(t *testing.T) {

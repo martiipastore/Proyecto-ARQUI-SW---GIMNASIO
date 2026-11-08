@@ -20,11 +20,11 @@ Trabajo Práctico Integrador de **Arquitectura de Software**: METALFITNESS es un
 | **Administrador** | Gestiona alumnos, profesionales, membresías, actividades, clases, horarios y beneficios. |
 | **Profesor** | Consulta sus clases y alumnos y arma planes de entrenamiento. La asistencia se registra automáticamente al ingresar con DNI. |
 | **Nutricionista** | Carga planes alimenticios, registra mediciones y responde consultas de sus pacientes. |
-| **Alumno** | Reserva clases, consulta su membresía, planes, mediciones y puntos; canjea beneficios. |
+| **Alumno** | Reserva clases y consulta su membresía, planes, mediciones y puntos. |
 
-Actividades: **Musculación** (7 turnos diarios de 2 horas entre 08:00 y 22:00, dentro del horario de apertura 08:00–23:00, hasta 50 alumnos) y **Funcional, GAP, Strong Nation y Zumba** (horarios configurables, hasta 30 alumnos). Cada clase asistida suma **500 puntos**; una reserva confirmada no asistida descuenta hasta **100 puntos**, sin saldo negativo. Las reservas se pueden cancelar hasta **1 hora antes** del inicio.
+Actividades: **Musculación** (7 turnos diarios de 2 horas entre 08:00 y 22:00, dentro del horario de apertura 08:00–23:00, hasta 50 alumnos) y **Funcional, GAP, Strong Nation y Zumba** (horarios configurables, hasta 30 alumnos). Cada clase asistida suma **500 puntos** en el diseño objetivo. Las reservas se pueden cancelar hasta **1 hora antes** del inicio.
 
-El Club de Beneficios expone una API pública para integraciones externas. Los sistemas de otros grupos no son usuarios ni roles del gimnasio: se autentican con API key y solo operan sobre cuentas de alumnos previamente vinculadas por un administrador. METALFITNESS envía directamente al alumno los emails de confirmación, recordatorio 10 días antes y advertencia el día del vencimiento de su membresía; el partner no interviene en esas notificaciones.
+El Club de Beneficios prepara una API pública para integraciones externas: registro o vinculación de personas, acreditación de puntos, saldo y movimientos. Los sistemas de otros grupos se autentican con API key; las cuentas existentes se vinculan tras verificar el control del correo. Una persona puede tener puntos sin membresía. La URL pública HTTPS sigue pendiente de despliegue.
 
 ## Objetivo
 
@@ -55,8 +55,6 @@ sequenceDiagram
     GW->>B: POST /api/v1/check-ins
     B-->>BE: asistencia.registrada (evento)
     BE->>BE: +500 puntos (una sola vez)
-    Alumno->>GW: Canjear beneficio
-    GW->>BE: POST /api/v1/benefits/redemptions
 ```
 
 El detalle completo, con criterios de aceptación, está en [SPEC.md §11](SPEC.md#11-criterios-de-aceptación-del-flujo-principal-de-punta-a-punta).
@@ -149,7 +147,7 @@ Collector y Jaeger ya participan en el flujo mínimo. Mailpit, Grafana, Traefik 
 
 ## Mock de la API de partners (disponible ya)
 
-El contrato público del Club de Beneficios ([docs/contracts/benefits-api.v1.yaml](docs/contracts/benefits-api.v1.yaml)) se puede probar hoy con un mock (Prism) que responde con los ejemplos del contrato. Solo requiere Docker.
+El contrato operativo del Club de Beneficios ([docs/contracts/benefits-api.v2.yaml](docs/contracts/benefits-api.v2.yaml)) cubre registro externo, acreditación, saldo y movimientos. Se puede probar localmente con un mock (Prism); la URL pública HTTPS sigue pendiente. El contrato v1 se conserva como historial.
 
 ```bash
 docker compose -f deploy/docker-compose.mock.yml up -d     # o: make mock-up   → http://localhost:4010
@@ -159,7 +157,7 @@ docker compose -f deploy/docker-compose.mock.yml down      # o: make mock-down
 Prueba rápida:
 
 ```bash
-curl -s http://localhost:4010/v1/accounts/cli-10045/balance -H "X-API-Key: demo-partner-key"
+curl -s http://localhost:4010/v2/accounts/cli-10045/balance -H "X-API-Key: demo-partner-key"
 ```
 
 Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run` equivalente). Ejemplos completos, errores y reintentos en la [guía de integración](docs/contracts/README.md).
@@ -171,7 +169,7 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | [SPEC.md](SPEC.md) | Especificación funcional aprobada: HU, reglas de negocio, estados, casos límite |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura: C4, servicios, comunicaciones, eventos, despliegue, limitaciones |
 | [docs/adr/](docs/adr/) | Registros de decisiones de arquitectura (ADR) |
-| [docs/contracts/](docs/contracts/README.md) | **Contrato público** del Club de Beneficios para otros grupos: [benefits-api.v1.yaml](docs/contracts/benefits-api.v1.yaml) (OpenAPI 3.1), guía de integración y mock |
+| [docs/contracts/](docs/contracts/README.md) | **Contrato operativo v2** del Club de Beneficios para otros grupos: [benefits-api.v2.yaml](docs/contracts/benefits-api.v2.yaml) (OpenAPI 3.1), guía de integración y mock |
 | [docs/entrega-2/VALIDACION_ENTREGA_2.md](docs/entrega-2/VALIDACION_ENTREGA_2.md) | Validación reproducible de tests, contrato, stack, flujo principal, observabilidad y resiliencia de la Entrega 2 |
 | [docs/entrega-2/Guía_Entrega2.md](docs/entrega-2/Guía_Entrega2.md) | Preparación y recorrido sugerido para demostrar la Entrega 2 sin reemplazar las evidencias versionadas |
 | [Registro_de_Decisiones_Gimnasio.docx](Registro_de_Decisiones_Gimnasio.docx) | Registro de decisiones del grupo (D-01 en adelante) |

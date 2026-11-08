@@ -174,6 +174,12 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 7 — Club de Beneficios completo
 
+> **Alcance revisado el 08/11/2026:** el equipo descartó débitos, catálogo y
+> canjes. El objetivo y la lista de trabajo originales de esta etapa quedan
+> como historial; para la capacidad compartida rige el
+> [contrato v2](../contracts/benefits-api.v2.yaml): registro, créditos, saldo
+> y movimientos. La gestión de integraciones y el despliegue siguen pendientes.
+
 **Estado:** Pendiente.
 
 **Objetivo:** completar catálogo, canje, administración y operaciones faltantes del contrato propio.

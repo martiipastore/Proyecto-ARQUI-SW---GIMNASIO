@@ -1,3 +1,5 @@
+# Contrato histórico v1.4.0. Incluye rutas que nunca se implementaron.
+# Para nuevas integraciones usar benefits-api.v2.yaml y docs/contracts/README.md.
 openapi: 3.1.0
 
 info:

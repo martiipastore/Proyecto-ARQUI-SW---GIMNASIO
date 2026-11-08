@@ -40,15 +40,19 @@ func (quotaAuth) Autenticar(context.Context, string) (string, error) {
 func TestCuotaResponde429SinEjecutarConsulta(t *testing.T) {
 	r := gin.New()
 	RegisterPartners(r, nil, quotaAuth{})
-	req := httptest.NewRequest(nethttp.MethodGet, "/v1/accounts/usuario/balance", nil)
-	req.Header.Set("X-API-Key", "secreto-no-publicar")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	require.Equal(t, 429, w.Code)
-	require.Equal(t, "60", w.Header().Get("Retry-After"))
-	require.Equal(t, "no-store", w.Header().Get("Cache-Control"))
-	require.Contains(t, w.Body.String(), "RATE_LIMITED")
-	require.NotContains(t, w.Body.String(), "secreto-no-publicar")
+	for _, version := range []string{"v1", "v2"} {
+		t.Run(version, func(t *testing.T) {
+			req := httptest.NewRequest(nethttp.MethodGet, "/"+version+"/accounts/usuario/balance", nil)
+			req.Header.Set("X-API-Key", "secreto-no-publicar")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			require.Equal(t, 429, w.Code)
+			require.Equal(t, "60", w.Header().Get("Retry-After"))
+			require.Equal(t, "no-store", w.Header().Get("Cache-Control"))
+			require.Contains(t, w.Body.String(), "RATE_LIMITED")
+			require.NotContains(t, w.Body.String(), "secreto-no-publicar")
+		})
+	}
 }
 
 func TestReady_ConPostgresDisponible(t *testing.T) {

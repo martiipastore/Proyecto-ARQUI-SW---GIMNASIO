@@ -60,7 +60,7 @@ func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*P
 		rp := &httputil.ReverseProxy{
 			Rewrite: func(pr *httputil.ProxyRequest) {
 				pr.SetURL(target)
-				if r.Prefix == "/partner-api/v1" {
+				if r.Prefix == "/partner-api/v1" || r.Prefix == "/partner-api/v2" {
 					pr.Out.URL.Path = strings.TrimPrefix(pr.Out.URL.Path, "/partner-api")
 					pr.Out.URL.RawPath = ""
 				}
@@ -71,7 +71,7 @@ func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*P
 				}
 			},
 			Transport:    transport,
-			ErrorHandler: p.errorHandler(service, r.Prefix == "/partner-api/v1"),
+			ErrorHandler: p.errorHandler(service, strings.HasPrefix(r.Prefix, "/partner-api/v")),
 		}
 		p.routes = append(p.routes, route{prefix: r.Prefix, service: service, timeout: r.Timeout, proxy: rp})
 	}
@@ -81,7 +81,7 @@ func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*P
 // Handler devuelve el handler de Gin que atiende toda ruta no registrada explícitamente.
 func (p *Proxy) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == "/partner-api/v1" || strings.HasPrefix(c.Request.URL.Path, "/partner-api/v1/") {
+		if partnerPath(c.Request.URL.Path) {
 			c.Request = problem.PartnerRequest(c.Request)
 			c.Header(correlation.Header, correlation.FromContext(c.Request.Context()))
 		}
@@ -92,7 +92,7 @@ func (p *Proxy) Handler() gin.HandlerFunc {
 
 // ServeHTTP implementa http.Handler.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	partner := r.URL.Path == "/partner-api/v1" || strings.HasPrefix(r.URL.Path, "/partner-api/v1/")
+	partner := partnerPath(r.URL.Path)
 	if partner {
 		r = problem.PartnerRequest(r)
 		w.Header().Set(correlation.Header, correlation.FromContext(r.Context()))
@@ -132,6 +132,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u.RawPath = ""
 	out.URL = &u
 	rt.proxy.ServeHTTP(w, out)
+}
+
+func partnerPath(p string) bool {
+	return p == "/partner-api/v1" || strings.HasPrefix(p, "/partner-api/v1/") ||
+		p == "/partner-api/v2" || strings.HasPrefix(p, "/partner-api/v2/")
 }
 
 func (p *Proxy) match(cleaned string) (route, bool) {
