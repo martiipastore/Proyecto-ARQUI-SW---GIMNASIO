@@ -79,7 +79,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 1 — Contratos y diseño de recorridos
 
-**Estado:** Pendiente.
+**Estado:** Desarrollada el 09/11/2026; falta la revisión del equipo y sus decisiones abiertas. Ver [ETAPA_1_CONTRATOS_RECORRIDOS.md](ETAPA_1_CONTRATOS_RECORRIDOS.md) y los contratos de [docs/api](../api/README.md).
 
 **Objetivo:** evitar que frontend y servicios evolucionen con contratos implícitos.
 
@@ -408,7 +408,7 @@ Actualizado el 09/11/2026 según el inventario de la [etapa 0](ETAPA_0_LINEA_BAS
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
 | 0. Línea base | Documentada; falta la ejecución completa con Docker | Equipo con espacio en disco y Docker |
-| 1. Contratos y recorridos | Pendiente | Revisión del equipo |
+| 1. Contratos y recorridos | Desarrollada; pendiente la revisión del equipo y 7 decisiones abiertas | Revisión del equipo |
 | 2. Identidad | Parcial: JWT, roles y gateway listos; faltan pantallas de login por rol y rutas protegidas | Members y Gateway |
 | 3. Members | Parcial: membresías listas; faltan alumnos con DNI, profesionales y asignaciones | Contratos internos |
 | 4. Booking | Pendiente | Members operativo |
