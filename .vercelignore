@@ -1,0 +1,10 @@
+# Credenciales y archivos locales nunca se suben con Vercel CLI.
+.env
+.env.*
+web/node_modules/
+web/dist/
+docs/
+tests/
+deploy/
+.github/
+*.docx

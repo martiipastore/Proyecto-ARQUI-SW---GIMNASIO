@@ -1,6 +1,6 @@
 // Cliente HTTP del frontend. Habla SOLO con el api-gateway (VITE_API_URL).
 
-export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080').replace(/\/+$/, '');
+export const API_URL = (import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:8080')).replace(/\/+$/, '');
 
 const CORRELATION_HEADER = 'X-Correlation-ID';
 

@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+# Contexto de build: raiz del repositorio para incluir pkg y benefits-service.
+ARG GO_VERSION=1.22
+FROM golang:${GO_VERSION}-alpine AS build
+WORKDIR /src
+ENV CGO_ENABLED=0 GOFLAGS=-trimpath
+COPY pkg ./pkg
+COPY services/benefits-service ./services/benefits-service
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    cd services/benefits-service && go build -ldflags="-s -w" -o /out/benefits-service ./cmd/api
+
+FROM alpine:3.20
+RUN adduser -D -H -u 10001 app
+USER app
+COPY --from=build /out/benefits-service /app/benefits-service
+EXPOSE 8080
+ENTRYPOINT ["/app/benefits-service"]

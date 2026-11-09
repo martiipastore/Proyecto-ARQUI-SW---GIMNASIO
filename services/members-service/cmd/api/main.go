@@ -64,29 +64,34 @@ func run(cfg config.Config, log *slog.Logger) error {
 		handler.RegisterIdentity(router, identity, cfg.ServiceKey)
 		memberships := service.NewMemberships(db, nil)
 		handler.RegisterMemberships(router, memberships, cfg.ServiceKey)
-		workerCtx, workerCancel := context.WithCancel(ctx)
-		workerDone := make(chan struct{})
-		defer func() { workerCancel(); <-workerDone }()
-		go func() {
-			defer close(workerDone)
-			ticker := time.NewTicker(2 * time.Second)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-workerCtx.Done():
-					return
-				case <-ticker.C:
-					workCtx, cancel := context.WithTimeout(workerCtx, 15*time.Second)
-					if _, err := memberships.Expire(workCtx); err != nil {
-						log.Warn("vencimiento de membresías pendiente; se reintentará")
-					}
-					if err := identity.Process(workCtx); err != nil {
-						log.Warn("registro o correo pendiente; se reintentará")
-					}
-					cancel()
-				}
+		if cfg.BackgroundWorkerEnabled {
+			if cfg.WorkerInterval <= 0 {
+				return fmt.Errorf("MEMBERS_WORKER_INTERVAL debe ser mayor que cero")
 			}
-		}()
+			workerCtx, workerCancel := context.WithCancel(ctx)
+			workerDone := make(chan struct{})
+			defer func() { workerCancel(); <-workerDone }()
+			go func() {
+				defer close(workerDone)
+				ticker := time.NewTicker(cfg.WorkerInterval)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-workerCtx.Done():
+						return
+					case <-ticker.C:
+						workCtx, cancel := context.WithTimeout(workerCtx, 15*time.Second)
+						if _, err := memberships.Expire(workCtx); err != nil {
+							log.Warn("vencimiento de membresías pendiente; se reintentará")
+						}
+						if err := identity.Process(workCtx); err != nil {
+							log.Warn("registro o correo pendiente; se reintentará")
+						}
+						cancel()
+					}
+				}
+			}()
+		}
 	}
 	return httpserver.Run(ctx, log, httpserver.Options{
 		Addr:            cfg.HTTPAddr,

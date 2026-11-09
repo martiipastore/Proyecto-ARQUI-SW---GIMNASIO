@@ -1,0 +1,56 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "gateway": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.gateway.vercel",
+      "bindings": [
+        { "type": "service", "service": "members", "format": "url", "env": "GATEWAY_MEMBERS_URL" },
+        { "type": "service", "service": "benefits", "format": "url", "env": "GATEWAY_BENEFITS_URL" }
+      ]
+    },
+    "members": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.members.vercel",
+      "bindings": [
+        { "type": "service", "service": "benefits", "format": "url", "env": "MEMBERS_BENEFITS_URL" }
+      ]
+    },
+    "members-registration": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.members.vercel"
+    },
+    "benefits": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.benefits.vercel",
+      "bindings": [
+        { "type": "service", "service": "members-registration", "format": "url", "env": "BENEFITS_MEMBERS_URL" }
+      ]
+    },
+    "web": {
+      "root": "web",
+      "framework": "vite"
+    }
+  },
+  "daemons": {
+    "members-worker": {
+      "root": ".",
+      "entrypoint": "Dockerfile.members.vercel",
+      "command": ["/app/members-worker"],
+      "instances": { "iad1": 1 },
+      "resources": { "requests": { "memory": "1Gi" } },
+      "bindings": [
+        { "type": "service", "service": "benefits", "format": "url", "env": "MEMBERS_BENEFITS_URL" }
+      ]
+    }
+  },
+  "rewrites": [
+    { "source": "/partner-api/(.*)", "destination": { "service": "gateway" } },
+    { "source": "/api/(.*)", "destination": { "service": "gateway" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
+}

@@ -2,7 +2,7 @@
 
 > Capacidad ofrecida al grupo consumidor: registro externo, acreditación, saldo e
 > historial de movimientos. El registro requiere habilitar identidad y correo.
-> La URL pública HTTPS todavía no está disponible.
+> La API pública HTTPS está disponible en `https://metalfitness-club.vercel.app/partner-api/v2`.
 > Detalles de activación y configuración: [Registro externo](../CLUB_REGISTRO_EXTERNO.md).
 
 Esta guía es para equipos de **otros sistemas** que quieran registrar a sus usuarios en el Club, acreditarles puntos por acciones de su sistema y consultar el saldo y los movimientos.
@@ -13,7 +13,7 @@ Esta guía es para equipos de **otros sistemas** que quieran registrar a sus usu
 | **Versión vigente** | **v2.0.0** (`/v2`) |
 | **Contrato anterior** | [benefits-api.v1.yaml](benefits-api.v1.yaml), histórico; contiene operaciones que no se implementaron y no debe usarse para una integración nueva |
 | **Mock local** | `http://localhost:4010` (ver [Probar con el mock](#probar-con-el-mock)) |
-| **Producción** | URL HTTPS pendiente de publicación y prueba desde una red externa |
+| **Producción** | `https://metalfitness-club.vercel.app/partner-api/v2` |
 | **Formato** | JSON (UTF-8); errores en `application/problem+json` (RFC 7807) |
 
 ---
@@ -151,7 +151,7 @@ Para pedir una respuesta de error concreta, usá el header `Prefer` de Prism:
 
 ## Ejemplos paso a paso
 
-Las variables de abajo apuntan al mock. Para producción, cambiá `BASE` y `API_KEY`.
+Las variables de abajo apuntan al mock. Para producción, usá `BASE=https://metalfitness-club.vercel.app/partner-api` y la API key asignada a tu integración. Enviá la API key solo desde el backend de tu sistema; nunca desde código del navegador.
 
 ```bash
 BASE=http://localhost:4010
@@ -238,7 +238,9 @@ Con `make`: `make contract-lint`. La CI corre el mismo comando en cada PR que to
 La [prueba E2E local de v2](../evidence/club/cb04-v2-e2e.json) aprobó 14 escenarios
 con Gateway, Benefits, Members, PostgreSQL y Mailpit reales el 08/11/2026.
 Incluye registro, crédito, aislamiento, fallos SMTP y conservación de puntos al
-cambiar la membresía. Esta evidencia local no acredita todavía una URL pública.
+cambiar la membresía. El 08/11/2026 se comprobó también el despliegue público en
+Vercel con una cuenta de prueba: registro completado, correo y activación,
+acreditación de 25 puntos, saldo actualizado, historial e idempotencia.
 
 ## Política de versionado
 

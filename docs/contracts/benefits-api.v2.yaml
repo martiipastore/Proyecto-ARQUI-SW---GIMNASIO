@@ -45,14 +45,10 @@ info:
     name: Uso académico
 
 servers:
+  - url: https://metalfitness-club.vercel.app/partner-api
+    description: Producción.
   - url: http://localhost:4010
     description: Mock local (Prism). Responde con los ejemplos de este contrato.
-  - url: https://{host}/partner-api
-    description: Producción (host HTTPS pendiente de publicación).
-    variables:
-      host:
-        default: gimnasio.example.com
-        description: Dominio público del api-gateway.
 
 security:
   - ApiKeyAuth: []
