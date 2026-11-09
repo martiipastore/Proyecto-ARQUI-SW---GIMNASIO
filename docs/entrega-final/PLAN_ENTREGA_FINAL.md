@@ -96,7 +96,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 2 — Identidad, autenticación y autorización
 
-**Estado:** Pendiente.
+**Estado:** Desarrollada el 09/11/2026. Backend ya implementado en CB-03; esta etapa agrega login, sesión y rutas protegidas por rol en el frontend. Falta que otro integrante ejecute `npm run build` y la prueba manual. Ver [ETAPA_2_IDENTIDAD.md](ETAPA_2_IDENTIDAD.md).
 
 **Objetivo:** disponer de ingreso real y una frontera de confianza en el gateway.
 
@@ -409,7 +409,7 @@ Actualizado el 09/11/2026 según el inventario de la [etapa 0](ETAPA_0_LINEA_BAS
 |---|---|---|
 | 0. Línea base | Documentada; falta la ejecución completa con Docker | Equipo con espacio en disco y Docker |
 | 1. Contratos y recorridos | Desarrollada; pendiente la revisión del equipo y 7 decisiones abiertas | Revisión del equipo |
-| 2. Identidad | Parcial: JWT, roles y gateway listos; faltan pantallas de login por rol y rutas protegidas | Members y Gateway |
+| 2. Identidad | Desarrollada: backend de CB-03 y frontend con login, sesión y rutas por rol; falta build y prueba manual | Members y Gateway |
 | 3. Members | Parcial: membresías listas; faltan alumnos con DNI, profesionales y asignaciones | Contratos internos |
 | 4. Booking | Pendiente | Members operativo |
 | 5. Mensajería | Pendiente (outbox de Members sin publicador) | Members y RabbitMQ |

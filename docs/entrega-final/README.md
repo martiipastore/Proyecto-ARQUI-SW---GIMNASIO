@@ -9,6 +9,7 @@ Esta carpeta reúne la planificación y las referencias propias de la presentaci
 | [PLAN_ENTREGA_FINAL.md](PLAN_ENTREGA_FINAL.md) | Etapas, dependencias, criterios de aceptación y seguimiento del trabajo restante |
 | [DISENO_FRONTEND.md](DISENO_FRONTEND.md) | Dirección estética del sitio público y de la aplicación autenticada |
 | [ETAPA_0_LINEA_BASE.md](ETAPA_0_LINEA_BASE.md) | Línea base, inventario, recorrido principal y matriz de requisitos (etapa 0) |
+| [ETAPA_2_IDENTIDAD.md](ETAPA_2_IDENTIDAD.md) | Login, sesión y rutas protegidas por rol; resumen de la seguridad ya implementada (etapa 2) |
 | [ETAPA_1_CONTRATOS_RECORRIDOS.md](ETAPA_1_CONTRATOS_RECORRIDOS.md) | Prioridades, rutas, pantallas con sus contratos, wireflows, datos de demostración y decisiones abiertas (etapa 1) |
 
 ## Fuentes de verdad

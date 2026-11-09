@@ -107,7 +107,7 @@ cp .env.example .env && make up
 
 `make up` construye las imágenes y levanta los contenedores; espera los health checks declarados. Collector y Jaeger se comprueban mediante la demostración de trazas. Después:
 
-- Abrí **http://localhost:5173**: la pantalla "Estado del sistema" debe mostrar todos los servicios en **Listo**.
+- Abrí **http://localhost:5173/#/estado**: la pantalla "Estado del sistema" debe mostrar todos los servicios en **Listo**. La portada (`http://localhost:5173`) lleva al ingreso.
 - O consultá el gateway: `curl http://localhost:8080/api/v1/status` → `"status": "ready"`.
 
 Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d --build --wait`.
@@ -129,7 +129,7 @@ Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d -
 
 | URL | Componente |
 |---|---|
-| http://localhost:5173 | Frontend (pantalla "Estado del sistema") |
+| http://localhost:5173 | Frontend: ingreso y aplicación por rol; estado del sistema en `#/estado` |
 | http://localhost:8080 | api-gateway — único punto de entrada |
 | http://localhost:8080/api/v1/status | Estado agregado de todos los servicios |
 | http://localhost:4010 | Mock de la API de partners (Prism) |

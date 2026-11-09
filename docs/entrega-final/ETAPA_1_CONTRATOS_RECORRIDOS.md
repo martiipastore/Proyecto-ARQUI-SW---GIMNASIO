@@ -57,7 +57,7 @@ activación actual (`/#activate=<token>`) se conserva.
 | Administrador | `/admin/actividades` | Actividades y horarios; generar clases | ADMINISTRADOR |
 | Administrador | `/admin/clases` y `/admin/clases/:id` | Clases, capacidad, cancelación y asistencias | ADMINISTRADOR |
 | Administrador | `/admin/club` | Integraciones y movimientos de una persona | ADMINISTRADOR |
-| Administrador | `/admin/estado` | Estado del sistema (pantalla actual) | ADMINISTRADOR |
+| Pública | `/estado` | Estado del sistema (pantalla actual); pública como `/api/v1/status`, ver [etapa 2](ETAPA_2_IDENTIDAD.md) | Todos |
 | Profesor | `/prof/clases` y `/prof/clases/:id` | Mis clases y sus alumnos | PROFESOR |
 | Profesor | `/prof/alumnos` y `/prof/alumnos/:id` | Mis alumnos y su plan de entrenamiento | PROFESOR |
 | Nutricionista | `/nutri/pacientes` y `/nutri/pacientes/:id` | Pacientes, plan alimenticio y mediciones | NUTRICIONISTA |
