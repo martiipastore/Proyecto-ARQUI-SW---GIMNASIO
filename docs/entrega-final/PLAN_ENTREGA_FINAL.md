@@ -1,6 +1,14 @@
 # Plan de trabajo — Entrega Final
 
 > Estado inicial: 18/10/2026. Presentación grupal prevista para el 11 o el 13 de noviembre de 2026; la fecha de cada grupo se comunicará el 6 de noviembre.
+>
+> **Actualización del 09/11/2026 (etapa 0):** la línea base, el inventario y la matriz de
+> requisitos están en [ETAPA_0_LINEA_BASE.md](ETAPA_0_LINEA_BASE.md). Desde que se escribió
+> este plan cambiaron tres cosas: la etapa 7 se redujo porque el equipo descartó catálogo,
+> canjes y débitos (D-76); la etapa 15 se resolvió con Vercel en lugar de la VM ARM (D-75,
+> ADR-021); y la CI está bloqueada por facturación, así que `scripts/linea-base.ps1`
+> reemplaza el requisito de "CI verde" mientras dure el bloqueo. El seguimiento de §9
+> refleja el estado real.
 
 ## 1. Propósito
 
@@ -55,7 +63,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 0 — Línea base y trazabilidad
 
-**Estado:** Pendiente.
+**Estado:** Documentación y herramienta completas el 09/11/2026; falta que otro integrante ejecute la línea base completa con Docker. Ver [ETAPA_0_LINEA_BASE.md](ETAPA_0_LINEA_BASE.md).
 
 **Objetivo:** comenzar desde `main` estable y convertir los requisitos finales en una matriz verificable.
 
@@ -65,7 +73,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 - registrar qué está implementado, diseñado o pendiente;
 - mapear requisito → servicio → pantalla → prueba → decisión → evidencia;
 - confirmar el flujo principal y las funcionalidades mínimas de cada rol;
-- realizar una prueba temprana de compatibilidad con la VM ARM elegida.
+- realizar una prueba temprana de compatibilidad con la VM ARM elegida (reemplazada por la verificación del despliegue en Vercel, D-75).
 
 **Aceptación:** línea base reproducible y matriz sin requisitos huérfanos.
 
@@ -393,26 +401,28 @@ El calendario se recalibra al conocer la fecha del grupo y la capacidad externa.
 - No se declara una etapa completa por estructura o mocks: debe cumplir su criterio de aceptación.
 - Cada PR actualiza este seguimiento y las decisiones afectadas.
 
-## 9. Seguimiento inicial
+## 9. Seguimiento
+
+Actualizado el 09/11/2026 según el inventario de la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente).
 
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
-| 0. Línea base | Pendiente | `main` estable |
+| 0. Línea base | Documentada; falta la ejecución completa con Docker | Equipo con espacio en disco y Docker |
 | 1. Contratos y recorridos | Pendiente | Revisión del equipo |
-| 2. Identidad | Pendiente | Members y Gateway |
-| 3. Members | Pendiente | Contratos internos |
+| 2. Identidad | Parcial: JWT, roles y gateway listos; faltan pantallas de login por rol y rutas protegidas | Members y Gateway |
+| 3. Members | Parcial: membresías listas; faltan alumnos con DNI, profesionales y asignaciones | Contratos internos |
 | 4. Booking | Pendiente | Members operativo |
-| 5. Mensajería | Pendiente | Members y RabbitMQ |
+| 5. Mensajería | Pendiente (outbox de Members sin publicador) | Members y RabbitMQ |
 | 6. Booking → Benefits | Pendiente | Booking y mensajería |
-| 7. Benefits completo | Pendiente | Ledger existente |
+| 7. Benefits completo | Reducida por D-76: queda la gestión de partners e integraciones | Ledger existente |
 | 8. Búsqueda | Pendiente | Booking y OpenSearch |
 | 9. Caché | Pendiente | Flujo de lectura medido |
 | 10. Training y nutrición | Pendiente | Identidad y asignaciones |
-| 11. Frontend completo | Pendiente | Contratos y servicios |
+| 11. Frontend completo | Pendiente (hoy: cuenta del Club y estado del sistema) | Contratos y servicios |
 | 12. Borde y balanceo | Pendiente | Booking operativo |
 | 13. Capacidad externa | **Bloqueada** | Proveedor y contrato |
 | 14. Observabilidad final | Pendiente | Flujos integrados |
-| 15. Nube | Pendiente | Perfil ARM y secretos |
+| 15. Nube | Resuelta con Vercel (D-75); falta publicar el PR #14 | Acceso a la cuenta de Vercel |
 | 16. Verificación final | Pendiente | Todas las anteriores |
 
 ## 10. Riesgos que deben revisarse en cada etapa
