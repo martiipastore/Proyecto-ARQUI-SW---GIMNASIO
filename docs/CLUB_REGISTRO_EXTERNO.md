@@ -1,4 +1,11 @@
-# Registro externo, activación y acceso al Club
+# Registro externo, activación y acceso al Club — historial de implementación
+
+> **Documento histórico de CB-03 (API v1 y pruebas locales).** Describe el estado
+> del proyecto en noviembre de 2026 antes de publicar el Club en Vercel. Para una
+> integración nueva, usá la [guía vigente de v2](contracts/README.md) y el
+> [contrato OpenAPI v2](contracts/benefits-api.v2.yaml). La URL pública actual es
+> `https://metalfitness-club.vercel.app/partner-api/v2`. Las referencias de abajo
+> a despliegue pendiente y rutas v1 conservan el contexto de aquella etapa.
 
 > **Actualización CB-03:** la divergencia D-70 se corrigió localmente aplicando
 > JWT RS256 de 15 minutos, roles y bcrypt mínimo 12 del ADR-006. Pasaron pruebas

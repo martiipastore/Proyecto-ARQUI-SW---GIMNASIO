@@ -3,7 +3,7 @@
 > Capacidad ofrecida al grupo consumidor: registro externo, acreditación, saldo e
 > historial de movimientos. El registro requiere habilitar identidad y correo.
 > La API pública HTTPS está disponible en `https://metalfitness-club.vercel.app/partner-api/v2`.
-> Detalles de activación y configuración: [Registro externo](../CLUB_REGISTRO_EXTERNO.md).
+> Esta guía y [el contrato OpenAPI v2](benefits-api.v2.yaml) son la referencia vigente para integrar el Club.
 
 Esta guía es para equipos de **otros sistemas** que quieran registrar a sus usuarios en el Club, acreditarles puntos por acciones de su sistema y consultar el saldo y los movimientos.
 
