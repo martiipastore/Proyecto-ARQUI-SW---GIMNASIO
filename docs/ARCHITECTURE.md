@@ -516,6 +516,12 @@ La traza atraviesa la frontera asíncrona: el productor guarda `traceparent` en 
 | `SOLAPAMIENTO_MEMBRESIA` | 409 | RN-02 (nombre del diseño inicial; Members implementa `MEMBRESIAS_SUPERPUESTAS`) |
 | `MEMBRESIAS_SUPERPUESTAS` | 409 | RN-02 (implementado en Members) |
 | `MEMBRESIA_NO_ENCONTRADA` | 404 | HU-03 a HU-05 (implementado en Members) |
+| `PERSONA_DUPLICADA` | 409 | RN-33, CA-01.2 (diseñado en [users.v1](api/users.v1.md)) |
+| `ASIGNACION_DUPLICADA` | 409 | SPEC §9, asignación vigente repetida ([users.v1](api/users.v1.md)) |
+| `SUPERPOSICION_PROFESOR` | 409 | RN-08, CA-07.4 ([booking.v1](api/booking.v1.md)) |
+| `USUARIO_INACTIVO` | 422 | D-36, ingreso de una persona dada de baja ([booking.v1](api/booking.v1.md)) |
+| `SIN_RESERVA_PARA_HORARIO` | 422 | D-39, CA-22.3 ([booking.v1](api/booking.v1.md)) |
+| `SIN_NUTRICIONISTA` | 422 | CA-33.2 ([training.v1](api/training.v1.md)) |
 | `SALDO_INSUFICIENTE` | 422 | RN-23 |
 | `BENEFICIO_NO_DISPONIBLE` | 422 | RN-24 |
 | `CONFLICTO_IDEMPOTENCIA` / `OPERACION_EN_CURSO` | 409 | RN-15, RN-27 |
