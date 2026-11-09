@@ -8,6 +8,7 @@ Esta carpeta reúne la planificación y las referencias propias de la presentaci
 |---|---|
 | [PLAN_ENTREGA_FINAL.md](PLAN_ENTREGA_FINAL.md) | Etapas, dependencias, criterios de aceptación y seguimiento del trabajo restante |
 | [DISENO_FRONTEND.md](DISENO_FRONTEND.md) | Dirección estética del sitio público y de la aplicación autenticada |
+| [ETAPA_0_LINEA_BASE.md](ETAPA_0_LINEA_BASE.md) | Línea base, inventario, recorrido principal y matriz de requisitos (etapa 0) |
 
 ## Fuentes de verdad
 
@@ -24,5 +25,6 @@ El brief de diseño no modifica reglas de negocio ni decisiones arquitectónicas
 - Entregas 1 y 2 integradas en `main`.
 - Capacidad propia de Benefits, persistencia, gateway, primera traza, resiliencia y pruebas de carga ya validadas para la Entrega 2.
 - Integración con la capacidad externa pendiente de que la cátedra confirme proveedor y contrato.
-- Frontend actual limitado al estado del sistema; el sitio y las pantallas funcionales todavía deben desarrollarse.
+- Frontend actual limitado al estado del sistema y a la cuenta del Club (login, activación, saldo y membresías); el sitio y las demás pantallas funcionales todavía deben desarrollarse.
+- Club ampliado (registro externo, membresías e identidad) publicado en Vercel el 08/11/2026 (D-75). Estado detallado al 09/11/2026 en [ETAPA_0_LINEA_BASE.md](ETAPA_0_LINEA_BASE.md).
 

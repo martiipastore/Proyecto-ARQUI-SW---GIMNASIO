@@ -151,6 +151,7 @@ Conventional Commits y GitHub Flow; ver [CONTRIBUTING.md](CONTRIBUTING.md). Rama
 | `make fmt` / `make tidy` | `gofmt -w` / `go mod tidy` en todos los módulos |
 | `go run ./cmd/migrate` (desde `services/benefits-service`) | Aplica migraciones SQL de Benefits; requiere `BENEFITS_DB_DSN` en el entorno. Ejecutar una sola instancia al inicializar una base vacía. |
 | `./tests/e2e/review-delivery.ps1` (PowerShell) | Detiene temporalmente gym sin borrar volúmenes, prueba una copia nueva y restaura contenedores originales; exporta evidencia de etapa 8 |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/linea-base.ps1` | Línea base de la entrega final: vet y tests de los 7 módulos, herramientas de prueba, frontend, Spectral, Compose, E2E y producción; evidencia en `docs/evidence/entrega-final/etapa0/linea-base.json`. Opciones `-SinRyuk`, `-OmitirE2E`, `-OmitirProduccion`. |
 | `make mock-up` / `make contract-lint` | Mock de Prism del contrato de partners / validación con Spectral |
 | `scripts/sync-club-docs.ps1` / `-Check` | Sincroniza o comprueba los tres Word desde Markdown; usar la invocación PowerShell UTF-8 de PLAN_CLUB_BENEFICIOS.md. Conserva copias previas y no cambia producción. |
 | `scripts/verify-club-access.ps1` | Verifica tests/vet de pkg/gateway/members con Docker obligatorio; invocación UTF-8 en CB03_VALIDACION.md. |
