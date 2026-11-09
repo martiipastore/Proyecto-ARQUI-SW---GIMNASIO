@@ -21,6 +21,30 @@ type MembershipType struct {
 	Enabled bool   `json:"habilitado"`
 }
 
+// HasDuration indica si el tipo define su período (meses o días).
+func (t MembershipType) HasDuration() bool { return t.Months != nil || t.Days != nil }
+
+// EndFor calcula el vencimiento inclusivo de un período que empieza en start
+// (D-77, CA-03.1 y S-04): el día de vencimiento es vigente, por eso termina el
+// día anterior al mismo día del período siguiente. Si ese mes no tiene el día
+// de inicio, cubre hasta su último día (31/01 + 1 mes vence el 28/02 o 29/02).
+// Devuelve false si el tipo no define duración.
+func (t MembershipType) EndFor(start time.Time) (time.Time, bool) {
+	switch {
+	case t.Months != nil:
+		months := *t.Months
+		firstOfTarget := time.Date(start.Year(), start.Month()+time.Month(months), 1, 0, 0, 0, 0, time.UTC)
+		lastOfTarget := firstOfTarget.AddDate(0, 1, -1)
+		if start.Day() > lastOfTarget.Day() {
+			return lastOfTarget, true
+		}
+		return time.Date(firstOfTarget.Year(), firstOfTarget.Month(), start.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1), true
+	case t.Days != nil:
+		return time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, *t.Days-1), true
+	}
+	return time.Time{}, false
+}
+
 type Membership struct {
 	ID         string         `json:"id"`
 	UserID     string         `json:"usuario_id"`

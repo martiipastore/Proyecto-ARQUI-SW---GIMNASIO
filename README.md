@@ -1,17 +1,16 @@
 # METALFITNESS
 
-> **Actualización del Club (06/11/2026):** [plan CB-01 a CB-08](docs/PLAN_CLUB_BENEFICIOS.md),
-> [adenda funcional](docs/SPEC_CLUB_BENEFICIOS.md) y D-63 a D-70 distinguen lo
-> implementado localmente de lo pendiente. Registro, activación, correo y acceso
-> tienen código y validación local con PostgreSQL/SMTP reales. CB-03 corrigió
-> D-70 según ADR-006; flags apagados y revisión del equipo pendiente. Sigue CB-04.
-> No se declara el Club completo ni desplegado. [Evidencia](docs/CB03_VALIDACION.md).
-
 Trabajo Práctico Integrador de **Arquitectura de Software**: METALFITNESS es un sistema de microservicios para gestionar alumnos, membresías, clases y reservas, asistencia, entrenamiento, nutrición y un **Club de Beneficios** con puntos que también usan sistemas de otros grupos.
 
-> Estado actual: **esqueleto ejecutable del proyecto**. Los servicios exponen health checks, verifican sus bases y reportan su estado en una pantalla web. Benefits ya tiene dominio, casos de uso y persistencia de créditos, saldo y movimientos con idempotencia, probados contra PostgreSQL real; ya están expuestos por /partner-api/v1 a través del gateway con API key. El gateway ya realiza routing, correlación y timeouts. El contrato de la API de partners está publicado con un mock ejecutable.
+> **Estado actual (09/11/2026):**
 >
-> La arquitectura, el flujo principal y las responsabilidades que se presentan a continuación describen el **diseño objetivo**. JWT, rate limiting, los demás casos de uso, eventos/outbox, CQRS con OpenSearch, balanceo con Traefik, envío de emails y observabilidad se incorporarán en las etapas correspondientes.
+> - **Club de Beneficios** (benefits-service, Hexagonal + PostgreSQL): API pública v2 para otros grupos con registro o vinculación de personas, acreditación de puntos idempotente por evento, saldo y movimientos, con permisos y límites por integración.
+> - **Identidad y membresías** (members-service, Capas + PostgreSQL): activación de cuenta por correo, login con JWT, roles y membresías mensual, trimestral, anual y por clases con historial.
+> - **Gateway**: único punto de entrada; valida el JWT, aplica permisos por rol, enruta y propaga la correlación.
+> - **Publicado en** <https://metalfitness-club.vercel.app> (API de partners en `/partner-api/v2`).
+> - **Pendiente**: mensajería con RabbitMQ y DLQ, clases y reservas (booking), entrenamiento y nutrición (training), búsqueda, caché, balanceo, tableros y el consumo de la capacidad de otro grupo.
+>
+> El flujo principal y las tablas siguientes describen el **diseño objetivo**; el estado detallado de cada parte está en [Estado de implementación](#estado-de-implementación) y en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Dominio
 
@@ -24,7 +23,7 @@ Trabajo Práctico Integrador de **Arquitectura de Software**: METALFITNESS es un
 
 Actividades: **Musculación** (7 turnos diarios de 2 horas entre 08:00 y 22:00, dentro del horario de apertura 08:00–23:00, hasta 50 alumnos) y **Funcional, GAP, Strong Nation y Zumba** (horarios configurables, hasta 30 alumnos). Cada clase asistida suma **500 puntos** en el diseño objetivo. Las reservas se pueden cancelar hasta **1 hora antes** del inicio.
 
-El Club de Beneficios prepara una API pública para integraciones externas: registro o vinculación de personas, acreditación de puntos, saldo y movimientos. Los sistemas de otros grupos se autentican con API key; las cuentas existentes se vinculan tras verificar el control del correo. Una persona puede tener puntos sin membresía. La URL pública HTTPS sigue pendiente de despliegue.
+El Club de Beneficios prepara una API pública para integraciones externas: registro o vinculación de personas, acreditación de puntos, saldo y movimientos. Los sistemas de otros grupos se autentican con API key; las cuentas existentes se vinculan tras verificar el control del correo. Una persona puede tener puntos sin membresía. La API está publicada en `https://metalfitness-club.vercel.app/partner-api/v2`; la guía para integrarla está en [docs/contracts/README.md](docs/contracts/README.md).
 
 ## Objetivo
 
@@ -78,13 +77,14 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Estado | Alcance |
 |---|---|
 | **Implementado** | Módulos y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing, correlación, CORS, timeouts y estado agregado; frontend de estado; contrato OpenAPI, guía y mock de partners. |
-| **Implementado en Benefits** | API con autenticación por partner para acreditar puntos, consultar saldo y listar movimientos; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/entrega-2/ETAPA_2_BENEFITS.md) y [API y demostración](docs/entrega-2/ETAPA_3_API_BENEFITS.md). |
+| **Implementado en Benefits** | API v2 para partners: registro o vinculación externa, créditos con identidad de evento, saldo y movimientos; permisos, límites y cuota por integración; PostgreSQL con migraciones, restricciones, idempotencia durable y pruebas de concurrencia. Ver [persistencia](docs/entrega-2/ETAPA_2_BENEFITS.md), [API](docs/entrega-2/ETAPA_3_API_BENEFITS.md) y [CB-02](docs/CB02_VALIDACION.md). |
+| **Implementado en Members** | Activación por correo, login con JWT RS256, roles y membresías con historial, idempotencia y vencimiento según el tipo (D-77). Ver [CB-03](docs/CB03_VALIDACION.md), [API de acceso](docs/api/auth.v1.md) y [API de membresías](docs/api/memberships.v1.md). |
+| **Publicado en la nube** | Gateway, Benefits, Members y web en Vercel con PostgreSQL gestionado ([ADR-021](docs/adr/ADR-021-despliegue-vercel.md), [guía](docs/deploy/VERCEL_CLUB.md)). |
 | **Resiliencia validada** | Caída controlada y recuperación idempotente ante 502/503/504, incluida respuesta perdida después de commit. [Reproducción](docs/entrega-2/ETAPA_6_RESILIENCIA.md) y [postmortem](docs/POSTMORTEM.md). |
 | **Observabilidad del flujo mínimo** | Logs JSON correlacionados y traza Gateway → Benefits → PostgreSQL; Collector y Jaeger local en memoria. [Evidencia y reproducción](docs/entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
 | **Capacidad y costos medidos** | Matriz k6 y experimento sobre cuenta compartida, sin errores funcionales ni inconsistencias; límites locales y comparación de costos USD/ARS. [Resultados y reproducción](docs/entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md). |
 | **Desplegado como infraestructura, todavía sin uso funcional** | Redis y RabbitMQ. |
-| **Ampliación local, pendiente de aceptación** | Integraciones y ledger CB-02, identidad/activación/JWT/roles y correo CB-03 validados en PostgreSQL/SMTP local; [guía](docs/CLUB_REGISTRO_EXTERNO.md) y [evidencia](docs/CB03_VALIDACION.md). D-70 corregida en local; revisión/configuración productiva pendientes. |
-| **Pendiente** | Membresías, beneficios/recompensas, reglas por acción, canjes y panel con roles; conformidad JWT/bcrypt del ADR-006; mensajería RabbitMQ; caché/OpenSearch/balanceo Booking; observabilidad ampliada y proveedor externo D9. |
+| **Pendiente** | Mensajería RabbitMQ con DLQ y notification-worker; clases, reservas y kiosco (booking); entrenamiento y nutrición (training); alumnos con DNI, profesionales y asignaciones; recompensas y panel administrativo; caché, OpenSearch y balanceo de Booking; métricas y tableros; consumo de la capacidad de otro grupo (D9). Débitos, catálogo y canjes fueron descartados (D-76). |
 
 ## Cómo ejecutarlo localmente
 
@@ -134,6 +134,8 @@ Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d -
 | http://localhost:8080/api/v1/status | Estado agregado de todos los servicios |
 | http://localhost:4010 | Mock de la API de partners (Prism) |
 | http://localhost:16686 | Jaeger local; historial volátil en memoria |
+| http://localhost:8025 | Mailpit (correos de activación); solo con el perfil `identity` |
+| https://metalfitness-club.vercel.app | Despliegue público (frontend, `/api/v1` y `/partner-api/v2`) |
 | http://localhost:15672 | RabbitMQ management (usuario y contraseña en `.env`) |
 | http://127.0.0.1:8081/health/ready | members-service (acceso directo solo para depurar; no prueba autenticación) |
 | http://127.0.0.1:8082/health/ready | booking-service |
@@ -143,11 +145,13 @@ Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d -
 | http://127.0.0.1:8086/health/ready | booking-indexer |
 | `127.0.0.1:5432` / `127.0.0.1:27017` / `127.0.0.1:6379` | PostgreSQL / MongoDB / Redis (credenciales en `.env`) |
 
-Collector y Jaeger ya participan en el flujo mínimo. Mailpit, Grafana, Traefik y OpenSearch se suman en las etapas que los usan.
+Collector y Jaeger ya participan en el flujo mínimo; Mailpit, con el perfil `identity`. Grafana, Traefik y OpenSearch se suman en las etapas que los usan.
+
+Identidad y registro externo vienen apagados por defecto (`MEMBERS_IDENTITY_ENABLED` y `BENEFITS_EXTERNAL_REGISTRATION_ENABLED`). Para probarlos localmente, con claves y correo de prueba, seguí [docs/CLUB_REGISTRO_EXTERNO.md](docs/CLUB_REGISTRO_EXTERNO.md) o ejecutá el E2E aislado `go run ./tests/e2e/identity/main.go -memberships`, que levanta sus propias bases y Mailpit sin tocar tu `.env`.
 
 ## Mock de la API de partners (disponible ya)
 
-El contrato operativo del Club de Beneficios ([docs/contracts/benefits-api.v2.yaml](docs/contracts/benefits-api.v2.yaml)) cubre registro externo, acreditación, saldo y movimientos. Se puede probar localmente con un mock (Prism); la URL pública HTTPS sigue pendiente. El contrato v1 se conserva como historial.
+El contrato operativo del Club de Beneficios ([docs/contracts/benefits-api.v2.yaml](docs/contracts/benefits-api.v2.yaml)) cubre registro externo, acreditación, saldo y movimientos. Se puede probar localmente con un mock (Prism) o contra la URL pública `https://metalfitness-club.vercel.app/partner-api/v2` con una API key asignada. El contrato v1 se conserva como historial.
 
 ```bash
 docker compose -f deploy/docker-compose.mock.yml up -d     # o: make mock-up   → http://localhost:4010
@@ -170,6 +174,10 @@ Validar el contrato con Spectral: `make contract-lint` (o el comando `docker run
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura: C4, servicios, comunicaciones, eventos, despliegue, limitaciones |
 | [docs/adr/](docs/adr/) | Registros de decisiones de arquitectura (ADR) |
 | [docs/contracts/](docs/contracts/README.md) | **Contrato operativo v2** del Club de Beneficios para otros grupos: [benefits-api.v2.yaml](docs/contracts/benefits-api.v2.yaml) (OpenAPI 3.1), guía de integración y mock |
+| [docs/api/](docs/api/) | APIs propias del gimnasio: [acceso](docs/api/auth.v1.md) y [membresías](docs/api/memberships.v1.md) |
+| [docs/deploy/VERCEL_CLUB.md](docs/deploy/VERCEL_CLUB.md) | Cómo se publica y se actualiza el despliegue en Vercel |
+| [docs/DECISIONES.md](docs/DECISIONES.md) | Registro de decisiones del grupo en texto (D-01 en adelante) |
+| [docs/PLAN_CLUB_BENEFICIOS.md](docs/PLAN_CLUB_BENEFICIOS.md) | Plan y estado de la ampliación del Club (CB-01 a CB-08) |
 | [docs/entrega-2/VALIDACION_ENTREGA_2.md](docs/entrega-2/VALIDACION_ENTREGA_2.md) | Validación reproducible de tests, contrato, stack, flujo principal, observabilidad y resiliencia de la Entrega 2 |
 | [docs/entrega-2/Guía_Entrega2.md](docs/entrega-2/Guía_Entrega2.md) | Preparación y recorrido sugerido para demostrar la Entrega 2 sin reemplazar las evidencias versionadas |
 | [Registro_de_Decisiones_Gimnasio.docx](Registro_de_Decisiones_Gimnasio.docx) | Registro de decisiones del grupo (D-01 en adelante) |

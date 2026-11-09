@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+// ForwardedPrefixHeader lo fija el gateway al quitar PartnerPrefix de la ruta.
+// Solo se acepta ese valor exacto, para no reflejar texto enviado por clientes.
+const (
+	ForwardedPrefixHeader = "X-Forwarded-Prefix"
+	PartnerPrefix         = "/partner-api"
+)
+
 var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // PartnerRequest conserva solo IDs compatibles con el contrato UUID de partners.
@@ -26,6 +33,9 @@ func PartnerRequest(r *http.Request) *http.Request {
 func WritePartnerHTTP(w http.ResponseWriter, r *http.Request, p Problem) {
 	if p.Instance == "" {
 		p.Instance = r.URL.Path
+		if r.Header.Get(ForwardedPrefixHeader) == PartnerPrefix && !strings.HasPrefix(p.Instance, PartnerPrefix+"/") {
+			p.Instance = PartnerPrefix + p.Instance
+		}
 	}
 	if p.CorrelationID == "" {
 		p.CorrelationID = correlation.FromContext(r.Context())

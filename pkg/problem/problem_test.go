@@ -60,3 +60,23 @@ func TestInternal_NoExponeDetalles(t *testing.T) {
 	assert.Equal(t, CodeInternal, p.Code)
 	assert.NotContains(t, p.Detail, "panic")
 }
+
+// D8: los errores de Benefits informan la ruta pública solo con el prefijo
+// exacto que agrega el gateway; un valor distinto no se refleja.
+func TestWritePartnerHTTP_InstanceConPrefijoPublico(t *testing.T) {
+	for prefix, want := range map[string]string{
+		PartnerPrefix: "/partner-api/v2/accounts/a/balance",
+		"/otro":       "/v2/accounts/a/balance",
+		"":            "/v2/accounts/a/balance",
+	} {
+		req := httptest.NewRequest(http.MethodGet, "/v2/accounts/a/balance", nil)
+		if prefix != "" {
+			req.Header.Set(ForwardedPrefixHeader, prefix)
+		}
+		rec := httptest.NewRecorder()
+		WritePartnerHTTP(rec, PartnerRequest(req), New(http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado", ""))
+		var body map[string]any
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+		assert.Equal(t, want, body["instance"], "prefijo %q", prefix)
+	}
+}

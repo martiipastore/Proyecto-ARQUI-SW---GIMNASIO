@@ -504,9 +504,6 @@ func run() {
 			return map[string]string{"Authorization": "Bearer " + adminJWT, "Idempotency-Key": key}
 		}
 		today := sql("members_db", `SELECT (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date;`)
-		calendar, err := time.Parse("2006-01-02", today)
-		must(err)
-		end := calendar.AddDate(0, 0, 29).Format("2006-01-02")
 		status, _ = request(gatewayURL, "POST", "/partner-api/v2/accounts/new-user/credits", partnerHeaders("credit-preserve-300"), map[string]any{"eventId": "preserve-300", "points": 150, "reason": "Prueba conservación", "reference": "preserve-300"})
 		ensure(status == 201, "No prepara saldo de 300")
 		ledgerSQL := fmt.Sprintf("SELECT string_agg(m.id::text||':'||m.puntos::text,',' ORDER BY m.secuencia) FROM movimientos_puntos m JOIN cuentas c ON c.id=m.cuenta_id WHERE c.alumno_id='%s';", studentID)
@@ -525,7 +522,7 @@ func run() {
 		ensure(status == 200 && expiredPage["activa"] == false, "Membresía vencida sigue vigente")
 		checkPoints()
 		mark("CB04_membresia_vencida_conserva_300_puntos_y_movimientos")
-		renewBody := map[string]any{"tipo_codigo": "MENSUAL", "fecha_vencimiento": end, "motivo": "Retorno al gimnasio"}
+		renewBody := map[string]any{"tipo_codigo": "MENSUAL", "motivo": "Retorno al gimnasio"}
 		status, renewed := request(gatewayURL, "POST", "/api/v1/memberships/users/"+studentID+"/renew", adminHeaders("membership-renew-001"), renewBody)
 		ensure(status == 201, "No renueva al retornar")
 		renewedMembership := renewed["membresia"].(map[string]any)
@@ -534,13 +531,13 @@ func run() {
 		ensure(status == 201 && replayed["membresia"].(map[string]any)["id"] == renewedMembership["id"], "Renovación duplicada")
 		checkPoints()
 		mark("CB04_retorno_y_renovacion_idempotente_sin_perdida")
-		status, _ = request(gatewayURL, "POST", "/api/v1/memberships", adminHeaders("membership-overlap-001"), map[string]any{"usuario_id": studentID, "tipo_codigo": "ANUAL", "fecha_inicio": today, "fecha_vencimiento": end, "motivo": "Prueba solapamiento"})
+		status, _ = request(gatewayURL, "POST", "/api/v1/memberships", adminHeaders("membership-overlap-001"), map[string]any{"usuario_id": studentID, "tipo_codigo": "ANUAL", "fecha_inicio": today, "motivo": "Prueba solapamiento"})
 		ensure(status == 409, "No rechaza períodos superpuestos")
 		status, _ = request(gatewayURL, "POST", "/api/v1/memberships/"+renewedMembership["id"].(string)+"/cancel", adminHeaders("membership-cancel-001"), map[string]any{"motivo": "Cambio de tipo solicitado"})
 		ensure(status == 200, "No cancela para cambio de tipo")
 		status, _ = request(gatewayURL, "PUT", "/api/v1/memberships/types/CLASES", adminHeaders("membership-type-001"), map[string]any{"nombre": "Clases de prueba", "duracion_dias": 30, "clases": 8, "habilitado": true, "motivo": "Condición sintética E2E"})
 		ensure(status == 200, "No configura tipo por clases")
-		status, classResult := request(gatewayURL, "POST", "/api/v1/memberships", adminHeaders("membership-class-001"), map[string]any{"usuario_id": studentID, "tipo_codigo": "CLASES", "fecha_inicio": today, "fecha_vencimiento": end, "motivo": "Cambio a clases"})
+		status, classResult := request(gatewayURL, "POST", "/api/v1/memberships", adminHeaders("membership-class-001"), map[string]any{"usuario_id": studentID, "tipo_codigo": "CLASES", "fecha_inicio": today, "motivo": "Cambio a clases"})
 		ensure(status == 201, "No asigna membresía por clases")
 		classMembership := classResult["membresia"].(map[string]any)
 		ensure(classMembership["tipo"].(map[string]any)["clases"] == float64(8), "Cupo incorrecto")
@@ -550,7 +547,7 @@ func run() {
 		ensure(status == 200 && page["total"] == float64(3) && page["membresia_vigente"].(map[string]any)["tipo"].(map[string]any)["clases"] == float64(8), "Configuración reescribe membresías previas")
 		checkPoints()
 		mark("CB04_cambio_de_tipo_clases_snapshot_e_historial_preservados")
-		status, future := request(gatewayURL, "POST", "/api/v1/memberships/users/"+studentID+"/renew", adminHeaders("membership-annual-001"), map[string]any{"tipo_codigo": "ANUAL", "fecha_vencimiento": calendar.AddDate(0, 0, 400).Format("2006-01-02"), "motivo": "Renovación futura de prueba"})
+		status, future := request(gatewayURL, "POST", "/api/v1/memberships/users/"+studentID+"/renew", adminHeaders("membership-annual-001"), map[string]any{"tipo_codigo": "ANUAL", "motivo": "Renovación futura de prueba"})
 		ensure(status == 201 && future["membresia"].(map[string]any)["condicion"] == "PROGRAMADA", "Renovación futura incorrecta")
 		status, page = request(gatewayURL, "GET", "/api/v1/memberships/me?pagina=2&tamano=2", userHeaders, nil)
 		ensure(status == 200 && page["total"] == float64(4) && len(page["items"].([]any)) == 2, "Historial no pagina correctamente")

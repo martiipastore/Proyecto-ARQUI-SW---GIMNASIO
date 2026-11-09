@@ -7,6 +7,9 @@ var (
 	ErrConflict     = errors.New("identidad o evento en conflicto")
 	ErrUnauthorized = errors.New("credencial inválida o vencida")
 	ErrRateLimited  = errors.New("demasiados intentos")
+	// ErrNotFound distingue un recurso inexistente de una credencial inválida:
+	// Benefits traduce 404 a cuenta/registro inexistente y 401 a falla interna.
+	ErrNotFound = errors.New("registro no encontrado")
 )
 
 type ExternalRegistration struct {

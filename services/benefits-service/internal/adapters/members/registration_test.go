@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/ports"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
@@ -29,4 +30,24 @@ func TestContratoRegistroInternoYReciboExterno(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "registro", out.ID)
 	require.Equal(t, "usuario-externo", out.ExternalUserID)
+}
+
+// HU-CB-01: un registro inexistente se informa como tal, pero una credencial
+// interna rechazada no debe confundirse con una cuenta inexistente.
+func TestRegistroInexistenteYCredencialInternaRechazada(t *testing.T) {
+	for _, tc := range []struct {
+		status int
+		want   error
+	}{
+		{http.StatusNotFound, domain.ErrCuentaNoVinculada},
+		{http.StatusUnauthorized, ports.ErrAlmacenNoDisponible},
+	} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(tc.status)
+		}))
+		client := Client{URL: server.URL, Secret: "secreto-interno", HTTP: server.Client()}
+		_, err := client.ConsultarRegistro(context.Background(), "partner", "evento-001")
+		server.Close()
+		require.ErrorIs(t, err, tc.want, "estado %d", tc.status)
+	}
 }

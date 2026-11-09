@@ -51,9 +51,11 @@ func (c Client) request(ctx context.Context, method, path string, in any) (domai
 		return domain.ReciboRegistro{}, domain.ErrOperacionInvalida
 	case 409:
 		return domain.ReciboRegistro{}, domain.ErrConflictoIdempotencia
-	case 401:
+	case 404:
 		return domain.ReciboRegistro{}, domain.ErrCuentaNoVinculada
 	default:
+		// 401 indica una credencial interna mal configurada: no se informa al
+		// partner como cuenta inexistente, sino como indisponibilidad del servicio.
 		return domain.ReciboRegistro{}, ports.ErrAlmacenNoDisponible
 	}
 	var out receipt

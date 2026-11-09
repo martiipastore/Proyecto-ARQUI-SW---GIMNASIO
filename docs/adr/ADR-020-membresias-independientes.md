@@ -33,7 +33,11 @@ usuario al calcular renovaciones concurrentes. Expiración usa el día argentino
 las consultas calculan vigencia sin depender de la puntualidad del worker.
 
 Asignar recibe fechas explícitas: no introduce una política arbitraria de fin de
-mes. Renovar calcula inicio desde hoy o el día posterior al último período activo,
+mes. **Actualización del 09/11/2026 (D-77):** el equipo definió esa política. El
+vencimiento se calcula según la duración del tipo (día anterior al mismo día del
+período siguiente; último día del mes si ese día no existe) y, si se envía, debe
+coincidir. Solo se asignan membresías a usuarios ALUMNO; la regla se comprueba en
+`service`, no en el repositorio. Ver docs/api/memberships.v1.md. Renovar calcula inicio desde hoy o el día posterior al último período activo,
 y recibe el vencimiento explícito. Tipo y cupo de clases se copian al otorgamiento:
 editar configuración no cambia membresías anteriores. Los meses iniciales 1/3/12
 proceden del SPEC; el tipo por clases no inventa cupo ni duración comerciales.

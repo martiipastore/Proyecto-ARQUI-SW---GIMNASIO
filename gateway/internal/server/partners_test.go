@@ -56,6 +56,33 @@ func TestPartners_V2EnrutaAlProveedorActual(t *testing.T) {
 	require.Equal(t, http.StatusAccepted, response.Code)
 }
 
+// D8: la respuesta lleva un único X-Correlation-ID y el servicio recibe el
+// prefijo público para informar instance como /partner-api/v2/... .
+func TestPartners_CorrelacionUnicaYPrefijoPublico(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/partner-api", r.Header.Get("X-Forwarded-Prefix"))
+		w.Header().Set("X-Correlation-ID", r.Header.Get("X-Correlation-ID"))
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer upstream.Close()
+	f := newFixture(t, map[string]string{"GATEWAY_BENEFITS_URL": upstream.URL})
+	response := f.do("GET", "/partner-api/v2/accounts/alumno-1/balance", map[string]string{"X-Forwarded-Prefix": "/inyectado"})
+	require.Equal(t, http.StatusUnauthorized, response.Code)
+	require.Len(t, response.Header().Values("X-Correlation-ID"), 1)
+}
+
+// El prefijo solo se envía a la API de partners; un valor del cliente no pasa.
+func TestProxy_NoReenviaPrefijoDelCliente(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Empty(t, r.Header.Get("X-Forwarded-Prefix"))
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer upstream.Close()
+	f := newFixture(t, map[string]string{"GATEWAY_MEMBERS_URL": upstream.URL})
+	response := f.do("POST", "/api/v1/auth/login", map[string]string{"X-Forwarded-Prefix": "/partner-api"})
+	require.Equal(t, http.StatusOK, response.Code)
+}
+
 func TestPartners_Errores502Y504Contractuales(t *testing.T) {
 	for _, timeout := range []bool{false, true} {
 		t.Run(map[bool]string{false: "502", true: "504"}[timeout], func(t *testing.T) {

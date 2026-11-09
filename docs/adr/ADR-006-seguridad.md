@@ -4,7 +4,7 @@
 |---|---|
 | **Estado** | Aceptado |
 | **Fecha** | 2026-10-08 |
-| **Decisión del TP** | D6 |
+| **Decisión del TP** | Adicional (seguridad). Corrección de etiqueta del 09/11/2026: decía «D6», pero D6 del enunciado es Búsqueda ([ADR-014](ADR-014-busqueda-clases.md)). El contenido de la decisión no cambia. |
 | **Autores** | Equipo del TPI |
 | **Relacionado con** | SPEC RN-26, RN-27, RN-30 y RN-34; [ADR-001](ADR-001-limites-de-servicios.md); [ADR-007](ADR-007-cache-autorizacion-disponibilidad.md); [ADR-008](ADR-008-contrato-propio.md) |
 

@@ -8,24 +8,31 @@ Sistema integral de gestión de gimnasio: Trabajo Práctico Integrador de Arquit
 
 - **Qué hace el sistema:** [SPEC.md](SPEC.md) (aprobado; fuente de verdad del negocio).
 - **Cómo está construido:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/adr/](docs/adr/).
-- **Etapa actual del Club:** CB-02/03 implementadas y validadas localmente; revisión del equipo pendiente. La siguiente etapa técnica es CB-04 (membresías); CB-05 a CB-08 pendientes. Ver [plan ampliado](docs/PLAN_CLUB_BENEFICIOS.md), D-70 corregida y evidencia CB03_VALIDACION.md antes de habilitar identidad.
+- **Etapa actual del Club (09/11/2026):** CB-02/03/04 implementadas y validadas localmente (E2E de 14 escenarios); publicado en Vercel (D-75, ADR-021). Débitos, catálogo y canjes descartados (D-76). Pendientes: CB-05, CB-07 y la regresión de CB-08. Ver [plan ampliado](docs/PLAN_CLUB_BENEFICIOS.md).
+- **Plan de etapas del Word v2:** etapas 7 (mensajería), 9, 10 y 11 (booking) y 14 en adelante no están implementadas; las 5, 8 y 12 son parciales. No empezar etapas nuevas sin que el equipo lo pida.
 - **Estado histórico de Entrega 2:** etapa 8 en revisión documental y de demostración; ver [revisión](docs/ETAPA_8_REVISION_ENTREGA.md). Etapa 7 integrada por PR #5 (fb2a17c). Etapa 5/D9 sigue pendiente de proveedor; no declarar todo el plan completo. D-61/D-62 aprobadas: validación aislada con restauración y Vite 6.4.3. Sus comprobaciones no validan la ampliación posterior del Club.
 
 ## Ampliación vigente del Club — 06/11/2026
 
 El pedido posterior del equipo amplía el alcance mínimo de Entrega 2 sin reiniciar
 el proyecto. Seguir [PLAN_CLUB_BENEFICIOS.md](docs/PLAN_CLUB_BENEFICIOS.md), la
-[adenda SPEC 0.11](docs/SPEC_CLUB_BENEFICIOS.md) y D-63 a D-70. D-63/D-64/D-65/D-67
-reemplazan D-06/D-08/D-28/D-19; no volver a restringir el Club a alumnos con membresía.
-La evidencia anterior no prueba el nuevo flujo. Registro/control de integraciones
-tienen implementación local; membresías, recompensas, canjes y panel siguen pendientes.
+[adenda SPEC 0.11](docs/SPEC_CLUB_BENEFICIOS.md) y D-63 a D-77. D-63/D-64/D-65/D-67
+reemplazan D-06/D-08/D-28/D-19 y D-75 reemplaza D-41; no volver a restringir el Club
+a alumnos con membresía. Registro, integraciones, acceso y membresías tienen
+implementación; recompensas y panel siguen pendientes.
 
-ADR-016/017/018 son propuestas técnicas, no aprobaciones retrospectivas. D-70
-registra la divergencia del borrador y su corrección local en CB-03 conforme al
-ADR-006 aceptado: JWT RS256 15 minutos, roles de base y bcrypt mínimo 12. Logout
-descarta en cliente sin revocación v1. Se verificaron PostgreSQL y SMTP local reales.
-Revisión del equipo y configuración de claves pendientes; flags apagados y sin producción.
+ADR-016/017/018/020/022 son propuestas técnicas, no aprobaciones retrospectivas;
+ADR-008 v4 (contrato v2) y ADR-021 (Vercel) están aceptados. Seguridad según ADR-006:
+JWT RS256 15 minutos, roles de base y bcrypt mínimo 12; logout descarta en cliente
+sin revocación v1. Las membresías calculan su vencimiento según el tipo y solo se
+asignan a alumnos (D-77). Flags de identidad y registro apagados por defecto en local.
 Mantener sincronizados DECISIONES.md y su Word, SPEC, etapas y ADR en cada cambio.
+
+GitHub Actions está bloqueado por facturación desde el 06/11/2026: correr tests y
+`go vet` localmente antes de integrar. Las integraciones con testcontainers
+necesitan Docker; si el contenedor Ryuk falla al arrancar Docker, repetir con
+`TESTCONTAINERS_RYUK_DISABLED=true`. Producción se publica con `vercel deploy --prod`,
+no con un push.
 
 ## Stack
 
@@ -47,10 +54,10 @@ Mantener sincronizados DECISIONES.md y su Word, SPEC, etapas y ADR en cada cambi
 | Servicio | Puerto | Patrón | Datos | Publica | Consume |
 |---|---|---|---|---|---|
 | `api-gateway` | 8080 | Middlewares | Redis (rate limit) | — | — |
-| `members-service` | 8081 | **Capas** | PostgreSQL `members_db` | `membresia.activada`, `membresia.cancelada`, `usuario.desactivado` | — |
+| `members-service` | 8081 | **Capas** | PostgreSQL `members_db` | `alumno.creado`, `membresia.activada`, `membresia.cancelada`, `usuario.desactivado` (los de membresía se guardan en outbox sin publicador; el resto es diseño objetivo) | — |
 | `booking-service` (×2 con Traefik desde la etapa de balanceo; hoy ×1) | 8082 | **Hexagonal + CQRS** | PostgreSQL `booking_db` + OpenSearch | `asistencia.registrada`, `inasistencia.registrada`, `clase.actualizada` | `membresia.cancelada`, `usuario.desactivado` |
 | `booking-indexer` | 8086 (solo health) | Consumidor | OpenSearch `clases` | — | `clase.actualizada` |
-| `benefits-service` | 8083 | **Hexagonal** | PostgreSQL `benefits_db` | — | `asistencia.registrada`, `inasistencia.registrada` |
+| `benefits-service` | 8083 | **Hexagonal** | PostgreSQL `benefits_db` | — | `alumno.creado`, `asistencia.registrada`, `inasistencia.registrada` (diseño objetivo) |
 | `training-service` | 8084 | **Capas** | MongoDB `training_db` | — | — |
 | `notification-worker` | 8085 | Consumidor | MongoDB `notifications_db` | — | `membresia.activada` |
 | `web` | 5173 | SPA | — | — | — |
@@ -147,7 +154,7 @@ Conventional Commits y GitHub Flow; ver [CONTRIBUTING.md](CONTRIBUTING.md). Rama
 | `make mock-up` / `make contract-lint` | Mock de Prism del contrato de partners / validación con Spectral |
 | `scripts/sync-club-docs.ps1` / `-Check` | Sincroniza o comprueba los tres Word desde Markdown; usar la invocación PowerShell UTF-8 de PLAN_CLUB_BENEFICIOS.md. Conserva copias previas y no cambia producción. |
 | `scripts/verify-club-access.ps1` | Verifica tests/vet de pkg/gateway/members con Docker obligatorio; invocación UTF-8 en CB03_VALIDACION.md. |
-| `go run ./tests/e2e/identity/main.go` | E2E CB-03 con PostgreSQL/Mailpit aislados y servicios reales; no usa .env ni datos existentes; limpia sus contenedores. |
+| `go run ./tests/e2e/identity/main.go` / `-memberships` | E2E CB-03 (con `-memberships`, también CB-04) con PostgreSQL/Mailpit aislados y servicios reales; no usa .env ni datos existentes; limpia sus contenedores y reescribe `docs/evidence/club/cb0X-v2-e2e.json`. |
 
 Equivalente sin make: `docker compose --env-file .env -f deploy/docker-compose.yml up -d --build --wait`, y `cd <módulo> && go test ./...` por módulo.
 

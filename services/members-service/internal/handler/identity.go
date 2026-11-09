@@ -36,6 +36,8 @@ func identityError(c *gin.Context, err error) {
 		status, code, detail = 400, problem.CodeValidation, "Revisá los datos enviados; la contraseña debe tener entre 12 y 72 caracteres."
 	case errors.Is(err, model.ErrUnauthorized):
 		status, code, detail = 401, "NO_AUTENTICADO", "Credencial o enlace inválido, utilizado o vencido."
+	case errors.Is(err, model.ErrNotFound):
+		status, code, detail = 404, problem.CodeNotFound, "No existe un registro con ese evento para la integración."
 	case errors.Is(err, model.ErrConflict):
 		status, code, detail = 409, "CONFLICTO_IDENTIDAD", "La solicitud no coincide con una vinculación o evento anterior."
 	}

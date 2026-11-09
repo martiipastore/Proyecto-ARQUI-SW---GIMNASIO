@@ -2,21 +2,27 @@
 
 > Documento de referencia de la arquitectura del proyecto. La funcionalidad está definida en [SPEC.md](../SPEC.md); las decisiones estructurales están en [docs/adr/](adr/).
 >
-> - Versión: 1.9 preparada localmente (CB-02/03 validadas, revisión pendiente)
-> - Fecha: 2026-11-06
+> - Versión: 1.10 (estado real del Club, membresías y publicación en Vercel)
+> - Fecha: 2026-11-09
 > - Incluye tres decisiones agregadas y aprobadas por el equipo (2026-10-07) para cubrir huecos con el SPEC: eventos `membresia.cancelada` y `usuario.desactivado`, consulta de asignaciones training → members y consulta de datos de alumnos booking → members. Registro completo en [Registro_de_Decisiones_Gimnasio.docx](../Registro_de_Decisiones_Gimnasio.docx) (D-20 a D-23).
 
-**Estado real:** Benefits implementa créditos, saldo y movimientos mediante Gateway/PostgreSQL, con idempotencia, logs y trazas. Resiliencia y carga tienen evidencia histórica exportada. CB-03 implementa JWT y outbox de correo con evidencia local posterior. Los diagramas y las demás interacciones describen el diseño objetivo: eventos de dominio/outbox AMQP, búsqueda, caché funcional y balanceo siguen pendientes. Ver [revisión de Entrega 2](ETAPA_8_REVISION_ENTREGA.md); D9 espera proveedor/contrato.
+**Estado real al 09/11/2026:**
 
-**Ampliación local del 06/11/2026:** controles de integraciones/eventos y cuotas,
-registro persistente en Members, enlace de activación, outbox de correo y acceso
-propio tienen código y validación real local CB-02/03; flags apagados y sin despliegue. No
-reutilizar las mediciones anteriores como evidencia del nuevo flujo. ADR-016/017/018
-siguen propuestos en sus detalles técnicos. CB-03 corrigió D-70 implementando JWT
-RS256 900 s, roles persistidos y bcrypt mínimo 12 conforme al ADR-006, sin editarlo.
-El gateway verifica el JWT y reenvía solo actor/rol; Members no decodifica tokens.
-Logout v1 descarta en cliente, sin revocación. Revisión del equipo pendiente.
-Ver [plan y aceptación](PLAN_CLUB_BENEFICIOS.md).
+- **Benefits** (Hexagonal): API de partners v2 con registro externo, créditos con
+  identidad de evento, saldo y movimientos; permisos, límites y cuota por
+  integración en PostgreSQL; idempotencia durable.
+- **Members** (Capas): identidad, activación por correo, login con JWT RS256 de 15
+  minutos, roles y membresías con historial inmutable y outbox.
+- **Gateway**: verifica el JWT, inyecta `X-User-Id`/`X-User-Role` y restringe por rol.
+- **Publicación**: Gateway, Benefits, Members y web en Vercel con PostgreSQL
+  gestionado (D-75, [ADR-021](adr/ADR-021-despliegue-vercel.md)).
+- **Pendiente**: mensajería RabbitMQ con DLQ (los outbox existen, pero nadie los
+  publica), booking (clases, reservas, kiosco), training, búsqueda, caché,
+  balanceo, métricas y tableros, y el proveedor externo D9.
+
+Los diagramas y las demás secciones describen el **diseño objetivo** salvo que digan
+lo contrario. Detalle de la ampliación en el [plan del Club](PLAN_CLUB_BENEFICIOS.md);
+revisión de la Entrega 2 en [ETAPA_8_REVISION_ENTREGA.md](ETAPA_8_REVISION_ENTREGA.md).
 
 ---
 
@@ -50,12 +56,13 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 | Estado | Componentes y comportamiento |
 |---|---|
 | **Implementado** | Módulos Go y ejecutables iniciales; health checks y readiness contra PostgreSQL/MongoDB; gateway con routing por prefijo, correlación, CORS, timeouts, errores y estado agregado; frontend de estado; bases y usuarios separados por servicio; contrato OpenAPI, guía y mock de partners. |
-| **Implementado en Benefits** | API de partners /v1 y ruta pública /partner-api/v1 por gateway; autenticación por API key sin caché; casos de uso de créditos, saldo y movimientos, puertos, dominio y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](entrega-2/ETAPA_2_BENEFITS.md) y [API](entrega-2/ETAPA_3_API_BENEFITS.md). |
+| **Implementado en Benefits** | API de partners v2 (`/partner-api/v2`; v1 conservada por compatibilidad) con registro externo, créditos, saldo y movimientos; autenticación por API key sin caché; permisos, límites de puntos, identidad de evento y cuota por minuto por integración; dominio, puertos y adaptador PostgreSQL; migraciones y restricciones para saldo, secuencia e idempotencia; tests de concurrencia y rollback contra base real. [Persistencia](entrega-2/ETAPA_2_BENEFITS.md), [API](entrega-2/ETAPA_3_API_BENEFITS.md) y [CB-02](CB02_VALIDACION.md). |
+| **Implementado en Members** | Identidad, registro externo, activación de un solo uso por correo, login JWT RS256 (15 min), roles, bcrypt 12 y membresías mensual/trimestral/anual/por clases con historial inmutable, idempotencia y outbox. [CB-03](CB03_VALIDACION.md), [ADR-020](adr/ADR-020-membresias-independientes.md) y [API de membresías](api/memberships.v1.md). |
+| **Publicado en la nube** | Gateway, Benefits, Members (con su worker) y web en Vercel, con PostgreSQL gestionado y SMTP externo: `https://metalfitness-club.vercel.app`. Sin RabbitMQ, Redis ni observabilidad en la nube. [ADR-021](adr/ADR-021-despliegue-vercel.md). |
 | **Validado en resiliencia** | Caída controlada 502/503/504 antes/después de commit, recuperación por misma clave y rollback previo al commit; proxy exclusivo de pruebas retirado al terminar. [Etapa 6](entrega-2/ETAPA_6_RESILIENCIA.md) y [postmortem](POSTMORTEM.md). |
 | **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
-| **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting ni mensajería. |
-| **Ampliación local pendiente de aceptación** | CB-02/03 validadas con PostgreSQL y SMTP Mailpit reales, tests/vet, build y Spectral. JWT/roles/bcrypt alineados con ADR-006; revisión, claves productivas y etapas restantes pendientes. [Detalle y evidencia](CB03_VALIDACION.md). |
-| **Pendiente de implementación** | Membresías, canjes, recompensas, reglas por acción y panel administrativo; conformidad de identidad/roles con ADR-006; eventos RabbitMQ y DLQ; caché/quotas Redis; OpenSearch/CQRS; balanceo Booking; métricas y tableros; verificación del nuevo flujo con bases/SMTP reales. |
+| **Desplegado, todavía sin integración funcional** | Redis y RabbitMQ están en Docker Compose con health checks, pero ningún flujo de negocio usa aún caché, rate limiting del gateway ni mensajería. |
+| **Pendiente de implementación** | Publicación de los outbox en RabbitMQ, consumidores idempotentes y DLQ; notification-worker; booking (actividades, clases, reservas, kiosco, asistencia); training; recompensas y panel administrativo (CB-05 y CB-07); alumnos con DNI, profesionales y asignaciones; caché y rate limiting en Redis; OpenSearch/CQRS; balanceo de Booking; métricas y tableros. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
 
 Salvo que una sección indique expresamente el estado actual, sus descripciones deben leerse como decisiones y comportamiento **objetivo**, no como funcionalidad ya disponible.
@@ -199,9 +206,9 @@ flowchart LR
 |---|---|---|---|---|---|---|---|---|---|
 | **api-gateway** | Punto de entrada único. Autenticación JWT, identidad, rate limiting, routing, correlación, timeouts. | — | Ninguno de negocio. Contadores de rate limiting. | Redis | Pipeline de middlewares | Validar JWT, enrutar, limitar, propagar contexto | Todos los servicios (proxy) | — | — |
 | **members-service** | Identidad y habilitación: usuarios, login, roles, alumnos, profesionales, asignaciones y membresías. | Usuario, Alumno, Profesional, AsignaciónProfesionalAlumno, TipoMembresía, Membresía | Padrón de personas, credenciales (hash), roles, asignaciones, historial de membresías | PostgreSQL `members_db` | **Capas** (Handler → Service → Repository) | Login (emite JWT), ABM de alumnos/profesionales, asignar alumno, asignar/renovar/cancelar membresía, vencimiento diario, avisos de vencimiento, consulta interna de vigencia | — | `alumno.creado`, `membresia.activada`, `membresia.recordatorio_vencimiento`, `membresia.advertencia_vencimiento`; `membresia.cancelada`, `usuario.desactivado` | — |
-| **booking-service** | Oferta y uso del gimnasio: actividades, horarios, clases, reservas, ingresos y asistencia automática. | Actividad, Horario, Clase, Reserva, Asistencia | Catálogo de actividades, agenda, cupos, reservas, ingresos y asistencias | PostgreSQL `booking_db` (escritura, fuente de verdad) + OpenSearch (lectura) | **Hexagonal** + **CQRS de lectura** | Generar clases, consultar clases con ocupación, reservar, cancelar, registrar ingreso mediante DNI, marcar ausencias al finalizar, cancelar clase | `members-service` (membresía vigente; datos de alumnos para ingresos y listados) | `asistencia.registrada`, `clase.actualizada` | `membresia.cancelada`, `usuario.desactivado` |
+| **booking-service** | Oferta y uso del gimnasio: actividades, horarios, clases, reservas, ingresos y asistencia automática. | Actividad, Horario, Clase, Reserva, Asistencia | Catálogo de actividades, agenda, cupos, reservas, ingresos y asistencias | PostgreSQL `booking_db` (escritura, fuente de verdad) + OpenSearch (lectura) | **Hexagonal** + **CQRS de lectura** | Generar clases, consultar clases con ocupación, reservar, cancelar, registrar ingreso mediante DNI, marcar ausencias al finalizar, cancelar clase | `members-service` (membresía vigente; datos de alumnos para ingresos y listados) | `asistencia.registrada`, `inasistencia.registrada`, `clase.actualizada` | `membresia.cancelada`, `usuario.desactivado` |
 | **booking-indexer** | Mantener el modelo de lectura de clases en OpenSearch. | Proyección `ClaseLectura` | Índice `clases` (derivado, reconstruible) | OpenSearch | Consumidor (parte del módulo booking) | Indexar/actualizar clase, reindexado completo | — (lee `booking_db` solo para reindexado completo, mismo servicio) | — | `clase.actualizada` |
-| **benefits-service** | Club de Beneficios y **capacidad publicada a otros grupos** (API v1 de puntos). | CuentaBeneficios, MovimientoPuntos, Beneficio, Canje, Partner, VinculaciónPartner, OperaciónPartner | Cuentas, ledger inmutable, catálogo, canjes, partners y API keys (hash), claves de idempotencia | PostgreSQL `benefits_db` | **Hexagonal** | Consultar saldo/movimientos, canjear, acreditar por asistencia, penalizar inasistencia, revertir, ABM de beneficios y partners, API partner (acreditar, debitar, canjear, consultar) | `members-service` solo para validar el alumno al vincularlo a un partner (operación de baja frecuencia) | — (ninguno en v1) | `alumno.creado`, `asistencia.registrada`, `inasistencia.registrada` |
+| **benefits-service** | Club de Beneficios y **capacidad publicada a otros grupos** (API v2 de puntos). | CuentaBeneficios, MovimientoPuntos, Partner, VinculaciónPartner, OperaciónPartner, EventoAcreditado | Cuentas, ledger inmutable, partners con permisos y límites, API keys (hash), claves de idempotencia e identidad de eventos | PostgreSQL `benefits_db` | **Hexagonal** | Consultar saldo/movimientos, acreditar por asistencia, penalizar inasistencia, revertir, API partner v2 (registrar o vincular, acreditar, consultar). Débitos, catálogo y canjes descartados (D-76) | `members-service` para registrar personas externas (síncrono, ADR-022) | — (ninguno en v1) | `alumno.creado`, `asistencia.registrada`, `inasistencia.registrada` |
 | **training-service** | Seguimiento del alumno: entrenamiento y nutrición. | PlanEntrenamiento, DíaRutina, EjercicioPlanificado, PlanAlimenticio, Medición, ConsultaNutricional | Planes (documentos anidados), mediciones (append-only), consultas | MongoDB `training_db` | **Capas** | ABM de planes de entrenamiento, planes alimenticios, registrar mediciones, consultas nutricionales | `members-service` (¿el alumno está asignado a este profesional?) | — | — |
 | **notification-worker** | Enviar emails de membresía. | NotificaciónEmail | Registro de mensajes procesados y estado de envío | MongoDB `notifications_db` | Consumidor | Consumir eventos de confirmación, recordatorio y advertencia; enviar email; registrar resultado | SMTP (Mailpit en local) | — | `membresia.activada`, `membresia.recordatorio_vencimiento`, `membresia.advertencia_vencimiento` |
 
@@ -230,8 +237,8 @@ flowchart LR
 #### benefits-service — Hexagonal
 
 - **Por qué hexagonal:** es la capacidad publicada a otros grupos; su contrato (API v1) debe mantenerse estable aunque cambie la infraestructura, y el ledger tiene invariantes estrictas (RN-22 a RN-27).
-- **Ledger:** `movimientos_puntos` es append-only; todas las escrituras bloquean la fila de la cuenta y reciben una `account_sequence` creciente. El saldo se mantiene en `cuentas.saldo`, actualizado en la misma transacción que inserta el movimiento, con `CHECK (saldo >= 0)`. La reversión inserta un movimiento compensatorio. Ver [ADR-004](adr/ADR-004-orden-movimientos-puntos.md).
-- **Cuentas:** el alta confirmada en `members-service` registra `alumno.creado` mediante outbox; `benefits-service` consume el evento y crea eventualmente una única cuenta con saldo 0. El alta no espera ni se revierte si benefits está caído. No se crean cuentas para personas que no sean alumnos; una vinculación o una operación posterior nunca crea una cuenta por sí sola.
+- **Ledger:** `movimientos_puntos` es append-only; todas las escrituras bloquean la fila de la cuenta y reciben una `account_sequence` creciente. El saldo se mantiene en `cuentas.saldo`, actualizado en la misma transacción que inserta el movimiento, con `CHECK (saldo >= 0)`. La reversión inserta un movimiento compensatorio. Ver [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md).
+- **Cuentas:** diseño objetivo para alumnos: el alta confirmada en `members-service` registra `alumno.creado` mediante outbox; `benefits-service` consume el evento y crea eventualmente una única cuenta con saldo 0, sin bloquear el alta si benefits está caído. Desde D-63 también puede tener cuenta una persona externa sin membresía: la crea el registro externo de un partner autorizado, completado por el worker de Members mediante `/internal/v1/external-registrations/fulfill` ([ADR-022](adr/ADR-022-registro-externo-members-benefits.md)). Una cuenta existente nunca se duplica ni se vincula sin prueba de control del correo.
 - **API de partners:** la versión operativa preparada es `/partner-api/v2/...`, con API key (`X-API-Key`, guardada como hash) e `Idempotency-Key` obligatorio en escrituras. Cubre registro externo, créditos, saldo y movimientos; el gateway adapta v2 a los handlers existentes de Benefits. Contrato vigente: [benefits-api.v2.yaml](contracts/benefits-api.v2.yaml), guía para consumidores en [docs/contracts/README.md](contracts/README.md). La v1 se conserva como historial del contrato original; su mock incluía operaciones que no se implementaron. La URL HTTPS pública y la habilitación productiva del registro siguen pendientes.
 - **Idempotencia de asistencia e inasistencia:** restricciones únicas sobre `movimientos_puntos.origen_asistencia_id` y `movimientos_puntos.origen_reserva_id` además del registro de mensajes procesados. La penalización se calcula como `min(100, saldo_actual)` bajo el bloqueo de la cuenta; con saldo 0 se registra un movimiento de 0 para cerrar el efecto de forma auditable.
 
@@ -306,7 +313,8 @@ El rate limiting **falla abierto** (deja pasar y registra métrica `ratelimit_re
 | booking | members | Membresía vigente hoy y en la fecha de la clase (RN-12 b) | La reserva **no puede** confirmarse sin la respuesta | 800 ms | 1 reintento (GET idempotente) con backoff 100 ms + circuit breaker | **Falla cerrado:** `503 MEMBERS_NO_DISPONIBLE`; no se reserva |
 | booking | members | Datos mínimos de alumnos para listados del profesor | Composición de vistas | 800 ms | 1 | Se devuelve el listado con IDs sin nombre (degradación) |
 | training | members | ¿Alumno asignado al profesional? (RN-30) | Autorización | 800 ms | 1 reintento (GET idempotente); **sin caché** | **Falla cerrado:** `503 MEMBERS_NO_DISPONIBLE`; no se ejecuta la operación protegida |
-| benefits | members | Validar alumno al vincularlo a un partner | Validación de alta | 800 ms | 1 | `503`; el admin reintenta |
+| benefits | members | Registrar persona externa (`/internal/v1/external-registrations`), implementado | El partner necesita un recibo durable | 3,5 s | No; el partner reintenta con la misma `Idempotency-Key` | `503 UNAVAILABLE` al partner ([ADR-022](adr/ADR-022-registro-externo-members-benefits.md)) |
+| members (worker) | benefits | Completar registro y acreditar (`/internal/v1/external-registrations/fulfill`), implementado | La acreditación pertenece al ledger | 4 s | Sí, desde el worker; idempotente por `eventId` | El registro queda `accepted` hasta confirmarse |
 | notification-worker | SMTP | Envío de email | Protocolo SMTP | 10 s | Vía colas de reintento | Reintento → DLQ |
 
 La validación booking → members usa datos frescos, pero no es una transacción entre servicios. Members devuelve la membresía que cubre la fecha de la clase y booking la guarda con la reserva. La creación de la reserva y el consumo de `membresia.cancelada` usan el mismo bloqueo transaccional por `membresia_id` dentro de booking: el consumidor registra una revocación durable y cancela las reservas afectadas, o la inserción posterior detecta la revocación y se rechaza. El estado converge aunque una reserva pueda quedar confirmada transitoriamente durante la propagación. Ver [ADR-005 v2](adr/ADR-005-v2-comunicacion.md).
@@ -504,7 +512,10 @@ La traza atraviesa la frontera asíncrona: el productor guarda `traceparent` en 
 | `VENTANA_ASISTENCIA_CERRADA` | 422 | RN-19 |
 | `ASISTENCIA_YA_REGISTRADA` | 409 | RN-21 |
 | `TRANSICION_INVALIDA` | 409 | §7 |
-| `SOLAPAMIENTO_MEMBRESIA` | 409 | RN-02 |
+| `TRANSICION_MEMBRESIA_INVALIDA` | 409 | §7.1, RN-04/RN-06 (implementado en Members) |
+| `SOLAPAMIENTO_MEMBRESIA` | 409 | RN-02 (nombre del diseño inicial; Members implementa `MEMBRESIAS_SUPERPUESTAS`) |
+| `MEMBRESIAS_SUPERPUESTAS` | 409 | RN-02 (implementado en Members) |
+| `MEMBRESIA_NO_ENCONTRADA` | 404 | HU-03 a HU-05 (implementado en Members) |
 | `SALDO_INSUFICIENTE` | 422 | RN-23 |
 | `BENEFICIO_NO_DISPONIBLE` | 422 | RN-24 |
 | `CONFLICTO_IDEMPOTENCIA` / `OPERACION_EN_CURSO` | 409 | RN-15, RN-27 |
@@ -676,7 +687,7 @@ Estados por servicio: `ready`, `degraded`, `not_ready` (respondió 503) o `unrea
 | `benefits-mock` | stoplight/prism:5.15.10 (contrato de partners) | 4010 | 1 | Sí |
 | `traefik` | traefik v3 | — | 1 | No, etapa de balanceo |
 | `opensearch` | opensearch 2.x | — | 1 | No, etapa de CQRS |
-| `mailpit` | axllent/mailpit | — | 1 | No, etapa de notificaciones |
+| `mailpit` | axllent/mailpit:v1.20 | 127.0.0.1:8025 (UI) | 1 | Sí, con el perfil `identity` (correo de activación y bienvenida de Members) |
 | `otel-collector`, `jaeger` | versiones fijadas en Compose | Jaeger UI 16686 (loopback) | 1 c/u | Sí, primera traza del flujo mínimo; memoria local |
 | `prometheus`, `loki`, `grafana` | oficiales | — | 1 c/u | No; métricas, logs centralizados y tableros pendientes |
 
@@ -684,16 +695,39 @@ Requisitos: ~8 GB de RAM y **al menos 15 GB libres en disco** para imágenes y b
 
 ### 14.2 Nube
 
-El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**.
+El requisito externo es que **otros grupos puedan consumir la API de puntos** por
+una URL pública.
 
-**Decisión objetivo:** se despliega **el stack completo en una VM con Docker Compose**, con configuración de producción: el frontend se sirve como estáticos y Traefik actúa además como borde HTTPS. El equipo eligió **Oracle Cloud Free Tier, VM ARM**, según D-41 de [DECISIONES.md](DECISIONES.md). La disponibilidad de recursos, el dimensionamiento y el costo efectivo se verificarán en D13; no hay despliegue productivo acreditado por esta decisión. El perfil de producción todavía debe incorporarse. La [etapa 7](entrega-2/ETAPA_7_CAPACIDAD_COSTOS.md) midió el flujo local y conserva una [estimación fechada](entrega-2/COSTOS_ENTREGA_2.md) para São Paulo en USD/ARS; no valida capacidad ARM ni disponibilidad de la cuenta.
+**Decisión vigente (D-75, [ADR-021](adr/ADR-021-despliegue-vercel.md)):** la capacidad
+compartida y el acceso del usuario se publican en **Vercel**, en
+`https://metalfitness-club.vercel.app`. Reemplaza a la VM de Oracle Cloud (D-41),
+que no llegó a crearse. La guía paso a paso está en
+[docs/deploy/VERCEL_CLUB.md](deploy/VERCEL_CLUB.md).
+
+```mermaid
+flowchart LR
+    partner["Partner externo"] -->|"HTTPS /partner-api/v2"| gw
+    user["Navegador"] -->|"HTTPS / y /api/v1"| edge
+    subgraph vercel["Proyecto Vercel"]
+        edge["Ruteo de Vercel"] --> web["web (Vite estático)"]
+        edge --> gw["gateway"]
+        gw --> benefits["benefits"]
+        gw --> members["members"]
+        benefits -->|"registro externo"| reg["members-registration<br/>(sin ruta pública)"]
+        worker["members-worker<br/>(Daemon)"] -->|"fulfill"| benefits
+    end
+    benefits --> pgb[("PostgreSQL gestionado<br/>base benefits")]
+    members & reg & worker --> pgm[("PostgreSQL gestionado<br/>base members")]
+    worker -->|"SMTP STARTTLS"| smtp["Proveedor SMTP"]
+```
 
 | Aspecto | Detalle |
 |---|---|
-| Qué se expone a Internet | Solo Traefik por HTTPS: sirve la SPA y enruta `/api/v1/**` y `/partner-api/v1/**` al gateway |
-| Qué queda privado | Servicios, bases, broker, Redis, OpenSearch y la observabilidad (acceso por túnel SSH) |
-| Por qué | Paridad total con local, costo bajo y operación simple para un TP; las acreditaciones por asistencia funcionan porque booking también está desplegado |
-| Alternativa descartada | Desplegar solo gateway + benefits: alcanza para los partners, pero los puntos por asistencia nunca llegarían |
+| Qué se expone a Internet | El ruteo de Vercel por HTTPS: la SPA, `/api/**` y `/partner-api/**` al gateway |
+| Qué queda privado | Benefits, Members y `members-registration` (solo por bindings internos), las bases y los secretos |
+| Qué no está en la nube | RabbitMQ, Redis, OpenSearch, Collector y Jaeger; booking, training y notification-worker |
+| Costo | La estimación fechada de la [etapa 7](entrega-2/COSTOS_ENTREGA_2.md) corresponde a Oracle en São Paulo y queda como historia; el costo del plan de Vercel y del PostgreSQL gestionado debe verificarse en sus paneles |
+| Alternativa descartada | VM de Oracle con Docker Compose (D-41): paridad con local, pero la VM no existía y exigía operar servidor, TLS y firewall |
 
 ---
 
@@ -719,6 +753,12 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | L-16 | **booking-service con 1 réplica y sin Traefik** en el esqueleto. | No se demuestra balanceo todavía. | Se agrega en la etapa de balanceo (2 réplicas + Traefik con health checks). |
 | L-17 | **Healthchecks de compose sobre `/health/ready`**. | Si una dependencia crítica cae, Docker marca el proceso *unhealthy* (no lo reinicia); una dependencia parcial produce estado `degraded`. | Es lo esperado: el detalle se ve en `/api/v1/status` y solo se retira tráfico cuando falla la capacidad principal. |
 | L-18 | **Acreditaciones y penalizaciones no son conmutativas.** Dos operaciones concurrentes pueden dejar saldo 400 o 500 según cuál se aplique primero. | El resultado no se deduce solo de la fecha del hecho. | Bloqueo de cuenta, secuencia creciente y fechas de hecho/aplicación diferenciadas; orden auditable según ADR-004. |
+| L-19 | **La nube no replica el entorno local** (ADR-021). Vercel no tiene RabbitMQ, Redis, OpenSearch ni Collector/Jaeger. | En producción no hay trazas ni rate limiting del gateway; la evidencia de observabilidad es local. | Límites y cuota por integración en PostgreSQL (ADR-016); evaluar observabilidad gestionada si se exige en la nube. |
+| L-20 | **Llamadas cruzadas Benefits ↔ Members** en el registro externo (ADR-022). | Acopla la disponibilidad de ambos servicios para registrar; en Vercel obliga a una segunda instancia de Members. | Recibo durable, reintento idempotente por `eventId`; reemplazar la vuelta por un evento cuando exista la mensajería. |
+| L-21 | **Outbox sin publicador.** Members guarda eventos de membresías y correo, pero nada los publica en RabbitMQ; Members envía su correo por SMTP directo en lugar de notification-worker. | No hay todavía un evento de dominio consumido con DLQ (requisito del TP). | Etapa de mensajería: relay del outbox, consumidor idempotente, reintentos y DLQ. |
+| L-22 | **Validación del ledger recorre el historial** de la cuenta en cada escritura (trigger `verificar_ledger`). | El costo de acreditar crece con la cantidad de movimientos; fue el límite observado en la etapa 7 (ADR-013 v2). | Medir y, si hace falta, validar de forma incremental conservando las invariantes. |
+| L-23 | **Integración continua bloqueada.** GitHub Actions no inicia por un problema de facturación de la cuenta desde el 06/11/2026. | Los PR se integran sin checks automáticos. | Verificación local documentada ([VALIDACION_LOCAL_GITHUB.md](VALIDACION_LOCAL_GITHUB.md)) hasta resolver la cuenta. |
+| L-24 | **Producción desplegada desde la CLI**, sin integración con Git. | La versión publicada puede diferir de `main`. | Publicar desde la rama aprobada y registrar el commit desplegado antes de cada demostración. |
 
 ---
 
@@ -735,7 +775,7 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md) | D4 — Orden, atomicidad y suma íntegra del ledger | Aceptado; créditos y ledger implementados, reversión pendiente |
 | [ADR-005 original](adr/ADR-005-comunicacion.md) | D5 — Comunicación síncrona y asíncrona | Reemplazado por ADR-005 v2 |
 | [ADR-005 v2](adr/ADR-005-v2-comunicacion.md) | D5 — Comunicación y garantías entre servicios | Aceptado |
-| [ADR-006](adr/ADR-006-seguridad.md) | Seguridad — decisión adicional; la etiqueta D6 del archivo es un error histórico, D6 del TP corresponde a búsqueda | Aceptado |
+| [ADR-006](adr/ADR-006-seguridad.md) | Seguridad — decisión adicional (etiqueta corregida el 09/11/2026; D6 del TP es búsqueda) | Aceptado; JWT, roles y bcrypt implementados en CB-03 |
 | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md) | D7 — Caché, autorización y disponibilidad degradada | Aceptado |
 | [ADR-008](adr/ADR-008-contrato-propio.md) | D8 — Contrato propio inicial | Reemplazado por ADR-008 v2 |
 | [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Reemplazado por ADR-008 v3 |
@@ -753,7 +793,30 @@ El requisito externo es que **otros grupos puedan consumir la API v1 de puntos**
 | [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md) | D4/D8 — Bloqueo por clave y operación en curso | Aceptado; implementado |
 | [ADR-016](adr/ADR-016-politicas-eventos-integraciones.md) | Club — Permisos, presupuesto y evento | Propuesto en detalles técnicos; CB-02 validada localmente, revisión pendiente |
 | [ADR-017](adr/ADR-017-registro-identidad-activacion.md) | Club — Identidad, activación y correo | Propuesto; CB-03 validada localmente con JWT según ADR-006; revisión pendiente |
-| [ADR-018](adr/ADR-018-contrato-club-ampliado.md) | D8 — Extensión compatible del Club | Propuesto; OpenAPI 1.4.0 local, Spectral correcto, revisión y flujos restantes pendientes |
+| [ADR-018](adr/ADR-018-contrato-club-ampliado.md) | D8 — Extensión compatible del Club | Propuesto; OpenAPI 1.4.0 local, superado por ADR-008 v4 para la capacidad exportada |
+| [ADR-008 v4](adr/ADR-008-v4-capacidad-operativa-club.md) | D8 — Contrato v2.0.0: registro, créditos, saldo y movimientos | Aceptado (D-76); publicado en Vercel |
+| [ADR-019](adr/ADR-019-experiencia-web-movimiento-progresivo.md) | Adicional — Experiencia web y movimiento progresivo | Propuesto; sin implementar |
+| [ADR-020](adr/ADR-020-membresias-independientes.md) | Club — Membresías con historial independiente del ledger | Propuesto; implementado en CB-04 y precisado por D-77 |
+| [ADR-021](adr/ADR-021-despliegue-vercel.md) | Adicional — Publicación en Vercel con PostgreSQL gestionado | Aceptado (D-75); reemplaza D-41 |
+| [ADR-022](adr/ADR-022-registro-externo-members-benefits.md) | D1/D5 — Llamadas cruzadas Benefits ↔ Members en el registro externo | Propuesto; documenta el diseño implementado |
+
+### Decisión del TP → ADR
+
+| Decisión del enunciado | ADR vigente | Estado |
+|---|---|---|
+| D1 — Límites de los servicios | [ADR-001](adr/ADR-001-limites-de-servicios.md), precisado por [ADR-022](adr/ADR-022-registro-externo-members-benefits.md) | Aceptado |
+| D2 — Arquitectura interna | [ADR-002 v2](adr/ADR-002-v2-patrones-internos.md) | Aceptado; Hexagonal en Benefits y Capas en Members implementados |
+| D3 — Persistencia | [ADR-003](adr/ADR-003-persistencia.md) | Aceptado; PostgreSQL en uso, MongoDB solo con health check |
+| D4 — Consistencia y concurrencia | [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md), [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md), [ADR-016](adr/ADR-016-politicas-eventos-integraciones.md) | Ledger implementado; reservas pendientes |
+| D5 — Comunicación | [ADR-005 v2](adr/ADR-005-v2-comunicacion.md), precisado por [ADR-022](adr/ADR-022-registro-externo-members-benefits.md) | Síncrona implementada; mensajería pendiente |
+| D6 — Búsqueda | [ADR-014](adr/ADR-014-busqueda-clases.md) | Diseño; implementación pendiente |
+| D7 — Caché | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md) | Diseño; implementación y medición pendientes |
+| D8 — Contrato propio | [ADR-008 v4](adr/ADR-008-v4-capacidad-operativa-club.md) | Aceptado; v2.0.0 publicado |
+| D9 — Consumo del proveedor | [ADR-009](adr/ADR-009-consumo-proveedor.md) | Propuesto; proveedor pendiente |
+| D10 — Resiliencia | [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | Aceptado; caída controlada validada |
+| D11 — Observabilidad | [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | Primera versión; métricas, tableros y alertas pendientes |
+| D12 — Balanceo | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | Diseño; implementación pendiente |
+| D13 — Capacidad y costos | [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md) | Mediciones locales; costos de Oracle desactualizados por ADR-021 |
 
 La revisión de la Entrega 2 se registra en [REVISION_ETAPA_1.md](REVISION_ETAPA_1.md), incluyendo patrones de acceso de Benefits y la traducción de los errores 502/504 del gateway ya implementada con el formato público. Las propuestas no cambian las decisiones aceptadas ni acreditan implementación.
 

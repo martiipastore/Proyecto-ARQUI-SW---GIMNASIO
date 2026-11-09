@@ -50,8 +50,9 @@ func TestMembresiasPostgres(t *testing.T) {
 	admin, otherAdmin := newUser(access.Admin), newUser(access.Admin)
 	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
 	app := service.NewMemberships(db, func() time.Time { return now })
-	input := func(user, code string, days int) model.MembershipInput {
-		return model.MembershipInput{UserID: user, TypeCode: code, Start: model.ArgentinaDate(now), End: model.ArgentinaDate(now.AddDate(0, 0, days)), Reason: "Asignación de prueba"}
+	input := func(user, code string) model.MembershipInput {
+		// Sin vencimiento: el servicio lo calcula según el tipo (D-77).
+		return model.MembershipInput{UserID: user, TypeCode: code, Start: model.ArgentinaDate(now), Reason: "Asignación de prueba"}
 	}
 	t.Run("usuario_sin_membresia_y_permisos", func(t *testing.T) {
 		user := newUser(access.Student)
@@ -61,14 +62,14 @@ func TestMembresiasPostgres(t *testing.T) {
 		require.Empty(t, out.Items)
 		_, err = app.List(ctx, newUser(access.Student), access.Student, user, 1, 20)
 		require.ErrorIs(t, err, model.ErrForbidden)
-		_, _, err = app.Assign(ctx, user, access.Student, "denegado-001", input(user, "MENSUAL", 30), false)
+		_, _, err = app.Assign(ctx, user, access.Student, "denegado-001", input(user, "MENSUAL"), false)
 		require.ErrorIs(t, err, model.ErrForbidden)
-		_, _, err = app.Assign(ctx, user, access.Admin, "rol-falso-001", input(user, "MENSUAL", 30), false)
+		_, _, err = app.Assign(ctx, user, access.Admin, "rol-falso-001", input(user, "MENSUAL"), false)
 		require.ErrorIs(t, err, model.ErrForbidden)
 	})
 	t.Run("asignacion_idempotente_outbox_auditoria", func(t *testing.T) {
 		user := newUser(access.Student)
-		in := input(user, "MENSUAL", 30)
+		in := input(user, "MENSUAL")
 		first, replay, err := app.Assign(ctx, admin, access.Admin, "asignar-001", in, false)
 		require.NoError(t, err)
 		require.False(t, replay)
@@ -97,7 +98,7 @@ func TestMembresiasPostgres(t *testing.T) {
 			go func(i int, actor string) {
 				defer group.Done()
 				<-start
-				_, _, err := app.Assign(ctx, actor, access.Admin, fmt.Sprintf("simultaneo-%d", i), input(user, "ANUAL", 100), false)
+				_, _, err := app.Assign(ctx, actor, access.Admin, fmt.Sprintf("simultaneo-%d", i), input(user, "ANUAL"), false)
 				results <- err
 			}(i, actor)
 		}
@@ -118,13 +119,16 @@ func TestMembresiasPostgres(t *testing.T) {
 	})
 	t.Run("renovar_futuro_preserva_original", func(t *testing.T) {
 		user := newUser(access.Student)
-		first, _, err := app.Assign(ctx, admin, access.Admin, "futuro-001", input(user, "MENSUAL", 20), false)
+		first, _, err := app.Assign(ctx, admin, access.Admin, "futuro-001", input(user, "MENSUAL"), false)
 		require.NoError(t, err)
-		in := input(user, "TRIMESTRAL", 50)
+		in := input(user, "TRIMESTRAL")
 		in.Start = ""
 		second, _, err := app.Assign(ctx, admin, access.Admin, "futuro-002", in, true)
 		require.NoError(t, err)
-		require.Equal(t, model.ArgentinaDate(now.AddDate(0, 0, 21)), second.Membership.Start)
+		// La mensual del 06/11 vence el 05/12 (D-77); la renovación empieza el 06/12.
+		require.Equal(t, "2026-12-05", first.Membership.End)
+		require.Equal(t, "2026-12-06", second.Membership.Start)
+		require.Equal(t, "2027-03-05", second.Membership.End)
 		require.False(t, second.Membership.Active)
 		require.Equal(t, "PROGRAMADA", second.Membership.Condition)
 		out, err := app.List(ctx, user, access.Student, user, 1, 1)
@@ -136,26 +140,28 @@ func TestMembresiasPostgres(t *testing.T) {
 	})
 	t.Run("vencer_retornar_y_cambiar_tipo_sin_borrar_historia", func(t *testing.T) {
 		user := newUser(access.Student)
-		first, _, err := app.Assign(ctx, admin, access.Admin, "vence-001", input(user, "MENSUAL", 0), false)
+		first, _, err := app.Assign(ctx, admin, access.Admin, "vence-001", input(user, "MENSUAL"), false)
 		require.NoError(t, err)
-		later := service.NewMemberships(db, func() time.Time { return now.AddDate(0, 0, 1) })
+		// Un mes después la mensual (06/11–05/12) ya venció.
+		laterNow := now.AddDate(0, 1, 0)
+		later := service.NewMemberships(db, func() time.Time { return laterNow })
 		out, err := later.List(ctx, user, access.Student, user, 1, 20)
 		require.NoError(t, err)
 		require.False(t, out.Active)
 		require.Equal(t, "VENCIDA", out.Items[0].State)
 		_, err = later.Expire(ctx)
 		require.NoError(t, err)
-		in := input(user, "ANUAL", 365)
+		in := input(user, "ANUAL")
 		in.Start = ""
 		next, _, err := later.Assign(ctx, admin, access.Admin, "vence-002", in, true)
 		require.NoError(t, err)
-		require.Equal(t, model.ArgentinaDate(now.AddDate(0, 0, 1)), next.Membership.Start)
+		require.Equal(t, model.ArgentinaDate(laterNow), next.Membership.Start)
 		_, _, err = later.Cancel(ctx, admin, access.Admin, "cancelar-vencida", first.Membership.ID, "No corresponde cancelar")
 		require.ErrorIs(t, err, model.ErrMembershipTransition)
 		_, _, err = later.Cancel(ctx, admin, access.Admin, "cancelar-activa", next.Membership.ID, "Cambio de plan solicitado")
 		require.NoError(t, err)
-		in = input(user, "TRIMESTRAL", 90)
-		in.Start = model.ArgentinaDate(now.AddDate(0, 0, 1))
+		in = input(user, "TRIMESTRAL")
+		in.Start = model.ArgentinaDate(laterNow)
 		_, _, err = later.Assign(ctx, admin, access.Admin, "cambiar-plan-001", in, false)
 		require.NoError(t, err)
 		out, err = later.List(ctx, user, access.Student, user, 1, 20)
@@ -167,13 +173,13 @@ func TestMembresiasPostgres(t *testing.T) {
 	})
 	t.Run("clases_configurables_snapshot_y_tipo_inactivo", func(t *testing.T) {
 		user := newUser(access.Student)
-		_, _, err := app.Assign(ctx, admin, access.Admin, "clases-sin-config", input(user, "CLASES", 29), false)
+		_, _, err := app.Assign(ctx, admin, access.Admin, "clases-sin-config", input(user, "CLASES"), false)
 		require.ErrorIs(t, err, model.ErrInvalid)
 		classes, days := 8, 30
 		typ := model.MembershipType{Code: "CLASES", Name: "Clases configurable", Classes: &classes, Days: &days, Enabled: true}
 		_, _, err = app.Configure(ctx, admin, access.Admin, "config-clases-001", "Condición de prueba", typ)
 		require.NoError(t, err)
-		first, _, err := app.Assign(ctx, admin, access.Admin, "clases-001", input(user, "CLASES", 29), false)
+		first, _, err := app.Assign(ctx, admin, access.Admin, "clases-001", input(user, "CLASES"), false)
 		require.NoError(t, err)
 		require.Equal(t, 8, *first.Membership.Type.Classes)
 		classes = 12
@@ -183,12 +189,12 @@ func TestMembresiasPostgres(t *testing.T) {
 		out, err := app.List(ctx, user, access.Student, user, 1, 20)
 		require.NoError(t, err)
 		require.Equal(t, 8, *out.Current.Type.Classes)
-		_, _, err = app.Assign(ctx, admin, access.Admin, "clases-inactivo", input(newUser(access.Student), "CLASES", 29), false)
+		_, _, err = app.Assign(ctx, admin, access.Admin, "clases-inactivo", input(newUser(access.Student), "CLASES"), false)
 		require.ErrorIs(t, err, model.ErrInvalid)
 	})
 	t.Run("fechas_invalidas_y_rollback", func(t *testing.T) {
 		user := newUser(access.Student)
-		in := input(user, "MENSUAL", 10)
+		in := input(user, "MENSUAL")
 		in.Start = model.ArgentinaDate(now.AddDate(0, 0, -1))
 		_, _, err := app.Assign(ctx, admin, access.Admin, "fecha-pasada", in, false)
 		require.ErrorIs(t, err, model.ErrInvalid)
@@ -199,5 +205,23 @@ func TestMembresiasPostgres(t *testing.T) {
 		out, err := app.List(ctx, user, access.Student, user, 1, 20)
 		require.NoError(t, err)
 		require.Zero(t, out.Total)
+	})
+	// CA-03.1/CA-03.3, HU-03 y D-77: vencimiento según el tipo y solo alumnos.
+	t.Run("vencimiento_segun_tipo_y_solo_alumnos", func(t *testing.T) {
+		user := newUser(access.Student)
+		in := input(user, "ANUAL")
+		in.End = "2028-11-06"
+		_, _, err := app.Assign(ctx, admin, access.Admin, "anual-largo", in, false)
+		require.ErrorIs(t, err, model.ErrInvalid, "una anual no puede durar dos años")
+		in.End = "2027-11-05"
+		annual, _, err := app.Assign(ctx, admin, access.Admin, "anual-exacta", in, false)
+		require.NoError(t, err)
+		require.Equal(t, "2027-11-05", annual.Membership.End)
+		for _, role := range []string{access.Admin, access.Teacher, access.Nutritionist} {
+			_, _, err = app.Assign(ctx, admin, access.Admin, "rol-"+role, input(newUser(role), "MENSUAL"), false)
+			require.ErrorIs(t, err, model.ErrInvalid, "rol %s", role)
+		}
+		_, _, err = app.Configure(ctx, admin, access.Admin, "mensual-sin-duracion", "Prueba sin período", model.MembershipType{Code: "MENSUAL", Name: "Mensual", Enabled: true})
+		require.ErrorIs(t, err, model.ErrInvalid)
 	})
 }

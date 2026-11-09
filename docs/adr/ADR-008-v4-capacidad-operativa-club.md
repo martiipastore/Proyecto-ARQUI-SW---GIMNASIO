@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesto; cambio preparado para revisión del equipo y despliegue pendiente |
+| Estado | Aceptado: alcance decidido por el equipo el 08/11/2026 y registrado como D-76; publicado en Vercel (ADR-021, D-75) |
 | Fecha | 2026-11-08 |
 | Decisión del TP | D8 — Contrato propio |
 | Relacionado con | ADR-008 v3, ADR-018, SPEC Club, OpenAPI v2 |
@@ -42,4 +42,6 @@ un recorrido completo contra el servicio real desde una red externa.
 
 El 08/11/2026 pasó el [E2E local de v2](../evidence/club/cb04-v2-e2e.json):
 14 escenarios con Gateway, Benefits, Members, PostgreSQL 16 y Mailpit reales.
-No se probó un despliegue público ni correo productivo.
+Ese E2E no probó un despliegue público ni correo productivo. Después, el
+08/11/2026 el equipo completó en producción registro, crédito, saldo, movimientos e
+idempotencia con los scripts de [VERCEL_CLUB.md](../deploy/VERCEL_CLUB.md).

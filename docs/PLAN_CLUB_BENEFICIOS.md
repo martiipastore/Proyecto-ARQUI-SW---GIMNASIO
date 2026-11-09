@@ -5,7 +5,8 @@
 > anteriores para trazabilidad; no deben leerse como compromisos de la capacidad
 > compartida. El contrato operativo es [v2](contracts/benefits-api.v2.yaml).
 
-Actualizado: 6 de noviembre de 2026. Fuente: pedido del equipo, D-63 a D-70 y
+Actualizado: 9 de noviembre de 2026 (estado de CB-04, publicación en Vercel y
+D-75 a D-77). Fuente: pedido del equipo, D-63 a D-77 y
 [adenda funcional](SPEC_CLUB_BENEFICIOS.md). No fija una nueva fecha de entrega.
 
 Este plan amplía el producto existente. No reinicia el proyecto ni renumera las
@@ -18,11 +19,11 @@ conservan su alcance histórico; no certifican los cambios del Club. Un estado
 | CB-01 — Alcance y documentación | En curso: documentos sincronizados, revisión del equipo pendiente | Conciliar SPEC, decisiones Markdown/Word, ADR y etapas; conservar decisiones reemplazadas y distinguir propuesta, implementación y evidencia. Revisar con otro integrante conforme a CONTRIBUTING antes de integrar. | D-63–70; HU-CB-01–08 |
 | CB-02 — Integraciones y ledger | Implementación y validación local completadas; revisión del equipo pendiente | Migraciones 001–005 desde base vacía y ledger previo con historial; permisos, revocación, límites, cuotas, eventos repetidos/concurrentes y clientes anteriores comprobados en PostgreSQL real. 53 resultados test/subtest aprobados, cero tests omitidos; vet y Spectral sin hallazgos. Ver CB02_VALIDACION.md. | ADR-016/018 propuestos; D-64/66/73; RN-CB-01–06 |
 | CB-03 — Registro, activación y acceso | Implementación y validación local completadas; revisión del equipo pendiente | D-70 corregida en código según ADR-006: JWT RS256 900 s, roles persistidos y bcrypt mínimo 12. Alta/reutilización, prueba de correo, primera contraseña, outbox, login/saldo propio y logout v1 probados. 100 resultados test/subtest y vet aprobados, nueve escenarios E2E con PostgreSQL/SMTP reales locales, build frontend correcto. Ver CB03_VALIDACION.md. | ADR-006 vigente y ADR-017 propuesto; D-63/65/70/74; HU-CB-01/02 |
-| CB-04 — Membresías independientes | Pendiente | Mensual/trimestral/anual/por clases, vigencia, estados e historial en Members. Mantener cuenta y ledger en Benefits sin borrados/reinicios por cambios de membresía. Datos comerciales configurables. Cerrar con vencimiento, retorno y cambio de tipo sin pérdida de puntos/historial. | D-66/67; HU-CB-03; RN-CB-08 |
+| CB-04 — Membresías independientes | Implementación y validación local completadas (PR #11); vencimiento según el tipo y solo alumnos agregados el 09/11/2026 (D-77). E2E de 14 escenarios aprobado el 09/11/2026: [cb04-v2-e2e.json](evidence/club/cb04-v2-e2e.json) | Mensual/trimestral/anual/por clases, vigencia, estados e historial en Members. Mantener cuenta y ledger en Benefits sin borrados/reinicios por cambios de membresía. Datos comerciales configurables. Cerrar con vencimiento, retorno y cambio de tipo sin pérdida de puntos/historial. | D-66/67; HU-CB-03; RN-CB-08 |
 | CB-05 — Reglas y recompensas | Pendiente | Diseñar ADR antes de implementar. Administrar acciones autorizadas y elegibilidad por integración, tipo/estado, período y restricciones; separar puntos, descuentos, recompensas y membresías promocionales. Probar mes gratuito configurable sin duplicar el otorgamiento ni convertirlo arbitrariamente en puntos. | D-68; HU-CB-04/05; RN-CB-09/10 |
-| CB-06 — Canjes y ajustes | Pendiente | Extender el ledger y sus restricciones juntos para débitos/canjes/ajustes autorizados con justificación, concurrencia e idempotencia; saldo siempre no negativo y auditoría inmutable. No llevar débitos a una tabla paralela que omita el saldo. | D-66; HU-CB-06; RN-CB-02/07 |
+| CB-06 — Canjes y ajustes | Canjes y débitos descartados por el equipo (D-76); los ajustes administrativos quedan para CB-07 | Extender el ledger y sus restricciones juntos para débitos/canjes/ajustes autorizados con justificación, concurrencia e idempotencia; saldo siempre no negativo y auditoría inmutable. No llevar débitos a una tabla paralela que omita el saldo. | D-66; HU-CB-06; RN-CB-02/07 |
 | CB-07 — Administración | Pendiente | Autenticación y roles reales antes de exponer gestión. Buscar usuarios, ver origen/puntos/historial/membresía; ajustar puntos; administrar catálogo, promociones, integraciones, permisos, credenciales y límites. Claves visibles solo al emitir/rotar y guardadas como hash. Auditoría de cambios y recuperación de comandos pendientes. | HU-CB-07; RN-CB-03/11; ADR-006 y decisión que lo concilie |
-| CB-08 — Regresión, operación y despliegue | Pendiente; verificaciones locales parciales disponibles | Ejecutar diez escenarios integrales, Spectral y bases/correo reales, revisar migraciones/secretos, cuotas, recuperación y limpieza de sesiones/contadores sin purgar ledger/eventos. Inspeccionar Vercel/GitHub con acceso real; documentar antes de cualquier cambio productivo. | HU-CB-08; E2E-CB-01–10; D-69 |
+| CB-08 — Regresión, operación y despliegue | En curso: publicado en Vercel y recorrido productivo completado el 08/11/2026 (D-75, ADR-021); faltan los escenarios de CB-05 y la regresión final | Ejecutar diez escenarios integrales, Spectral y bases/correo reales, revisar migraciones/secretos, cuotas, recuperación y limpieza de sesiones/contadores sin purgar ledger/eventos. Inspeccionar Vercel/GitHub con acceso real; documentar antes de cualquier cambio productivo. | HU-CB-08; E2E-CB-01–10; D-69 |
 
 ## Evidencia disponible y límites
 
@@ -60,14 +61,14 @@ No se declara cumplimiento de todos los escenarios por compilar sus tests.
 |---|---|---|
 | E2E-CB-01 | Nuevo usuario externo, puntos, bienvenida y activación | Aprobado local: HTTP real, PostgreSQL, SMTP Mailpit y activación; sin navegador/productivo |
 | E2E-CB-02 | Usuario existente recibe puntos en su cuenta | Aprobado local: prueba de correo, UUID y contraseña preservados, bcrypt actualizado y saldo correcto |
-| E2E-CB-03 | Sin membresía activa conserva puntos | Ledger independiente; falta recorrido de membresías |
-| E2E-CB-04 | Membresía vencida y retorno al gimnasio | Pendiente CB-04 |
+| E2E-CB-03 | Sin membresía activa conserva puntos | Aprobado local (09/11/2026): cuenta sin membresía con saldo propio; cb04-v2-e2e.json |
+| E2E-CB-04 | Membresía vencida y retorno al gimnasio | Aprobado local (09/11/2026): vencida conserva 300 puntos y movimientos; renovación idempotente |
 | E2E-CB-05 | Integración no autorizada intenta acreditar | Permisos, estado y revocación comprobados en PostgreSQL/API de Benefits; E2E desplegado pendiente |
-| E2E-CB-06 | Evento repetido no acredita dos veces | Comprobado en PostgreSQL/API: distintas keys, simultaneidad y retención; registro externo E2E completo pendiente |
+| E2E-CB-06 | Evento repetido no acredita dos veces | Aprobado local: distintas keys, simultaneidad y retención en PostgreSQL; evento compartido entre registro y créditos en el E2E |
 | E2E-CB-07 | Consulta autenticada de saldo vinculado | Aprobado local: JWT propio y API key del partner; otra integración recibe 404 y cabeceras falsas no cambian actor |
 | E2E-CB-08 | Beneficio otorga período gratuito | Pendiente CB-05 |
-| E2E-CB-09 | Cambio de membresía conserva historial | Pendiente CB-04 |
-| E2E-CB-10 | Canje actualiza saldo sin sobregiro concurrente | Pendiente CB-06 |
+| E2E-CB-09 | Cambio de membresía conserva historial | Aprobado local (09/11/2026): cambio a por clases con copia del tipo e historial preservado |
+| E2E-CB-10 | Canje actualiza saldo sin sobregiro concurrente | Fuera de alcance: canjes descartados (D-76) |
 
 ## Dependencias y orden de trabajo
 
@@ -78,8 +79,9 @@ CB-04 y el diseño de CB-05 preceden al otorgamiento real de membresías promoci
 CB-06 debe conservar las invariantes ya existentes. CB-08 cierra el conjunto,
 sin sustituir la revisión de otro integrante por una autoaprobación del asistente.
 
-La próxima etapa técnica es CB-04: membresías independientes con historial y
-conservación de puntos. No adelantar el diseño frontend por haber completado acceso.
+CB-04 está implementada (09/11/2026). Lo que sigue del Club es CB-05 (recompensas,
+con ADR previo) y CB-07 (administración); la prioridad general del proyecto la
+define el equipo según el plan de etapas. No adelantar el diseño frontend sin decisión.
 
 La asignación del proveedor externo de D9/etapa 5 sigue pendiente: ofrecer nuestra
 API a Estudiario no prueba que consumimos una capacidad real del otro grupo.

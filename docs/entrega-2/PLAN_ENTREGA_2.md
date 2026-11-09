@@ -584,7 +584,7 @@ Asegurar que código, contratos, decisiones y demostración describan el mismo s
 | 5. Capacidad externa | Bloqueada | Contrato y adaptador del proveedor | — |
 | 6. Resiliencia | Completada e integrada (16/10/2026) | [Ejercicio](ETAPA_6_RESILIENCIA.md), [postmortem](../POSTMORTEM.md), 502/503/504 y recuperación idempotente | PR #4 integrado en main (b65469b); incluye 29465ee y 5b3d330 |
 | 7. Capacidad y costos | Completada e integrada (16/10/2026) | [Informe](ETAPA_7_CAPACIDAD_COSTOS.md): 36 fases, invariantes, límite explorado y costos; D-57 a D-60 aprobadas | PR #5 integrado en main (fb2a17c); incluye aabe4e0 y 05f7c0e |
-| 8. Revisión final | Completada (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md), [guía](Guía_Entrega2.md) y checklist actualizado; D9 continúa bloqueada | Rama `docs/entrega-2-etapa-08-cierre`; PR de cierre por crear |
+| 8. Revisión final | Completada (17/10/2026) | [Validación técnica](VALIDACION_ENTREGA_2.md), [guía](Guía_Entrega2.md) y checklist actualizado; D9 continúa bloqueada | PR #6 integrado en main (78ddf40) desde `docs/entrega-2-etapa-08-cierre` |
 
 ### Línea base — 16/10/2026
 

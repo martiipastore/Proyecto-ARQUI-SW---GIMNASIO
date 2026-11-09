@@ -65,6 +65,9 @@ elecciones del proyecto; no se atribuyen al PDF ni se dan por validadas.
 
 Las acreditaciones nuevas de una misma integración se serializan al comprobar
 su presupuesto; es un costo explícito para evitar excederlo concurrentemente.
+Corrección del 09/11/2026: el bloqueo se toma solo si la integración tiene un
+presupuesto diario configurado. Antes se tomaba siempre, lo que serializaba todas
+las acreditaciones de la integración aunque no hubiera consumo que proteger.
 Las demás integraciones pueden operar en paralelo salvo que compartan cuenta.
 La migración debe preceder al binario. Registro y acceso tienen implementación
 local posterior en ADR-017; membresías y panel siguen pendientes según el
