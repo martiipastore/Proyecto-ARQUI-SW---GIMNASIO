@@ -13,12 +13,14 @@ COPY pkg ./pkg
 COPY services/members-service ./services/members-service
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    cd services/members-service && go build -ldflags="-s -w" -o /out/members-service ./cmd/api
+    cd services/members-service && go build -ldflags="-s -w" -o /out/members-service ./cmd/api && \
+    go build -ldflags="-s -w" -o /out/members-worker ./cmd/worker
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
 RUN adduser -D -H -u 10001 app
 USER app
 COPY --from=build /out/members-service /app/members-service
+COPY --from=build /out/members-worker /app/members-worker
 EXPOSE 8081
 ENTRYPOINT ["/app/members-service"]

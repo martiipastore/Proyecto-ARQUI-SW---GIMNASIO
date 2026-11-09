@@ -14,6 +14,7 @@ go.work.sum
 # Frontend
 web/node_modules/
 web/dist/
+.vercel/
 *.local
 
 # Editores y sistema
@@ -25,3 +26,5 @@ Thumbs.db
 
 # Documentos temporales de Office
 ~$*
+.vercel
+.env*
