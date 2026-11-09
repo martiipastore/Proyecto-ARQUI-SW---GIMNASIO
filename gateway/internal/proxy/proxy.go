@@ -60,9 +60,13 @@ func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*P
 		rp := &httputil.ReverseProxy{
 			Rewrite: func(pr *httputil.ProxyRequest) {
 				pr.SetURL(target)
+				pr.Out.Header.Del(problem.ForwardedPrefixHeader)
 				if r.Prefix == "/partner-api/v1" || r.Prefix == "/partner-api/v2" {
 					pr.Out.URL.Path = strings.TrimPrefix(pr.Out.URL.Path, "/partner-api")
 					pr.Out.URL.RawPath = ""
+					// Benefits recibe /v2/...; el prefijo permite informar en
+					// instance la ruta pública que usó el partner.
+					pr.Out.Header.Set(problem.ForwardedPrefixHeader, problem.PartnerPrefix)
 				}
 				pr.SetXForwarded()
 				pr.Out.Host = target.Host
@@ -70,7 +74,13 @@ func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*P
 					pr.Out.Header.Set(correlation.Header, id)
 				}
 			},
-			Transport:    transport,
+			Transport: transport,
+			// El gateway ya respondió X-Correlation-ID con el mismo valor que
+			// propagó; se descarta el del servicio para no duplicar el header.
+			ModifyResponse: func(res *http.Response) error {
+				res.Header.Del(correlation.Header)
+				return nil
+			},
 			ErrorHandler: p.errorHandler(service, strings.HasPrefix(r.Prefix, "/partner-api/v")),
 		}
 		p.routes = append(p.routes, route{prefix: r.Prefix, service: service, timeout: r.Timeout, proxy: rp})

@@ -95,4 +95,4 @@ El postmortem y la evidencia oficial se conservan en `docs/POSTMORTEM.md` y `doc
 
 ## Estado de la revisión
 
-El sistema cumple las verificaciones técnicas reproducibles previstas para la etapa 8, excepto las dependencias externas señaladas. Antes de cerrar la etapa faltan preparar el guion de demostración, actualizar el checklist final y revisar los enlaces desde README y ARCHITECTURE.
+El sistema cumple las verificaciones técnicas reproducibles previstas para la etapa 8, excepto las dependencias externas señaladas. Al momento de esta validación faltaban el guion de demostración, el checklist final y la revisión de enlaces; se completaron después en [Guía_Entrega2.md](Guía_Entrega2.md) y en el checklist de [PLAN_ENTREGA_2.md](PLAN_ENTREGA_2.md), integrados por el PR #6.

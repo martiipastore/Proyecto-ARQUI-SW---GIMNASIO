@@ -10,14 +10,11 @@ import (
 )
 
 // El bloqueo por integración serializa el presupuesto diario, incluso cuando
-// dos eventos afectan cuentas distintas. PartnerActivo mantiene FOR SHARE para
-// que una revocación no compita con una operación ya autorizada.
+// dos eventos afectan cuentas distintas (ADR-016). Solo se toma si existe un
+// presupuesto: sin él no hay consumo que proteger y las acreditaciones de la
+// integración siguen en paralelo. PartnerActivo mantiene FOR SHARE sobre la
+// fila, así que la política leída no cambia antes de que termine la transacción.
 func (t *transaction) AutorizarCredito(ctx context.Context, partner string, puntos int64, evento string, ahora time.Time) error {
-	if puntos > 0 {
-		if _, err := t.tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,1))`, partner); err != nil {
-			return err
-		}
-	}
 	var permitido, requiereEvento bool
 	var maximo int64
 	var diario *int64
@@ -32,6 +29,9 @@ func (t *transaction) AutorizarCredito(ctx context.Context, partner string, punt
 	}
 	politica := domain.PoliticaAcreditacion{Permitido: permitido, MaximoOperacion: maximo, MaximoDia: diario}
 	if diario != nil && puntos > 0 && permitido {
+		if _, err := t.tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,1))`, partner); err != nil {
+			return err
+		}
 		err := t.tx.QueryRow(ctx, `SELECT COALESCE(sum(puntos),0) FROM movimientos_puntos WHERE partner_id=$1 AND aplicado_en >= date_trunc('day',$2::timestamptz AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND aplicado_en < (date_trunc('day',$2::timestamptz AT TIME ZONE 'America/Argentina/Buenos_Aires')+interval '1 day') AT TIME ZONE 'America/Argentina/Buenos_Aires'`, partner, ahora).Scan(&politica.UsadosHoy)
 		if err != nil {
 			return err

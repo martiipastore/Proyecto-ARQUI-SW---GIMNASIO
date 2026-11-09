@@ -198,7 +198,7 @@ func (p *Postgres) Registration(ctx context.Context, partner, event string) (mod
 	var state string
 	err := p.pool.QueryRow(ctx, `SELECT id::text,evento_id,external_user_id,estado FROM registros_externos WHERE partner_id=$1 AND evento_id=$2`, partner, event).Scan(&r.ID, &r.EventID, &r.ExternalUserID, &state)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return r, model.ErrUnauthorized
+		return r, model.ErrNotFound
 	}
 	if state == "completed" {
 		r.Status = "completed"

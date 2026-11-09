@@ -13,7 +13,8 @@ import (
 )
 
 type MembershipTx interface {
-	LockUser(context.Context, string) error
+	// LockUser bloquea al usuario destino y devuelve su rol.
+	LockUser(context.Context, string) (string, error)
 	Type(context.Context, string) (model.MembershipType, error)
 	SaveType(context.Context, model.MembershipType, string, string, time.Time) error
 	Last(context.Context, string, bool, string) (*model.Membership, error)
@@ -95,7 +96,9 @@ func (s *Memberships) Configure(ctx context.Context, actor, role, key, reason st
 		return model.MembershipResult{}, false, err
 	}
 	positive := func(n *int) bool { return n == nil || (*n > 0 && int64(*n) <= 2147483647) }
-	if !validType(t.Code) || !textValid(t.Name, 1, 120) || !positive(t.Months) || !positive(t.Days) || !positive(t.Classes) || (t.Months != nil && t.Days != nil) || (t.Code != "CLASES" && t.Classes != nil) {
+	// Mensual, trimestral y anual definen su período (D-77); por clases puede
+	// quedar sin duración hasta que el gimnasio la configure (ADR-020).
+	if !validType(t.Code) || !textValid(t.Name, 1, 120) || !positive(t.Months) || !positive(t.Days) || !positive(t.Classes) || (t.Months != nil && t.Days != nil) || (t.Code != "CLASES" && t.Classes != nil) || (t.Code != "CLASES" && !t.HasDuration()) {
 		return model.MembershipResult{}, false, model.ErrInvalid
 	}
 	return s.repo.RunMembership(ctx, actor, key, fingerprint("CONFIGURAR_TIPO", []any{t, reason}), func(tx MembershipTx) (model.MembershipResult, error) {
@@ -113,8 +116,12 @@ func (s *Memberships) Assign(ctx context.Context, actor, role, key string, in mo
 	if !uuidIdentity.MatchString(in.UserID) || !validType(in.TypeCode) {
 		return model.MembershipResult{}, false, model.ErrInvalid
 	}
-	if _, err := date(in.End); err != nil {
-		return model.MembershipResult{}, false, err
+	// El vencimiento es opcional: si se omite se calcula según el tipo; si se
+	// envía debe coincidir con ese cálculo (CA-03.1, D-77).
+	if in.End != "" {
+		if _, err := date(in.End); err != nil {
+			return model.MembershipResult{}, false, err
+		}
 	}
 	if !renew {
 		if _, err := date(in.Start); err != nil {
@@ -124,8 +131,13 @@ func (s *Memberships) Assign(ctx context.Context, actor, role, key string, in mo
 		return model.MembershipResult{}, false, model.ErrInvalid
 	}
 	return s.repo.RunMembership(ctx, actor, key, fingerprint(fmt.Sprintf("ASIGNAR_RENOVAR_%t", renew), in), func(tx MembershipTx) (model.MembershipResult, error) {
-		if err := tx.LockUser(ctx, in.UserID); err != nil {
+		role, err := tx.LockUser(ctx, in.UserID)
+		if err != nil {
 			return model.MembershipResult{}, err
+		}
+		// La membresía habilita a un alumno; no se asigna a otros roles (HU-03).
+		if role != access.Student {
+			return model.MembershipResult{}, model.ErrInvalid
 		}
 		today := model.ArgentinaDate(s.now())
 		start := in.Start
@@ -153,7 +165,7 @@ func (s *Memberships) Assign(ctx context.Context, actor, role, key string, in mo
 				previous = &active.ID
 			}
 		}
-		if start < today || in.End < start {
+		if start < today {
 			return model.MembershipResult{}, model.ErrInvalid
 		}
 		t, err := tx.Type(ctx, in.TypeCode)
@@ -163,11 +175,26 @@ func (s *Memberships) Assign(ctx context.Context, actor, role, key string, in mo
 		if !t.Enabled || (t.Code == "CLASES" && t.Classes == nil) {
 			return model.MembershipResult{}, model.ErrInvalid
 		}
+		end := in.End
+		startDate, err := date(start)
+		if err != nil {
+			return model.MembershipResult{}, err
+		}
+		if expected, ok := t.EndFor(startDate); ok {
+			if end != "" && end != expected.Format("2006-01-02") {
+				return model.MembershipResult{}, model.ErrInvalid
+			}
+			end = expected.Format("2006-01-02")
+		}
+		// Solo un tipo por clases sin duración configurada exige el vencimiento.
+		if end == "" || end < start {
+			return model.MembershipResult{}, model.ErrInvalid
+		}
 		id, err := newUUID()
 		if err != nil {
 			return model.MembershipResult{}, err
 		}
-		m := model.Membership{ID: id, UserID: in.UserID, Type: t, Start: start, End: in.End, State: "ACTIVA", PreviousID: previous, Reason: in.Reason}
+		m := model.Membership{ID: id, UserID: in.UserID, Type: t, Start: start, End: end, State: "ACTIVA", PreviousID: previous, Reason: in.Reason}
 		if err := tx.Insert(ctx, m, actor, s.now().UTC()); err != nil {
 			return model.MembershipResult{}, err
 		}
@@ -188,7 +215,7 @@ func (s *Memberships) Cancel(ctx context.Context, actor, role, key, id, reason s
 		if err != nil {
 			return model.MembershipResult{}, err
 		}
-		if err := tx.LockUser(ctx, m.UserID); err != nil {
+		if _, err := tx.LockUser(ctx, m.UserID); err != nil {
 			return model.MembershipResult{}, err
 		}
 		// Releer tras el lock del usuario para resolver renovaciones/cancelaciones concurrentes.

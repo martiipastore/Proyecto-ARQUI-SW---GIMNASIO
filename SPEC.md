@@ -121,6 +121,17 @@ El alcance incluye ambas responsabilidades: **ofrecer** la API del Club de Benef
 
 La elección del microservicio consumidor y los detalles técnicos se documentarán en `docs/ARCHITECTURE.md` y en la decisión D9 del TP cuando se defina la integración. Esta sección no asigna un proveedor, una capacidad ni un servicio responsable.
 
+### 1.6 Desafíos bonus anunciados (D-40)
+
+El enunciado (§7) permite hasta dos desafíos adicionales, anunciados en la Entrega 2. El equipo anunció:
+
+| Desafío | Alcance | Estado |
+|---|---|---|
+| Tests e2e de los flujos del §11 | Recorrer con Playwright, desde la web, los criterios E2E del §11 | Anunciado; no implementado |
+| Ocupación de clases en tiempo real | Actualizar la ocupación mostrada mediante Server-Sent Events a través del gateway | Anunciado; depende de booking, todavía no implementado |
+
+Playwright y Server-Sent Events son herramientas adicionales: su justificación se registrará en un ADR al implementarlas, según la restricción académica del equipo.
+
 ---
 
 ## 2. Glosario (lenguaje ubicuo)

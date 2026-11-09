@@ -1,5 +1,9 @@
 # Publicar el Club de Beneficios desde una cuenta propia de Vercel
 
+> Decisión: D-75 / [ADR-021](../adr/ADR-021-despliegue-vercel.md), que reemplaza la
+> VM de Oracle (D-41). El llamado cruzado entre Benefits y Members que explica
+> `members-registration` está en [ADR-022](../adr/ADR-022-registro-externo-members-benefits.md).
+
 Esta guía despliega la capacidad del Club sin conectar el repositorio de GitHub a Vercel. La copia local se envía con Vercel CLI. El resultado es una URL HTTPS que sigue disponible aunque la computadora esté apagada.
 
 ## Componentes
@@ -13,7 +17,7 @@ Vercel Services y Daemons están en beta. Daemons corre solo en producción y co
 Desde CMD, en la raíz del repositorio:
 
 ```cmd
-cd /d "C:\Users\matia\OneDrive\Documentos\Proyect - Arqui SW"
+cd /d "<ruta-local-del-repositorio>"
 vercel whoami
 vercel link
 ```

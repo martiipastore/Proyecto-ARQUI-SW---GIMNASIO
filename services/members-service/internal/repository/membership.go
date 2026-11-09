@@ -93,13 +93,13 @@ func scanMembership(row interface{ Scan(...any) error }) (model.Membership, erro
 	}
 	return m, err
 }
-func (t *membershipTx) LockUser(ctx context.Context, user string) error {
+
+// LockUser serializa las operaciones del usuario y devuelve su rol; la regla
+// sobre qué roles admiten membresía pertenece a service (patrón Capas).
+func (t *membershipTx) LockUser(ctx context.Context, user string) (string, error) {
 	var role string
 	err := t.tx.QueryRow(ctx, `SELECT rol FROM usuarios WHERE id=$1 FOR UPDATE`, user).Scan(&role)
-	if err == nil && role != access.Student {
-		return model.ErrInvalid
-	}
-	return err
+	return role, err
 }
 func (t *membershipTx) Type(ctx context.Context, code string) (model.MembershipType, error) {
 	var v model.MembershipType
