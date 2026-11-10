@@ -86,31 +86,8 @@ func (d *DB) HistorialUsuario(ctx context.Context, user string, page, size int) 
 	} else if err != nil {
 		return out, err
 	}
-	if err = tx.QueryRow(ctx, `SELECT count(*) FROM movimientos_puntos WHERE cuenta_id=$1`, account).Scan(&out.Total); err != nil {
-		return out, err
-	}
-	rows, err := tx.Query(ctx, `SELECT id::text,cuenta_id::text,COALESCE(partner_id::text,''),puntos,secuencia,motivo,referencia,ocurrido_en,aplicado_en,tipo,COALESCE(origen_id::text,'') FROM movimientos_puntos WHERE cuenta_id=$1 ORDER BY secuencia DESC LIMIT $2 OFFSET $3`, account, size, int64(page-1)*int64(size))
-	if err != nil {
-		return out, err
-	}
-	for rows.Next() {
-		var m domain.DatosMovimiento
-		if err = rows.Scan(&m.ID, &m.CuentaID, &m.PartnerID, &m.Puntos, &m.Secuencia, &m.Motivo, &m.Referencia, &m.OcurridoEn, &m.AplicadoEn, &m.Tipo, &m.OrigenID); err != nil {
-			rows.Close()
-			return out, err
-		}
-		if m.Tipo == "CREDITO_PARTNER" {
-			m.Tipo = ""
-		}
-		mov, err := domain.NuevoMovimiento(m)
-		if err != nil {
-			rows.Close()
-			return out, err
-		}
-		out.Movimientos = append(out.Movimientos, mov)
-	}
-	rows.Close()
-	if err = rows.Err(); err != nil {
+	// Etapa 7: el historial propio también muestra reversiones y su estado.
+	if out, err = paginaCuenta(ctx, tx, account, page, size); err != nil {
 		return out, err
 	}
 	return out, tx.Commit(ctx)

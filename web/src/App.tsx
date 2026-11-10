@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { homeFor, Role, SessionProvider, useSession } from './auth/session';
 import { AccountPage } from './pages/AccountPage';
 import { ActivationPage } from './pages/ActivationPage';
+import { ClubAdminPage } from './pages/admin/ClubAdmin';
 import { PeoplePage } from './pages/admin/PeoplePage';
 import { PersonPage } from './pages/admin/PersonPage';
 import { ActivitiesPage } from './pages/booking/ActivitiesPage';
@@ -41,6 +42,8 @@ const ROUTES: Record<string, RouteDef> = {
   '/admin/personas': { roles: ['ADMINISTRADOR'], render: () => <PeoplePage /> },
   '/admin/actividades': { roles: ['ADMINISTRADOR'], render: () => <ActivitiesPage /> },
   '/admin/clases': { roles: ['ADMINISTRADOR'], render: () => <ClassesPage /> },
+  // Integraciones del Club (etapa 7); la cuenta de cada persona está en su ficha.
+  '/admin/club': { roles: ['ADMINISTRADOR'], render: () => <ClubAdminPage /> },
   // Ingreso por DNI: lo opera el administrador (D-82).
   '/recepcion': { roles: ['ADMINISTRADOR'], render: () => <ReceptionPage /> },
   '/prof/clases': { roles: ['PROFESOR'], render: () => <MyClassesPage /> },
@@ -63,6 +66,7 @@ const NAV: Record<Role, { path: string; label: string }[]> = {
     { path: '/admin/actividades', label: 'Actividades' },
     { path: '/admin/clases', label: 'Clases' },
     { path: '/recepcion', label: 'Recepción' },
+    { path: '/admin/club', label: 'Club' },
     { path: '/estado', label: 'Estado del sistema' },
   ],
   PROFESOR: [{ path: '/prof/clases', label: 'Mis clases' }, { path: '/prof', label: 'Mis alumnos' }],

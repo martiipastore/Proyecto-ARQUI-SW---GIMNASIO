@@ -4,7 +4,8 @@ import { useSession } from '../auth/session';
 
 interface Movement {
   id: string; fecha: string; aplicado_en: string; motivo: string; puntos: number;
-  origen: 'ASISTENCIA' | 'INASISTENCIA' | 'PARTNER'; secuencia: number;
+  origen: 'ASISTENCIA' | 'INASISTENCIA' | 'PARTNER' | 'REVERSION'; secuencia: number;
+  estado: 'CONFIRMADO' | 'REVERTIDO';
 }
 interface History { items: Movement[]; total: number; pagina: number; tamano: number }
 
@@ -53,6 +54,8 @@ export function PointsHistory() {
         {history.items.map(m => <li key={m.id}>
           <strong>{m.puntos > 0 ? '+' : ''}{m.puntos} puntos</strong> · {m.motivo}
           {m.origen === 'INASISTENCIA' && m.puntos === 0 && ' (sin descuento por saldo cero)'}
+          {m.origen === 'REVERSION' && ' (corrección del administrador)'}
+          {m.estado === 'REVERTIDO' && ' · revertido'}
           <br /><span className="muted">{new Date(m.fecha).toLocaleString('es-AR')} · Movimiento {m.secuencia}</span>
         </li>)}
       </ol>}

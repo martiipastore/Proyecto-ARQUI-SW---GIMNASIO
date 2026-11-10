@@ -53,17 +53,36 @@ func RegisterAccountHistory(r *gin.Engine, app AccountHistory, secret string) {
 			}
 			return
 		}
-		items := make([]gin.H, 0, len(out.Movimientos))
-		for _, mov := range out.Movimientos {
-			m := mov.Datos()
-			origin := "PARTNER"
-			if m.Tipo == domain.Asistencia {
-				origin = "ASISTENCIA"
-			} else if m.Tipo == domain.PenalizacionInasistencia {
-				origin = "INASISTENCIA"
-			}
-			items = append(items, gin.H{"id": m.ID, "fecha": m.OcurridoEn, "aplicado_en": m.AplicadoEn, "motivo": m.Motivo, "puntos": m.Puntos, "estado": "CONFIRMADO", "origen": origin, "origen_id": m.OrigenID, "referencia": m.Referencia, "secuencia": m.Secuencia})
-		}
-		c.JSON(200, gin.H{"items": items, "total": out.Total, "pagina": page, "tamano": size})
+		c.JSON(200, gin.H{"items": movimientosJSON(out, false), "total": out.Total, "pagina": page, "tamano": size})
 	})
+}
+
+// movimientosJSON representa el ledger de benefits.v1. El administrador ve
+// además el partner y el original revertido; el alumno ve estado y origen.
+func movimientosJSON(p domain.PaginaMovimientos, admin bool) []gin.H {
+	items := make([]gin.H, 0, len(p.Movimientos))
+	for _, mov := range p.Movimientos {
+		m := mov.Datos()
+		origin := "PARTNER"
+		switch m.Tipo {
+		case domain.Asistencia:
+			origin = "ASISTENCIA"
+		case domain.PenalizacionInasistencia:
+			origin = "INASISTENCIA"
+		case domain.Reversion:
+			origin = "REVERSION"
+		}
+		item := gin.H{"id": m.ID, "fecha": m.OcurridoEn, "aplicado_en": m.AplicadoEn, "motivo": m.Motivo, "puntos": m.Puntos, "estado": p.EstadoMovimiento(m.ID), "origen": origin, "origen_id": m.OrigenID, "referencia": m.Referencia, "secuencia": m.Secuencia}
+		if m.RevierteID != "" {
+			item["revierte_id"] = m.RevierteID
+		}
+		if admin {
+			item["partner_id"] = m.PartnerID
+			if by := p.RevertidoPor[m.ID]; by != "" {
+				item["revertido_por"] = by
+			}
+		}
+		items = append(items, item)
+	}
+	return items
 }

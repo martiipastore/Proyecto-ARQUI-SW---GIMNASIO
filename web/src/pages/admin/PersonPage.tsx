@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useSession } from '../../auth/session';
+import { ClubAccountSection } from './ClubAdmin';
 import { Assignment, fullName, Membership, MembershipPage, MembershipType, newIdempotencyKey, Person, ROLE_LABELS } from './types';
 
 // Detalle de persona (users.v1 y memberships.v1): datos, baja, membresías y
@@ -126,6 +127,9 @@ export function PersonPage({ id }: { id: string }) {
           <AssignForm professionals={professionals} busy={busy} onAssign={(professionalId) => run(() => post(`/api/v1/users/${professionalId}/assignments`, { alumno_id: id }), 'Asignación registrada.')} />
         )}
       </section>
+
+      {/* Etapa 7: el Club es para todas las personas (D-63/D-64), no solo alumnos. */}
+      <ClubAccountSection userId={id} />
     </main>
   );
 }
