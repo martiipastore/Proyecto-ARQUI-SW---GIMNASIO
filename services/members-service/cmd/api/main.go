@@ -3,17 +3,21 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/access"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/messaging"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/config"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/handler"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/members-service/internal/repository"
@@ -45,7 +49,20 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}
 	defer db.Close()
 
-	router := handler.NewRouter(log, service.NewReadiness(db), cfg.HealthTimeout)
+	var relayConnected atomic.Bool
+	var extraChecks []health.Check
+	if cfg.MessagingEnabled {
+		if !cfg.IdentityEnabled {
+			return fmt.Errorf("mensajería requiere MEMBERS_IDENTITY_ENABLED=true")
+		}
+		extraChecks = append(extraChecks, health.Check{Name: "rabbitmq", Partial: true, Fn: func(context.Context) error {
+			if !relayConnected.Load() {
+				return errors.New("relay RabbitMQ desconectado")
+			}
+			return nil
+		}})
+	}
+	router := handler.NewRouter(log, service.NewReadiness(db, extraChecks...), cfg.HealthTimeout)
 	if cfg.IdentityEnabled {
 		if len(cfg.ServiceKey) < 32 {
 			return fmt.Errorf("GYM_INTERNAL_SERVICE_KEY debe tener al menos 32 caracteres")
@@ -76,6 +93,64 @@ func run(cfg config.Config, log *slog.Logger) error {
 		memberships := service.NewMemberships(db, nil)
 		handler.RegisterMemberships(router, memberships, cfg.ServiceKey)
 		handler.RegisterCoverage(router, memberships, cfg.ServiceKey)
+		if cfg.MessagingEnabled {
+			if cfg.AMQPURL == "" {
+				return fmt.Errorf("MEMBERS_AMQP_URL requerida para mensajería")
+			}
+			relayCtx, cancelRelay := context.WithCancel(ctx)
+			relayDone := make(chan struct{})
+			defer func() { cancelRelay(); <-relayDone }()
+			go func() {
+				defer close(relayDone)
+				var bus *messaging.Session
+				defer func() {
+					if bus != nil {
+						bus.Close()
+					}
+				}()
+				ticker := time.NewTicker(500 * time.Millisecond)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-relayCtx.Done():
+						return
+					case <-ticker.C:
+						workCtx, cancel := context.WithTimeout(relayCtx, 10*time.Second)
+						var err error
+						// Detectar también caídas sin eventos pendientes: readiness
+						// no debe depender de que haya una publicación para fallar.
+						if bus != nil && bus.Conn.IsClosed() {
+							bus.Close()
+							bus = nil
+							relayConnected.Store(false)
+						}
+						if bus == nil {
+							bus, err = messaging.Dial(workCtx, cfg.AMQPURL)
+							if err == nil {
+								err = bus.Topology("notification.membresia-activada", "membresia.activada", []time.Duration{10 * time.Second, time.Minute, 10 * time.Minute})
+							}
+						}
+						if err == nil {
+							relayConnected.Store(true)
+							var count int
+							count, err = db.RelayMemberships(workCtx, bus)
+							if count > 0 {
+								log.Info("eventos de membresía publicados", slog.Int("cantidad", count))
+							}
+						}
+						cancel()
+						if err != nil {
+							relayConnected.Store(false)
+							if bus != nil {
+								bus.Close()
+								bus = nil
+							}
+							log.Warn("outbox pendiente; se reintentará")
+						}
+					}
+				}
+			}()
+		}
 		if cfg.BackgroundWorkerEnabled {
 			if cfg.WorkerInterval <= 0 {
 				return fmt.Errorf("MEMBERS_WORKER_INTERVAL debe ser mayor que cero")

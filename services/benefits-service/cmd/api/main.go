@@ -15,13 +15,16 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/messaging"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
+	bookingamqp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/amqp"
 	benefitshttp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/members"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/config"
+	"github.com/gin-gonic/gin"
 )
 
 const serviceName = "benefits-service"
@@ -63,7 +66,45 @@ func run(cfg config.Config, log *slog.Logger) error {
 		return err
 	}
 
-	router := benefitshttp.NewRouter(log, cfg.HealthTimeout, health.Check{Name: "postgres", Fn: db.Ping})
+	bookingEvents := application.NewBookingEvents(db, system.Clock{}, system.IDs{})
+	checks := []health.Check{{Name: "postgres", Fn: db.Ping}}
+	var workers []*messaging.Consumer
+	if cfg.MessagingEnabled {
+		if cfg.AMQPURL == "" {
+			return fmt.Errorf("BENEFITS_AMQP_URL requerida para mensajería")
+		}
+		consumerCtx, cancel := context.WithCancel(ctx)
+		done := make(chan struct{})
+		defer func() { cancel(); <-done }()
+		for _, route := range []messaging.Route{{Queue: "benefits.asistencia-registrada", Key: "asistencia.registrada"}, {Queue: "benefits.inasistencia-registrada", Key: "inasistencia.registrada"}} {
+			adapter := bookingamqp.Adapter{App: bookingEvents, EventType: route.Key}
+			worker := &messaging.Consumer{URL: cfg.AMQPURL, Route: route, Handle: adapter.Handle, Permanent: bookingamqp.Permanent, Log: log}
+			workers = append(workers, worker)
+			checks = append(checks, health.Check{Name: route.Queue, Fn: worker.Ready, Partial: true})
+		}
+		go func() {
+			defer close(done)
+			finished := make(chan struct{}, len(workers))
+			for _, w := range workers {
+				go func(w *messaging.Consumer) { w.Run(consumerCtx); finished <- struct{}{} }(w)
+			}
+			for range workers {
+				<-finished
+			}
+		}()
+	}
+	router := benefitshttp.NewRouter(log, cfg.HealthTimeout, checks...)
+	if cfg.MessagingEnabled {
+		router.GET("/metrics", func(c *gin.Context) {
+			var processed, retried, dead int64
+			for _, w := range workers {
+				processed += w.Processed.Load()
+				retried += w.Retried.Load()
+				dead += w.Dead.Load()
+			}
+			c.Data(200, "text/plain; version=0.0.4", []byte(fmt.Sprintf("booking_events_processed_total %d\nbooking_events_retries_total %d\nbooking_events_dlq_total %d\n", processed, retried, dead)))
+		})
+	}
 	benefits := application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{})
 	auth := application.NewAuthenticator(db)
 	benefitshttp.RegisterPartners(router, benefits, auth, log)
@@ -73,6 +114,7 @@ func run(cfg config.Config, log *slog.Logger) error {
 		}
 		client := members.Client{URL: cfg.MembersURL, Secret: cfg.ServiceKey, HTTP: &http.Client{Timeout: 3500 * time.Millisecond}}
 		benefitshttp.RegisterRegistrations(router, application.NewRegistro(client, db, benefits), auth, cfg.ServiceKey, log)
+		benefitshttp.RegisterAccountHistory(router, bookingEvents, cfg.ServiceKey)
 	}
 	router.NoRoute(benefitshttp.PartnerFallback)
 	router.NoMethod(benefitshttp.PartnerFallback)

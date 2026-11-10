@@ -1,10 +1,10 @@
 // Comando worker de notification-worker: consumirá membresia.activada y enviará
-// el email de confirmación. En esta etapa es solo el esqueleto: arranca, expone
-// /health/live y /health/ready (verifica notifications_db) y se apaga ordenadamente.
+// el email de confirmación con estado durable, reintentos y DLQ (RN-05).
 package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -16,7 +16,10 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpx"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/notification-worker/internal/config"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/notification-worker/internal/consumer"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/notification-worker/internal/mailer"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/notification-worker/internal/store"
+	"github.com/gin-gonic/gin"
 )
 
 const serviceName = "notification-worker"
@@ -51,7 +54,22 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}()
 
 	router := httpx.NewRouter(log)
-	health.Register(router, cfg.HealthTimeout, health.Check{Name: "mongodb", Fn: db.Ping})
+	checks := []health.Check{{Name: "mongodb", Fn: db.Ping}}
+	if cfg.MessagingEnabled {
+		if cfg.AMQPURL == "" {
+			return fmt.Errorf("NOTIFICATION_AMQP_URL requerida para mensajería")
+		}
+		worker := &consumer.Worker{URL: cfg.AMQPURL, Log: log, Failures: db, Processor: consumer.Processor{Store: db, Mailer: mailer.SMTP{Host: cfg.SMTPHost, Port: cfg.SMTPPort, From: cfg.SMTPFrom, Username: cfg.SMTPUser, Password: cfg.SMTPPassword, AllowPlaintext: cfg.SMTPAllowPlaintext}}}
+		workerCtx, cancel := context.WithCancel(ctx)
+		done := make(chan struct{})
+		defer func() { cancel(); <-done }()
+		go func() { defer close(done); worker.Run(workerCtx) }()
+		checks = append(checks, health.Check{Name: "rabbitmq", Fn: worker.Ready})
+		router.GET("/metrics", func(c *gin.Context) {
+			c.Data(200, "text/plain; version=0.0.4", []byte(fmt.Sprintf("notification_processed_total %d\nnotification_retries_total %d\nnotification_dlq_total %d\n", worker.Processed.Load(), worker.Retries.Load(), worker.Failed.Load())))
+		})
+	}
+	health.Register(router, cfg.HealthTimeout, checks...)
 
 	return httpserver.Run(ctx, log, httpserver.Options{
 		Addr:            cfg.HTTPAddr,

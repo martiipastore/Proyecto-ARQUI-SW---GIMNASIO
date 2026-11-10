@@ -9,6 +9,8 @@ import (
 
 // Config de benefits-service.
 type Config struct {
+	MessagingEnabled            bool
+	AMQPURL                     string
 	ExternalRegistrationEnabled bool
 	ServiceKey, MembersURL      string
 	HTTPAddr                    string
@@ -22,6 +24,8 @@ type Config struct {
 func Load() (Config, error) {
 	l := config.New()
 	cfg := Config{
+		MessagingEnabled:            l.String("BENEFITS_MESSAGING_ENABLED", "false") == "true",
+		AMQPURL:                     l.String("BENEFITS_AMQP_URL", ""),
 		ExternalRegistrationEnabled: l.String("BENEFITS_EXTERNAL_REGISTRATION_ENABLED", "false") == "true",
 		ServiceKey:                  l.String("GYM_INTERNAL_SERVICE_KEY", ""),
 		MembersURL:                  l.String("BENEFITS_MEMBERS_URL", "http://members-service:8081"),

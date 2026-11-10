@@ -77,6 +77,8 @@ func TestCuentaPropiaJWTEliminaIdentidadFalsificada(t *testing.T) {
 	require.Equal(t, 401, f.do("GET", "/api/v1/benefits/me", map[string]string{"Authorization": "Bearer token-opaco-anterior"}).Code)
 	require.Equal(t, 401, f.do("GET", "/api/v1/benefits/me", map[string]string{"Authorization": "Bearer " + testJWT(t, access.Student, time.Now().Add(-16*time.Minute))}).Code)
 	require.Equal(t, 200, f.do("GET", "/api/v1/benefits/me", map[string]string{"Authorization": "Bearer " + testJWT(t, access.Student, time.Now()), "X-User-Id": "victima", "X-User-Role": access.Admin}).Code)
+	require.Equal(t, 401, f.do("GET", "/api/v1/benefits/me/movements", map[string]string{"X-User-Id": "victima", "X-Internal-Service-Key": secret}).Code)
+	require.Equal(t, 200, f.do("GET", "/api/v1/benefits/me/movements", map[string]string{"Authorization": "Bearer " + testJWT(t, access.Student, time.Now()), "X-User-Id": "victima", "X-User-Role": access.Admin}).Code)
 }
 
 func TestRutasPrivadasYRolesFallanCerrados(t *testing.T) {

@@ -1,0 +1,30 @@
+{
+  "fecha": "2026-11-10",
+  "alcance": "Cambios locales de etapa 6; revisión e integración pendientes; sin despliegue",
+  "verificaciones": [
+    {"modulo": "services/benefits-service", "comando": "go vet ./... y go test -count=1 -timeout 15m ./...", "postgresql_real": true, "aprobado": true},
+    {"modulo": "services/booking-service", "comando": "go vet ./... y go test -count=1 -timeout 15m ./...", "postgresql_real": true, "aprobado": true},
+    {"modulo": "gateway", "comando": "go vet ./... y go test -count=1 ./...", "aprobado": true},
+    {"modulo": "pkg", "comando": "go vet ./... y go test -count=1 ./...", "aprobado": true},
+    {"modulo": "web", "comando": "npm.cmd run build", "typescript": true, "vite": "6.4.3", "aprobado": true},
+    {"comando": "go run ./tests/e2e/identity/main.go -attendance", "evidencia": "attendance-e2e.json", "escenarios": 32, "aprobado": true}
+  ],
+  "reglas_verificadas": [
+    "Asistencia +500 y ausencia -min(100,saldo), incluida penalización cero sin deuda",
+    "Mismo ledger y bloqueo de cuenta para créditos HTTP y eventos",
+    "Diez reentregas concurrentes producen un movimiento",
+    "Deduplicación durable por event_id y por origen incluso con un nuevo event_id",
+    "Saldo igual a suma de movimientos y secuencia estricta",
+    "Rollback sin cuenta, movimiento ni recibo parciales",
+    "Créditos de partners siguen positivos y separados por integración",
+    "Historial propio autenticado y paginado; cabeceras falsas no cambian identidad",
+    "Benefits apagado no bloquea reserva, ingreso ni cierre; recuperación y replay sin duplicados",
+    "Evento con importe inválido termina en DLQ sin modificar puntos"
+  ],
+  "limites": [
+    "Revisión visual en navegador pendiente de etapa 11",
+    "Sin publicación en Vercel; flags de mensajería apagados por defecto",
+    "Mensajes agotados permanecen en DLQ; no hay herramienta nueva de replay masivo",
+    "Consumo de bajas y cancelaciones de membresía en Booking sigue pendiente"
+  ]
+}

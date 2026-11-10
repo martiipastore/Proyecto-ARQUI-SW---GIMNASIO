@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:metalfitness:events:membresia.activada:v1",
+  "title": "Asignación o renovación de membresía",
+  "type": "object",
+  "required": ["event_id", "event_type", "event_version", "occurred_at", "producer", "data"],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "event_type": {"const": "membresia.activada"},
+    "event_version": {"const": 1},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "producer": {"const": "members-service"},
+    "correlation_id": {"type": "string"},
+    "traceparent": {"type": "string"},
+    "data": {
+      "type": "object",
+      "required": ["membresia_id", "alumno_id", "alumno_nombre", "alumno_email", "tipo_membresia", "fecha_inicio", "fecha_vencimiento", "operacion"],
+      "properties": {
+        "membresia_id": {"type": "string", "format": "uuid"},
+        "alumno_id": {"type": "string", "format": "uuid"},
+        "alumno_nombre": {"type": "string", "minLength": 1},
+        "alumno_email": {"type": "string", "format": "email"},
+        "tipo_membresia": {"type": "string", "minLength": 1},
+        "fecha_inicio": {"type": "string", "format": "date"},
+        "fecha_vencimiento": {"type": "string", "format": "date"},
+        "operacion": {"enum": ["ASIGNACION", "RENOVACION"]},
+        "membresia_anterior_id": {"type": ["string", "null"], "format": "uuid"}
+      }
+    }
+  }
+}

@@ -2,11 +2,37 @@
 
 > Documento de referencia de la arquitectura del proyecto. La funcionalidad está definida en [SPEC.md](../SPEC.md); las decisiones estructurales están en [docs/adr/](adr/).
 >
-> - Versión: 1.10 (estado real del Club, membresías y publicación en Vercel)
-> - Fecha: 2026-11-09
+> - Versión: 1.11 (validación local de Booking y mensajería de membresías)
+> - Fecha: 2026-11-10
 > - Incluye tres decisiones agregadas y aprobadas por el equipo (2026-10-07) para cubrir huecos con el SPEC: eventos `membresia.cancelada` y `usuario.desactivado`, consulta de asignaciones training → members y consulta de datos de alumnos booking → members. Registro completo en [Registro_de_Decisiones_Gimnasio.docx](../Registro_de_Decisiones_Gimnasio.docx) (D-20 a D-23).
 
-**Estado real al 09/11/2026:**
+**Actualización local del 10/11/2026:** Booking aprobó tests PostgreSQL, vet,
+build del frontend y 20 escenarios E2E (etapa 4). La etapa 5 incorpora un relay
+para `membresia.activada` y un consumidor con MongoDB, SMTP, reintentos y DLQ;
+aprobó 26 escenarios E2E y una prueba de retención TTL sin destino con RabbitMQ real. Ambos flags de mensajería siguen apagados
+por defecto. No se publicaron estos cambios en Vercel. Ver
+[etapa 4](entrega-final/ETAPA_4_BOOKING.md) y
+[etapa 5](entrega-final/ETAPA_5_MENSAJERIA.md). Las afirmaciones siguientes del
+09/11 se conservan como inventario anterior y no describen esos cambios locales.
+
+**Capacidad externa, recepción del 10/11/2026:** se recibió el manual de MELT,
+con catálogo público, registro referido y consultas de sesión/puntos MELT. Está
+documentado en [ETAPA_13_MELT.md](entrega-final/ETAPA_13_MELT.md), junto con la
+copia del proveedor. La implementación sigue pendiente del flujo propio, servicio
+consumidor y coordinaciones; ADR-009 continúa propuesto. No hay llamadas al
+proveedor ni cambios en la arquitectura por esta recepción documental.
+
+**Etapa 6 local, 10/11/2026:** Booking publica asistencia/ausencia desde su outbox
+y Benefits las consume en el mismo ledger de cuenta que los créditos HTTP.
+Migración 006: movimientos internos tipados, origen único y recibos inmutables;
+500 por asistencia o hasta −100 por ausencia, sin saldo negativo. El ACK sigue al
+commit. `GET /api/v1/benefits/me/movements` permite consultar la cuenta propia;
+historial web y E2E de 32 escenarios aprobados, incluida caída y recuperación de
+Benefits. Ver [ETAPA_6_BOOKING_BENEFITS.md](entrega-final/ETAPA_6_BOOKING_BENEFITS.md).
+No se agregan débitos a partners ni se publica este flujo en Vercel. Los flags de
+mensajería permanecen apagados por defecto y la revisión para integrar está pendiente.
+
+**Inventario anterior al 09/11/2026:**
 
 - **Benefits** (Hexagonal): API de partners v2 con registro externo, créditos con
   identidad de evento, saldo y movimientos; permisos, límites y cuota por

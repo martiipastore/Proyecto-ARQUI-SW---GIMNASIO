@@ -1,3 +1,3 @@
-// Package consumer contendrá el consumidor idempotente de membresia.activada
-// (RabbitMQ, cola notification.membresia-activada). Se agrega en la etapa de membresías.
+// Package consumer procesa membresia.activada con deduplicación durable,
+// ACK manual, reintentos acotados y DLQ (RN-05, ADR-005).
 package consumer

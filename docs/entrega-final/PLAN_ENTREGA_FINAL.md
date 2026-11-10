@@ -14,7 +14,7 @@
 
 Este documento organiza todo el trabajo posterior a la Entrega 2 hasta la presentación final. Cada etapa debe terminar con comportamiento ejecutable, pruebas y evidencia; la documentación se actualiza durante el desarrollo.
 
-La capacidad externa permanece bloqueada hasta recibir proveedor, contrato y credenciales. El resto del sistema puede avanzar sin inventar esa integración.
+El 10/11/2026 se recibió el manual de MELT y se documentó para la [etapa 13](ETAPA_13_MELT.md). La implementación sigue pendiente del flujo propio y de las coordinaciones que el manual deja abiertas, incluido el código de referido. El catálogo es público y no requiere credenciales. El resto del sistema avanza en orden sin inventar la integración.
 
 ## 2. Fuentes y restricciones
 
@@ -129,7 +129,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 4 — Booking, clases y reservas
 
-**Estado:** Desarrollada el 09/11/2026: actividades, horarios, generación, reservas, cancelación, ingreso por DNI, ausencias y pantallas. Tests de dominio y casos de uso aprobados; falta correr la integración con Docker, el build del frontend y la prueba manual. Ver [ETAPA_4_BOOKING.md](ETAPA_4_BOOKING.md).
+**Estado:** Verificación técnica local cerrada el 10/11/2026: tests y vet de Booking, Members y Gateway con PostgreSQL real, build del frontend y E2E de 20 escenarios aprobados. Revisión visual reservada para la etapa 11; revisión de otro integrante pendiente para integrar. Ver [ETAPA_4_BOOKING.md](ETAPA_4_BOOKING.md).
 
 **Objetivo:** implementar el núcleo operativo de actividades, clases, reservas e ingreso.
 
@@ -147,7 +147,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 5 — Mensajería y notificaciones
 
-**Estado:** Pendiente.
+**Estado:** Verificación técnica local cerrada el 10/11/2026: 26 escenarios E2E aprobados, vet/tests de los módulos afectados y retención TTL sin destino verificada con RabbitMQ real. Relay de Members con confirms, notificación durable en MongoDB, SMTP, reintentos y DLQ. Revisión de otro integrante pendiente para integrar. Ver [ETAPA_5_MENSAJERIA.md](ETAPA_5_MENSAJERIA.md).
 
 **Objetivo:** demostrar comunicación asíncrona durable mediante un flujo real.
 
@@ -165,7 +165,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 6 — Integración Booking → Benefits
 
-**Estado:** Pendiente.
+**Estado:** Verificación técnica local cerrada el 10/11/2026: relay de Booking, consumidores idempotentes, ledger de asistencia/ausencia e historial propio en la web. E2E de 32 escenarios, tests/vet de los módulos afectados y build del frontend aprobados. Revisión de otro integrante pendiente para integrar. Ver [ETAPA_6_BOOKING_BENEFITS.md](ETAPA_6_BOOKING_BENEFITS.md).
 
 **Objetivo:** conectar la asistencia y las ausencias con el ledger ya validado.
 
@@ -291,11 +291,11 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 13 — Capacidad externa y D9
 
-**Estado:** Bloqueada por proveedor no asignado.
+**Estado:** Manual de MELT recibido y documentado el 10/11/2026; implementación y validación pendientes. Ver [ETAPA_13_MELT.md](ETAPA_13_MELT.md) y la copia del PDF enlazada allí. El PDF es toda la información recibida: falta el código de referido definitivo y definir el flujo relevante, el servicio consumidor y los detalles no especificados. No se adelantó esta etapa ni se hicieron llamadas al proveedor.
 
 **Objetivo:** incorporar la capacidad de otro grupo a un flujo principal relevante.
 
-**Trabajo cuando se reciba:**
+**Trabajo al llegar a esta etapa:**
 
 - revisar contrato, autenticación, versionado y límites;
 - decidir servicio consumidor y modelo interno;
@@ -403,7 +403,7 @@ El calendario se recalibra al conocer la fecha del grupo y la capacidad externa.
 
 ## 9. Seguimiento
 
-Actualizado el 09/11/2026 según el inventario de la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente).
+Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4, 5 y 6 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
 
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
@@ -411,16 +411,16 @@ Actualizado el 09/11/2026 según el inventario de la [etapa 0](ETAPA_0_LINEA_BAS
 | 1. Contratos y recorridos | Cerrada; decisiones resueltas en D-78 a D-85 | — |
 | 2. Identidad | Desarrollada: backend de CB-03 y frontend con login, sesión y rutas por rol; falta build y prueba manual | Members y Gateway |
 | 3. Members | Desarrollada: padrón, asignaciones, vigencia y pantallas; falta compilar, tests de integración con Docker y build del frontend | Contratos internos |
-| 4. Booking | Desarrollada: dominio y casos de uso probados; falta integración con Docker, build y prueba manual | Members operativo |
-| 5. Mensajería | Pendiente (outbox de Members sin publicador) | Members y RabbitMQ |
-| 6. Booking → Benefits | Pendiente | Booking y mensajería |
+| 4. Booking | Verificación técnica local cerrada el 10/11: integración PostgreSQL, vet, build y 20 escenarios E2E aprobados; revisión visual en etapa 11 | Revisión de otro integrante para integrar |
+| 5. Mensajería | Verificación técnica local cerrada el 10/11: 26 escenarios E2E y retención TTL sin destino aprobados | Revisión de otro integrante para integrar |
+| 6. Booking → Benefits | Verificación técnica local cerrada el 10/11: 32 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
 | 7. Benefits completo | Reducida por D-76: queda la gestión de partners e integraciones | Ledger existente |
 | 8. Búsqueda | Pendiente | Booking y OpenSearch |
 | 9. Caché | Pendiente | Flujo de lectura medido |
 | 10. Training y nutrición | Pendiente | Identidad y asignaciones |
 | 11. Frontend completo | Pendiente (hoy: cuenta del Club y estado del sistema) | Contratos y servicios |
 | 12. Borde y balanceo | Pendiente | Booking operativo |
-| 13. Capacidad externa | **Bloqueada** | Proveedor y contrato |
+| 13. Capacidad externa | MELT: manual recibido y documentado el 10/11; implementación pendiente | Flujo/servicio consumidor, código de referido y contrato incompleto de algunas respuestas; ver ETAPA_13_MELT.md |
 | 14. Observabilidad final | Pendiente | Flujos integrados |
 | 15. Nube | Resuelta con Vercel (D-75); falta publicar el PR #14 | Acceso a la cuenta de Vercel |
 | 16. Verificación final | Pendiente | Todas las anteriores |

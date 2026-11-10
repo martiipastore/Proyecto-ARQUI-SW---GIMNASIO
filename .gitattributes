@@ -7,4 +7,5 @@ Makefile text eol=lf
 Dockerfile text eol=lf
 *.conf text eol=lf
 *.docx binary
+*.pdf binary
 *.go text eol=lf

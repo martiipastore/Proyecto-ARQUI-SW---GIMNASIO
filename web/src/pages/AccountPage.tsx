@@ -1,5 +1,6 @@
 import { useSession } from '../auth/session';
 import { navigate } from '../router';
+import { PointsHistory } from './PointsHistory';
 
 const ROLE_NAMES: Record<string, string> = {
   ADMINISTRADOR: 'Administrador',
@@ -23,6 +24,7 @@ export function AccountPage() {
         <dt>Rol</dt>
         <dd>{ROLE_NAMES[user.role] ?? user.role}</dd>
       </dl>
+      <PointsHistory />
       <button type="button" onClick={async () => { await logout(); navigate('/login'); }}>Cerrar sesión</button>
     </main>
   );

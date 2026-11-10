@@ -13,6 +13,9 @@ Esta carpeta reúne la planificación y las referencias propias de la presentaci
 | [ETAPA_1_CONTRATOS_RECORRIDOS.md](ETAPA_1_CONTRATOS_RECORRIDOS.md) | Prioridades, rutas, pantallas con sus contratos, wireflows, datos de demostración y decisiones del equipo (etapa 1) |
 | [ETAPA_3_MEMBERS.md](ETAPA_3_MEMBERS.md) | Padrón de personas, asignaciones, vigencia para Booking y pantallas de administración; lista de pruebas pendientes con Docker (etapa 3) |
 | [ETAPA_4_BOOKING.md](ETAPA_4_BOOKING.md) | Actividades, clases, reservas, ingreso por DNI y ausencias; invariantes en la base y pruebas pendientes con Docker (etapa 4) |
+| [ETAPA_5_MENSAJERIA.md](ETAPA_5_MENSAJERIA.md) | Relay, notificaciones durables, reintentos, DLQ y validación local aprobada (etapa 5) |
+| [ETAPA_6_BOOKING_BENEFITS.md](ETAPA_6_BOOKING_BENEFITS.md) | Asistencias/ausencias al ledger, historial propio y recuperación de Benefits; 32 escenarios E2E aprobados |
+| [ETAPA_13_MELT.md](ETAPA_13_MELT.md) | Manual recibido de MELT, APIs, reglas del referido, pendientes y pruebas previstas; implementación reservada para la etapa 13 |
 
 ## Fuentes de verdad
 

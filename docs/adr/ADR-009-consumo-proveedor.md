@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Propuesto; pendiente de proveedor y aprobación del equipo |
+| **Estado** | Propuesto; manual de MELT recibido el 10/11/2026; flujo, servicio consumidor y aprobación pendientes |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D9 |
 | **Autores** | Equipo del TPI |
@@ -10,9 +10,9 @@
 
 ## Contexto
 
-El enunciado §4 exige consumir una capacidad de otro grupo con consecuencias de negocio. SPEC §1.5 deja pendientes proveedor, capacidad y flujo. Este documento identifica lo que falta; no afirma que exista integración ni selecciona un proveedor.
+El enunciado §4 exige consumir una capacidad de otro grupo con consecuencias de negocio. SPEC §1.5 requiere concretar el flujo. Este documento identifica lo que falta; no afirma que exista integración ni aprueba un servicio consumidor.
 
-El 16/10/2026 el equipo confirmó que todavía no recibió la asignación y que la recibirá próximamente. D9 permanece como propuesta inicial; la etapa 5 depende de esa asignación y del contrato publicado por el proveedor.
+El 16/10/2026 todavía no se había recibido la asignación. El 10/11/2026 el equipo entregó el manual de **MELT** y confirmó que es toda la información recibida. Describe catálogo público, registro referido, login y puntos MELT. El documento, su procedencia y sus pendientes están en [ETAPA_13_MELT.md](../entrega-final/ETAPA_13_MELT.md). D9 permanece propuesto: la implementación corresponde a la etapa 13 del plan final (la referencia histórica a etapa 5 era de la planificación anterior).
 
 ## Alternativas consideradas
 
@@ -30,13 +30,13 @@ Antes de aceptar esta decisión se completará:
 
 | Dato | Estado |
 |---|---|
-| Grupo, contacto y capacidad asignada | Asignación aún no recibida, confirmado por el equipo el 16/10/2026 |
-| Contrato, versión, URL y entorno | Pendiente |
+| Grupo, contacto y capacidad asignada | MELT; catálogo de tratamientos y registro referido con beneficio de 100 puntos en MELT. Contacto nominal no informado. Flujo propio por definir. |
+| Contrato, versión, URL y entorno | Manual PDF de 5 páginas recibido el 10/11, sin versión explícita; base declarada https://melt-gateway.onrender.com, prefijo /api/v1. Sin verificación en vivo. |
 | Servicio consumidor, HU/RN y efecto observable | Pendiente; requiere aprobación del alcance |
-| Autenticación y gestión de secretos | Pendiente del contrato |
+| Autenticación y gestión de secretos | Catálogo y registro públicos; login con credenciales personales MELT y consulta de puntos con Bearer de cliente. No se entregan secretos reales. Código de referido definitivo pendiente; no confundirlo con una credencial. |
 | Timeout, reintentos y presupuesto total | Pendiente del flujo; no copiar valores sin justificar |
 | Cuotas, límites y costos | Pendiente de información verificable del proveedor |
-| Traducción de errores y cambios incompatibles | Pendiente del contrato |
+| Traducción de errores y cambios incompatibles | El manual documenta HTTP status y campo externo error variable; esquemas completos y traducción al contrato propio pendientes. |
 | Falla cerrada o degradación visible | Pendiente del impacto de negocio |
 
 ## Consecuencias
@@ -47,4 +47,4 @@ Antes de aceptar esta decisión se completará:
 
 ## Cómo se verificará
 
-En la etapa 5: contrato recibido, test del adaptador y de compatibilidad, respuesta normal, error y caída del proveedor con comportamiento visible. La defensa debe mostrar qué decisión del negocio utiliza la capacidad. Hasta entonces D9 sigue propuesta y su implementación pendiente.
+En la etapa 13 del plan final: completar el contrato recibido, test del adaptador y de compatibilidad, respuesta normal, error y caída del proveedor con comportamiento visible. La defensa debe mostrar qué decisión del negocio utiliza la capacidad. Hasta entonces D9 sigue propuesta y su implementación pendiente. El manual contempla llamadas desde navegador y una eventual llamada inversa, pero no autoriza cambiar la arquitectura propia ni inventa un callback MELT → gimnasio.

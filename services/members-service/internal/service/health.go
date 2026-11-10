@@ -16,15 +16,16 @@ type Pinger interface {
 
 // Readiness reúne las dependencias propias del servicio.
 type Readiness struct {
-	db Pinger
+	db    Pinger
+	extra []health.Check
 }
 
 // NewReadiness crea el servicio de disponibilidad.
-func NewReadiness(db Pinger) *Readiness {
-	return &Readiness{db: db}
+func NewReadiness(db Pinger, extra ...health.Check) *Readiness {
+	return &Readiness{db: db, extra: extra}
 }
 
 // Checks devuelve los chequeos de /health/ready.
 func (r *Readiness) Checks() []health.Check {
-	return []health.Check{{Name: "postgres", Fn: r.db.Ping}}
+	return append([]health.Check{{Name: "postgres", Fn: r.db.Ping}}, r.extra...)
 }

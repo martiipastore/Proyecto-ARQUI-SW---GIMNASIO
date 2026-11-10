@@ -114,12 +114,12 @@ El alcance incluye ambas responsabilidades: **ofrecer** la API del Club de Benef
 
 | Aspecto | Estado |
 |---|---|
-| Grupo proveedor y capacidad asignada | Pendiente de asignación y coordinación con el grupo proveedor. |
+| Grupo proveedor y capacidad asignada | Manual de MELT recibido el 10/11/2026: catálogo de tratamientos y registro referido con beneficio en MELT; flujo a incorporar pendiente de definición. Ver docs/entrega-final/ETAPA_13_MELT.md. |
 | Flujo de negocio y actores afectados | Pendiente de conocer la capacidad; su uso DEBE formar parte de un flujo relevante del sistema. |
 | Reglas, datos intercambiados y criterios de aceptación | Pendientes del contrato del proveedor y de la definición del flujo. Se incorporarán a las HU, RN y escenarios correspondientes. |
 | Resultado ante indisponibilidad o errores del proveedor | Pendiente de definir según el flujo; deberá documentarse y comprobarse con escenarios de fallo. |
 
-La elección del microservicio consumidor y los detalles técnicos se documentarán en `docs/ARCHITECTURE.md` y en la decisión D9 del TP cuando se defina la integración. Esta sección no asigna un proveedor, una capacidad ni un servicio responsable.
+La elección del microservicio consumidor y los detalles técnicos se documentarán en `docs/ARCHITECTURE.md` y en la decisión D9 del TP cuando se defina la integración. La recepción del manual identifica al proveedor y las interfaces disponibles; no aprueba un flujo, nuevas HU/RN ni un servicio responsable. No se modifica el saldo del gimnasio por los 100 puntos de bienvenida que el manual atribuye a MELT.
 
 ### 1.6 Desafíos bonus anunciados (D-40)
 

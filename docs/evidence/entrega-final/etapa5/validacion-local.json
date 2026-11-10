@@ -1,0 +1,27 @@
+{
+  "fecha": "2026-11-10",
+  "alcance": "Verificación local; cambios sin integrar ni publicar",
+  "go": "1.26.1 windows/amd64",
+  "docker": "29.6.1",
+  "verificaciones": [
+    {"modulo": "pkg", "comando": "go vet ./... y go test -count=1 ./...", "aprobado": true},
+    {"modulo": "services/members-service", "comando": "go vet ./... y go test -count=1 -timeout 15m ./...", "postgresql_real": true, "aprobado": true},
+    {"modulo": "services/notification-worker", "comando": "go vet ./... y go test -count=1 -timeout 15m ./...", "mongodb_real": true, "aprobado": true},
+    {"modulo": "services/notification-worker", "test": "TestReintentoRetieneMensajeSinDestino", "rabbitmq_real": true, "aprobado": true},
+    {"modulo": "services/notification-worker", "tests": "TestMensajesInvalidos y TestNotificacionDurableMongo", "nota": "Repetidos tras normalizar offsets y conservar el historial de resultados SMTP", "aprobado": true},
+    {"modulo": "services/members-service y services/notification-worker", "comando": "GOWORK=off go test de cmd/api y cmd/worker respectivamente", "aprobado": true},
+    {"comando": "go vet ./tests/e2e/identity/main.go", "aprobado": true},
+    {"comando": "docker compose --env-file .env.example -f deploy/docker-compose.yml config --quiet", "aprobado": true},
+    {"comando": "git diff --check", "aprobado": true},
+    {"evidencia": "../etapa4/booking-e2e.json", "escenarios": 20, "aprobado": true},
+    {"evidencia": "messaging-e2e.json", "escenarios": 26, "aprobado": true}
+  ],
+  "limites": [
+    "Sin automatización visual del navegador; revisión visual en etapa 11",
+    "SMTP puede repetir un envío físico tras una caída en la ventana posterior a DATA; la notificación lógica y el Message-ID permanecen estables",
+    "La prueba del cuarto intento usa un header sintético con tres fallos anteriores",
+    "La prueba de retención TTL acorta los plazos solo en su contenedor exclusivo",
+    "Pendientes el consumo de cancelaciones y bajas en Booking, recordatorios y la integración Booking-Benefits de etapa 6",
+    "Revisión de otro integrante pendiente para integrar"
+  ]
+}

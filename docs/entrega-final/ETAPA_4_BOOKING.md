@@ -3,9 +3,16 @@
 Etapa 4 del [plan de la entrega final](PLAN_ENTREGA_FINAL.md). Desarrollada el
 09/11/2026 en la rama `feature/entrega-final-etapa-04-booking`, que parte de la etapa 3.
 
-**Estado:** el código, los tests y la documentación están completos. Los tests de
-dominio y de casos de uso se ejecutaron y pasan. Falta correr la integración con
-PostgreSQL (Docker), el build del frontend y la prueba manual (§6).
+**Estado:** verificación técnica local cerrada el 10/11/2026 en
+`feature/entrega-final-etapa-04-cierre`. Tests y vet de Booking, Members y Gateway,
+incluidas las integraciones con PostgreSQL real, y build del frontend aprobados.
+El recorrido HTTP automatizado de §6 reemplaza la comprobación manual de las APIs;
+no constituye una revisión visual del navegador.
+
+El E2E completo aprobó sus **20 escenarios** el 10/11/2026. La evidencia
+reproducible está en [booking-e2e.json](../evidence/entrega-final/etapa4/booking-e2e.json)
+con `passed: true`. La revisión visual queda en la etapa 11 y la revisión de otro
+integrante sigue siendo requisito de integración.
 
 **Historias y reglas:** HU-06 a HU-08, HU-13 a HU-16, HU-21, HU-22, HU-35; RN-07 a
 RN-21, RN-32, RN-38 a RN-40; D-15, D-17, D-18, D-35 a D-39 y D-82.
@@ -82,12 +89,14 @@ No cambian la arquitectura; quedan escritas en el contrato:
 | `domain.TestCA06_2…` a `TestD37AD39Ingreso` (10 tests) | Topes, franjas, superposición, generación, estados, capacidad, cancelación, vigencia y ventana de ingreso | **Ejecutados: pasan** |
 | `domain.TestArquitectura_*` | Reglas de ADR-002 para el patrón hexagonal | **Ejecutados: pasan** |
 | `application.TestCU01Reservar` y 4 más | Falla cerrada sin members, idempotencia, cancelar reserva ajena, responsable profesor, ingreso por DNI | **Ejecutados: pasan** |
-| `postgres.TestBookingPostgres` (10 subtests) | Catálogo, horarios superpuestos, regeneración, **10 reservas simultáneas por el último lugar**, duplicado, idempotencia, superposición, Musculación diaria, cancelación, capacidad, cancelación de clase, ingreso, reingreso, ausencias y restricciones de la base | Escrito; requiere Docker |
-| `server.TestRutasDeBookingPorRol` (gateway) | Matriz de roles de las 13 rutas | Escrito; no ejecutado |
+| `postgres.TestBookingPostgres` (10 subtests) | Catálogo, horarios superpuestos, regeneración, **10 reservas simultáneas por el último lugar**, duplicado, idempotencia, superposición, Musculación diaria, cancelación, capacidad, cancelación de clase, ingreso, reingreso, ausencias y restricciones de la base | **Ejecutado con PostgreSQL 16 real: pasa** |
+| `server.TestRutasDeBookingPorRol` (gateway) | Matriz de roles de las 13 rutas | **Ejecutado: pasa** |
 
-`go vet` y `gofmt` pasan en dominio, puertos y casos de uso. El resto del código se
-revisó con el analizador de Go del editor, sin errores, pero no se compiló: el equipo
-de desarrollo no tiene espacio para compilar las dependencias.
+El 10/11/2026 se ejecutaron `go vet ./...` y
+`go test -count=1 -timeout 15m ./...` en Booking, Members y Gateway con
+`REQUIRE_DOCKER_TESTS=1`: todos aprobaron. También aprobaron
+`npm.cmd ci --no-audit --no-fund` y `npm.cmd run build` en `web`
+(TypeScript y Vite 6.4.3). Go 1.26.1, Node 22.18.0 y Docker 29.6.1.
 
 ## 4. Pendiente de otras etapas
 
@@ -107,15 +116,42 @@ claves y `GYM_INTERNAL_SERVICE_KEY`):
 BOOKING_ENABLED=true
 ```
 
-## 6. Verificación pendiente
+## 6. Verificación reproducible
+
+Desde la raíz, con Docker iniciado:
+
+```text
+go run ./tests/e2e/identity/main.go -booking
+```
+
+Levanta PostgreSQL 16 y Mailpit con nombres y puertos exclusivos, compila y ejecuta
+Members, Benefits, Booking y Gateway reales y elimina únicamente sus contenedores
+al terminar. No usa `.env`, no toca producción ni los datos del stack habitual.
+El informe queda en
+`docs/evidence/entrega-final/etapa4/booking-e2e.json`.
+
+Además de la regresión de identidad y membresías, verifica altas y activación,
+profesor responsable, catálogo, horarios, generación sin duplicados, búsqueda,
+reserva idempotente, duplicado, cancelación y cupo, permisos, clases del profesor,
+plazo de cancelación, ingreso por DNI, reingreso, evento único, DNI inexistente y
+cierre automático con ausencia visible en el historial. Las fechas del ingreso y
+la ausencia se preparan como fixtures SQL en la base aislada, sin esperar en tiempo
+real; clase histórica y reserva se insertan atómicamente para evitar una carrera
+con el proceso de cierre. La concurrencia por el último lugar se verifica en
+`TestBookingPostgres`.
+
+El navegador no está automatizado. La guía siguiente se conserva para revisión
+visual durante el cierre transversal del frontend (etapa 11). Los 500 puntos del
+ingreso representan el hecho registrado; consumirlo y modificar el saldo pertenece
+a la etapa 6.
 
 Desde la raíz, con Docker en marcha:
 
-- [ ] `cd services/booking-service && go vet ./... && go test ./...` — `TestBookingPostgres`
+- [x] `cd services/booking-service && go vet ./... && go test ./...` — `TestBookingPostgres`
   no debe saltearse. Si Ryuk falla: `TESTCONTAINERS_RYUK_DISABLED=true`.
-- [ ] `cd services/members-service && go vet ./... && go test ./...`.
-- [ ] `cd gateway && go vet ./... && go test ./...`.
-- [ ] `npm --prefix web ci && npm --prefix web run build`.
+- [x] `cd services/members-service && go vet ./... && go test ./...`.
+- [x] `cd gateway && go vet ./... && go test ./...`.
+- [x] `npm.cmd --prefix web ci && npm.cmd --prefix web run build`.
 
 Prueba manual con `make up`, identidad y booking habilitados:
 
