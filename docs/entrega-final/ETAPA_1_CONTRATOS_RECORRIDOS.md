@@ -16,7 +16,7 @@ Fecha: 9 de noviembre de 2026. Base: `main` en `fff9383` (PR #15). Rama:
 | Códigos de error nuevos | [ARCHITECTURE §12.1](../ARCHITECTURE.md#121-errores--rfc-7807-applicationproblemjson) |
 | Priorización, rutas, matriz, wireflows, datos y recursos | Este documento |
 
-## 1. Historias priorizadas (propuesta para confirmar)
+## 1. Historias priorizadas (confirmadas, D-81)
 
 Criterio: **P1** es lo que exige el recorrido principal y los requisitos obligatorios de
 la presentación; **P2** completa el SPEC; **fuera** quedó descartado por el equipo.
@@ -44,7 +44,7 @@ activación actual (`/#activate=<token>`) se conserva.
 | Pública | `/` | Inicio institucional | Todos |
 | Pública | `/login` | Login | Todos |
 | Pública | `/#activate=…` | Elegir contraseña o confirmar vinculación | Persona con enlace |
-| Pública | `/recepcion` | Terminal de ingreso por DNI | Terminal autorizada (§7.2) |
+| Administración | `/recepcion` | Pantalla de ingreso por DNI | ADMINISTRADOR (D-82) |
 | Alumno | `/app` | Resumen: membresía, próximas reservas y saldo | ALUMNO |
 | Alumno | `/app/clases` y `/app/clases/:id` | Búsqueda y detalle; reservar | ALUMNO |
 | Alumno | `/app/reservas` | Mis reservas e historial; cancelar | ALUMNO |
@@ -89,7 +89,7 @@ Estados comunes a todas las pantallas: **cargando**, **error** (con `correlation
 | Mis puntos | GET /benefits/me, GET /benefits/me/movements | ALUMNO | Sin movimientos; cuenta en creación | 404 `CUENTA_NO_ENCONTRADA` |
 | Entrenamiento | GET /training/plans/me | ALUMNO | Sin plan (CA-17.2) | 404 |
 | Nutrición | GET /nutrition/plans/me, GET y POST /nutrition/questions… | ALUMNO | Sin plan; consulta pendiente o respondida | `SIN_NUTRICIONISTA` |
-| Terminal de recepción | POST /check-ins | Terminal | Verde "Bienvenido" / "Bienvenido de nuevo"; rojo con motivo | `MEMBRESIA_NO_VIGENTE`, `SIN_RESERVA_PARA_HORARIO`, `USUARIO_INACTIVO`, 404 sin datos |
+| Pantalla de recepción | POST /check-ins | ADMINISTRADOR | Verde "Bienvenido" / "Bienvenido de nuevo"; rojo con motivo | `MEMBRESIA_NO_VIGENTE`, `SIN_RESERVA_PARA_HORARIO`, `USUARIO_INACTIVO`, 404 sin datos |
 | Personas (admin) | GET /users, POST /users, PUT /users/{id}, POST /users/{id}/deactivate | ADMINISTRADOR | Vacío; activación pendiente; inactiva | `PERSONA_DUPLICADA`, `TRANSICION_INVALIDA` |
 | Detalle de persona (admin) | GET /users/{id}, GET /memberships/users/{id}, POST /memberships, renew, cancel, assignments | ADMINISTRADOR | Sin membresía; asignaciones vigentes e históricas | `MEMBRESIAS_SUPERPUESTAS`, `TRANSICION_MEMBRESIA_INVALIDA`, `ASIGNACION_DUPLICADA` |
 | Actividades (admin) | GET/POST/PUT /activities, schedules, POST /classes/generate | ADMINISTRADOR | Generación sin duplicados | 400 (franja o responsable inválidos), `SUPERPOSICION_PROFESOR` |
@@ -154,7 +154,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    K[Terminal de recepción] --> D[Teclado: DNI]
+    K[Pantalla de recepción] --> D[Teclado: DNI]
     D --> V{POST /check-ins}
     V -->|201| G1[Verde: Bienvenido + clase]
     V -->|200| G2[Verde: Bienvenido de nuevo]
@@ -197,30 +197,24 @@ No se inventan: hasta tenerlos se usan placeholders explícitos (DISENO_FRONTEND
 | Iconografía de estados (reserva, membresía, movimiento) | A definir en la etapa 11 con un set libre |
 | Diseño de la capacidad externa | Depende del proveedor (D9) |
 
-## 7. Decisiones abiertas para el equipo
+## 7. Decisiones del equipo
 
-1. **Prioridad de §1.** Confirmar qué historias entran antes de la presentación.
-2. **Credencial de la terminal de recepción (HU-22).** Hoy no existe. Opciones: (a) un
-   usuario con un rol nuevo `RECEPCION`, que solo puede llamar a `POST /check-ins`;
-   (b) una credencial de dispositivo emitida por el administrador. Cualquiera de las dos
-   requiere ADR, porque cambia la frontera de confianza (ADR-006).
-3. **Estado de notificaciones para el administrador (CL-14).** El gateway no tiene un
-   prefijo hacia notification-worker. Opciones: agregar `/api/v1/notifications`
-   (cambia ARCHITECTURE §5.2) o que el administrador lo consulte por logs y el tablero.
-4. **Rutas del frontend.** Implementarlas sin dependencias nuevas o incorporar una
-   librería de ruteo (herramienta nueva, requiere justificación según la regla académica).
-5. **Documento de diseño que manda en la etapa 11:** `DISENO_FRONTEND.md` o el plan FD
-   (`docs/PLAN_DISENO_FRONTEND.md`).
-6. **Registrar como decisión las reglas del padrón** respondidas el 09/11/2026:
-   activación por correo para altas del administrador; completar al usuario externo con
-   el mismo email; DNI de 7 u 8 dígitos y sin edad mínima; rate limiting con Redis solo
-   en local.
-7. **Recorrido principal:** confirmar el cambio del paso 8 (sin canjes) propuesto en la
-   [etapa 0](ETAPA_0_LINEA_BASE.md#4-recorrido-principal).
+Las siete preguntas abiertas de esta etapa se resolvieron el 09/11/2026 y están en
+[DECISIONES.md](../DECISIONES.md).
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | Qué historias entran antes de la presentación | P1 de §1; P2 solo si queda tiempo. Orden: Booking (4), Booking → Benefits (6) y notificación (5). **D-81** |
+| 2 | Credencial de la terminal de recepción (HU-22) | El ADMINISTRADOR registra el ingreso desde la pantalla de recepción; sin rol ni credencial nueva, sin ADR. `RECEPCION` queda como mejora futura. **D-82** |
+| 3 | Estado de notificaciones para el administrador (CL-14) | Logs y tablero de observabilidad (etapa 14); no se agrega `/api/v1/notifications`. **D-83** |
+| 4 | Rutas del frontend | Sin librería nueva: rutas `#/...` de `web/src/router.ts`. **D-80** |
+| 5 | Documento de diseño de la etapa 11 | Manda [DISENO_FRONTEND.md](DISENO_FRONTEND.md); el plan FD queda como referencia visual. **D-84** |
+| 6 | Reglas del padrón | Registradas. **D-78** y **D-79** |
+| 7 | Paso 8 del recorrido principal | Confirmado: saldo, movimientos y acreditación por la API v2, sin canjes. **D-85** |
 
 ## 8. Verificación del criterio de aceptación
 
 Cada pantalla de §2 aparece en la matriz de §3 con su endpoint, su permiso, sus estados
 y sus errores; cada endpoint de la matriz está definido en un contrato de `docs/api/`.
 Las únicas pantallas sin contrato propio son la de la capacidad externa (depende de D9)
-y la de notificaciones (decisión 7.3).
+y la de notificaciones, que se reemplaza por logs y tablero (D-83).

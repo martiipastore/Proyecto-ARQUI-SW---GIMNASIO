@@ -4,6 +4,12 @@ import { AccountPage } from './pages/AccountPage';
 import { ActivationPage } from './pages/ActivationPage';
 import { PeoplePage } from './pages/admin/PeoplePage';
 import { PersonPage } from './pages/admin/PersonPage';
+import { ActivitiesPage } from './pages/booking/ActivitiesPage';
+import { ClassDetailPage } from './pages/booking/ClassDetailPage';
+import { ClassesPage } from './pages/booking/ClassesPage';
+import { MyBookingsPage } from './pages/booking/MyBookingsPage';
+import { MyClassesPage } from './pages/booking/MyClassesPage';
+import { ReceptionPage } from './pages/booking/ReceptionPage';
 import { AccessDeniedPage, NotFoundPage } from './pages/InfoPages';
 import { LoginPage } from './pages/LoginPage';
 import { MyStudentsPage } from './pages/MyStudentsPage';
@@ -29,23 +35,37 @@ const ROUTES: Record<string, RouteDef> = {
   '/activar': { roles: [], render: () => <ActivationPage token={activationToken} /> },
   '/cuenta': { roles: ALL_ROLES, render: () => <AccountPage /> },
   '/app': { roles: ['ALUMNO'], render: () => <StudentHomePage /> },
+  '/app/clases': { roles: ['ALUMNO'], render: () => <ClassesPage /> },
+  '/app/reservas': { roles: ['ALUMNO'], render: () => <MyBookingsPage /> },
   '/admin': { roles: ['ADMINISTRADOR'], render: () => <Redirect to="/admin/personas" /> },
   '/admin/personas': { roles: ['ADMINISTRADOR'], render: () => <PeoplePage /> },
+  '/admin/actividades': { roles: ['ADMINISTRADOR'], render: () => <ActivitiesPage /> },
+  '/admin/clases': { roles: ['ADMINISTRADOR'], render: () => <ClassesPage /> },
+  // Ingreso por DNI: lo opera el administrador (D-82).
+  '/recepcion': { roles: ['ADMINISTRADOR'], render: () => <ReceptionPage /> },
+  '/prof/clases': { roles: ['PROFESOR'], render: () => <MyClassesPage /> },
   // Pública como /api/v1/status: sirve para verificar el stack aunque la
   // identidad esté apagada en local (valor por defecto del Compose).
   '/estado': { roles: [], render: () => <SystemStatusPage /> },
-  // Mis clases (etapa 4) y planes (etapa 10) se suman a estos inicios.
-  '/prof': { roles: ['PROFESOR'], render: () => <MyStudentsPage title="Mis alumnos" /> },
+  // Los planes (etapa 10) se suman a estos inicios.
+  '/prof':{ roles: ['PROFESOR'], render: () => <MyStudentsPage title="Mis alumnos" /> },
   '/nutri': { roles: ['NUTRICIONISTA'], render: () => <MyStudentsPage title="Mis pacientes" /> },
 };
 
-// Rutas con parámetro: el detalle de una persona lleva su id en la dirección.
+// Rutas con parámetro: el detalle de una persona o una clase lleva su id.
 const PERSON_ROUTE = /^\/admin\/personas\/([0-9a-fA-F-]{36})$/;
+const CLASS_ROUTE = /^\/(admin|prof)\/clases\/([0-9a-fA-F-]{36})$/;
 
 const NAV: Record<Role, { path: string; label: string }[]> = {
-  ALUMNO: [{ path: '/app', label: 'Inicio' }],
-  ADMINISTRADOR: [{ path: '/admin/personas', label: 'Personas' }, { path: '/estado', label: 'Estado del sistema' }],
-  PROFESOR: [{ path: '/prof', label: 'Mis alumnos' }],
+  ALUMNO: [{ path: '/app', label: 'Inicio' }, { path: '/app/clases', label: 'Clases' }, { path: '/app/reservas', label: 'Mis reservas' }],
+  ADMINISTRADOR: [
+    { path: '/admin/personas', label: 'Personas' },
+    { path: '/admin/actividades', label: 'Actividades' },
+    { path: '/admin/clases', label: 'Clases' },
+    { path: '/recepcion', label: 'Recepción' },
+    { path: '/estado', label: 'Estado del sistema' },
+  ],
+  PROFESOR: [{ path: '/prof/clases', label: 'Mis clases' }, { path: '/prof', label: 'Mis alumnos' }],
   NUTRICIONISTA: [{ path: '/nutri', label: 'Mis pacientes' }],
 };
 
@@ -64,6 +84,13 @@ function Screen({ path }: { path: string }) {
     if (!user) return <Redirect to="/login" />;
     if (user.role !== 'ADMINISTRADOR') return <AccessDeniedPage />;
     return <PersonPage key={person[1]} id={person[1]} />;
+  }
+  const clase = CLASS_ROUTE.exec(path);
+  if (clase) {
+    if (!user) return <Redirect to="/login" />;
+    const allowed = clase[1] === 'admin' ? user.role === 'ADMINISTRADOR' : user.role === 'PROFESOR';
+    if (!allowed) return <AccessDeniedPage />;
+    return <ClassDetailPage key={clase[2]} id={clase[2]} />;
   }
   const route = ROUTES[path];
   if (!route) return <NotFoundPage />;

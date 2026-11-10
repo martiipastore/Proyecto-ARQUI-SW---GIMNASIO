@@ -25,7 +25,7 @@ type PeopleRepository interface {
 	Revoke(ctx context.Context, actor, professional, student string, now time.Time) (model.Assignment, error)
 	Assignments(ctx context.Context, person string) ([]model.Assignment, error)
 	StudentsOf(ctx context.Context, professional string) ([]model.Assignment, error)
-	StudentsByID(ctx context.Context, ids []string) ([]model.StudentSummary, error)
+	SummariesByID(ctx context.Context, ids []string, role string) ([]model.StudentSummary, error)
 	StudentByDNI(ctx context.Context, dni string) (model.StudentSummary, error)
 	ActiveAssignment(ctx context.Context, professional, student string) (bool, error)
 	EnsureAdmin(ctx context.Context, id, email, name string, hash []byte) (bool, error)
@@ -272,6 +272,16 @@ func (s *People) MyStudents(ctx context.Context, actor, actorRole string) ([]mod
 
 // StudentsByID entrega datos mínimos a otros servicios (API interna, HU-21).
 func (s *People) StudentsByID(ctx context.Context, ids []string) ([]model.StudentSummary, error) {
+	return s.summaries(ctx, ids, access.Student)
+}
+
+// TeachersByID permite a booking validar que el responsable de un horario sea un
+// PROFESOR activo (RN-08, CA-07.6); un nutricionista no aparece en la respuesta.
+func (s *People) TeachersByID(ctx context.Context, ids []string) ([]model.StudentSummary, error) {
+	return s.summaries(ctx, ids, access.Teacher)
+}
+
+func (s *People) summaries(ctx context.Context, ids []string, role string) ([]model.StudentSummary, error) {
 	if len(ids) == 0 || len(ids) > 100 {
 		return nil, model.ErrInvalid
 	}
@@ -280,7 +290,7 @@ func (s *People) StudentsByID(ctx context.Context, ids []string) ([]model.Studen
 			return nil, model.ErrInvalid
 		}
 	}
-	return s.repo.StudentsByID(ctx, ids)
+	return s.repo.SummariesByID(ctx, ids, role)
 }
 
 // StudentByDNI identifica al alumno en el ingreso por DNI (etapa 4, D-36).

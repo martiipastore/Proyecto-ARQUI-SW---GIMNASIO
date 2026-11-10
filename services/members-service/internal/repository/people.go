@@ -305,8 +305,8 @@ func (p *Postgres) StudentsOf(ctx context.Context, professional string) ([]model
 	return p.assignmentList(ctx, ` WHERE a.profesional_id=$1 AND a.hasta IS NULL AND s.estado='ACTIVO' ORDER BY s.apellido,s.nombre`, professional)
 }
 
-func (p *Postgres) StudentsByID(ctx context.Context, ids []string) ([]model.StudentSummary, error) {
-	rows, err := p.pool.Query(ctx, `SELECT id::text,nombre,apellido,estado FROM usuarios WHERE id=ANY($1::uuid[]) AND rol='ALUMNO' ORDER BY id`, ids)
+func (p *Postgres) SummariesByID(ctx context.Context, ids []string, role string) ([]model.StudentSummary, error) {
+	rows, err := p.pool.Query(ctx, `SELECT id::text,nombre,apellido,estado FROM usuarios WHERE id=ANY($1::uuid[]) AND rol=$2 ORDER BY id`, ids, role)
 	if err != nil {
 		return nil, err
 	}

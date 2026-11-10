@@ -116,3 +116,37 @@ func TestMisAlumnosSoloProfesionales(t *testing.T) {
 	teacher := map[string]string{"Authorization": "Bearer " + testJWT(t, access.Teacher, time.Now())}
 	require.Equal(t, 403, f.do("GET", "/api/v1/users", teacher).Code, "el listado completo es solo de administración")
 }
+
+// booking.v1, D-15 y D-82: matriz gruesa de roles de booking en el gateway.
+func TestRutasDeBookingPorRol(t *testing.T) {
+	f := newFixture(t, nil)
+	const id = "00000000-0000-4000-8000-000000000010"
+	casos := []struct {
+		method, path string
+		permitido    map[string]bool
+	}{
+		{"GET", "/api/v1/activities", map[string]bool{access.Student: true, access.Teacher: true, access.Nutritionist: true}},
+		{"POST", "/api/v1/activities", nil},
+		{"POST", "/api/v1/activities/" + id + "/schedules", nil},
+		{"POST", "/api/v1/classes/generate", nil},
+		{"GET", "/api/v1/classes", map[string]bool{access.Student: true, access.Teacher: true}},
+		{"GET", "/api/v1/classes/" + id, map[string]bool{access.Student: true, access.Teacher: true}},
+		{"GET", "/api/v1/classes/mine", map[string]bool{access.Teacher: true}},
+		{"PUT", "/api/v1/classes/" + id + "/capacity", nil},
+		{"POST", "/api/v1/classes/" + id + "/cancel", nil},
+		{"POST", "/api/v1/bookings", map[string]bool{access.Student: true}},
+		{"GET", "/api/v1/bookings/me", map[string]bool{access.Student: true}},
+		{"POST", "/api/v1/bookings/" + id + "/cancel", map[string]bool{access.Student: true}},
+		{"POST", "/api/v1/check-ins", nil},
+	}
+	for _, c := range casos {
+		for _, role := range []string{access.Student, access.Teacher, access.Nutritionist, access.Admin} {
+			want := 403
+			if role == access.Admin || c.permitido[role] {
+				want = 200
+			}
+			headers := map[string]string{"Authorization": "Bearer " + testJWT(t, role, time.Now())}
+			require.Equal(t, want, f.do(c.method, c.path, headers).Code, "%s %s como %s", c.method, c.path, role)
+		}
+	}
+}

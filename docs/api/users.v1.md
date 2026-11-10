@@ -88,12 +88,13 @@ desde ese momento, sin período de gracia (RN-30); la historia se conserva.
 | Método y ruta | Consumidor | Respuesta |
 |---|---|---|
 | GET /internal/v1/alumnos?ids=a,b | booking (listados, HU-21) | `{items:[{id,nombre,apellido,estado}]}`; hasta 100 ids |
+| GET /internal/v1/profesores?ids=a,b | booking (responsable de horarios, RN-08, CA-07.6) | Igual que alumnos, solo con personas de rol PROFESOR; un nutricionista no aparece. Agregado en la etapa 4 |
 | POST /internal/v1/alumnos/buscar-dni con `{"dni":"…"}` | booking (ingreso por DNI, HU-22) | `{id,nombre,apellido,estado}` o 404 |
 | GET /internal/v1/asignaciones?profesional_id=&alumno_id= | training (RN-30) | `{"vigente":true}`; sin caché (D-33) |
-| GET /internal/v1/alumnos/{id}/vigencia?fechas=AAAA-MM-DD,… | booking (reservar, RN-12) | `{alumno_activo, vigente_hoy, vigente_en:{fecha:{vigente, membresia_id}}, evaluado_en}`; hasta 31 fechas; un alumno dado de baja no tiene vigencia (ARCHITECTURE §4.2) |
+| GET /internal/v1/alumnos/{id}/vigencia?fechas=AAAA-MM-DD,… | booking (reservar, RN-12; ingreso, D-36) | `{alumno_activo, vigente_hoy, vence_hoy, vigente_en:{fecha:{vigente, membresia_id, vence}}, evaluado_en}`; `vence` es la fecha de vencimiento de la membresía que cubre la fecha (agregado opcional de la etapa 4); hasta 31 fechas; un alumno dado de baja no tiene vigencia (ARCHITECTURE §4.2) |
 
 Ejemplo de vigencia:
 
 ```json
-{"alumno_activo":true,"vigente_hoy":true,"vigente_en":{"2026-11-20":{"vigente":true,"membresia_id":"…"},"2026-12-20":{"vigente":false,"membresia_id":null}},"evaluado_en":"2026-11-09T15:00:00Z"}
+{"alumno_activo":true,"vigente_hoy":true,"vence_hoy":"2026-12-08","vigente_en":{"2026-11-20":{"vigente":true,"membresia_id":"…","vence":"2026-12-08"},"2026-12-20":{"vigente":false,"membresia_id":null,"vence":null}},"evaluado_en":"2026-11-09T15:00:00Z"}
 ```

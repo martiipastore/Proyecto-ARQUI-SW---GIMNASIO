@@ -158,6 +158,10 @@ services:
       <<: *go-env
       BOOKING_HTTP_ADDR: ":8082"
       BOOKING_DB_DSN: postgres://booking_user:${BOOKING_DB_PASSWORD}@postgres:5432/booking_db?sslmode=disable
+      BOOKING_ENABLED: ${BOOKING_ENABLED:-false}
+      BOOKING_MEMBERS_URL: http://members-service:8081
+      BOOKING_CLOSE_INTERVAL: ${BOOKING_CLOSE_INTERVAL:-30s}
+      GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
     ports:
       - "127.0.0.1:8082:8082"
     depends_on:

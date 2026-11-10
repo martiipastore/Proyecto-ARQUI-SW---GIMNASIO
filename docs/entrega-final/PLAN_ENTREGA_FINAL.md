@@ -79,7 +79,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 1 — Contratos y diseño de recorridos
 
-**Estado:** Desarrollada el 09/11/2026; falta la revisión del equipo y sus decisiones abiertas. Ver [ETAPA_1_CONTRATOS_RECORRIDOS.md](ETAPA_1_CONTRATOS_RECORRIDOS.md) y los contratos de [docs/api](../api/README.md).
+**Estado:** Cerrada el 09/11/2026; sus siete decisiones abiertas se resolvieron en D-78 a D-85. Ver [ETAPA_1_CONTRATOS_RECORRIDOS.md](ETAPA_1_CONTRATOS_RECORRIDOS.md) y los contratos de [docs/api](../api/README.md).
 
 **Objetivo:** evitar que frontend y servicios evolucionen con contratos implícitos.
 
@@ -129,7 +129,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 4 — Booking, clases y reservas
 
-**Estado:** Pendiente.
+**Estado:** Desarrollada el 09/11/2026: actividades, horarios, generación, reservas, cancelación, ingreso por DNI, ausencias y pantallas. Tests de dominio y casos de uso aprobados; falta correr la integración con Docker, el build del frontend y la prueba manual. Ver [ETAPA_4_BOOKING.md](ETAPA_4_BOOKING.md).
 
 **Objetivo:** implementar el núcleo operativo de actividades, clases, reservas e ingreso.
 
@@ -408,10 +408,10 @@ Actualizado el 09/11/2026 según el inventario de la [etapa 0](ETAPA_0_LINEA_BAS
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
 | 0. Línea base | Documentada; falta la ejecución completa con Docker | Equipo con espacio en disco y Docker |
-| 1. Contratos y recorridos | Desarrollada; pendiente la revisión del equipo y 7 decisiones abiertas | Revisión del equipo |
+| 1. Contratos y recorridos | Cerrada; decisiones resueltas en D-78 a D-85 | — |
 | 2. Identidad | Desarrollada: backend de CB-03 y frontend con login, sesión y rutas por rol; falta build y prueba manual | Members y Gateway |
 | 3. Members | Desarrollada: padrón, asignaciones, vigencia y pantallas; falta compilar, tests de integración con Docker y build del frontend | Contratos internos |
-| 4. Booking | Pendiente | Members operativo |
+| 4. Booking | Desarrollada: dominio y casos de uso probados; falta integración con Docker, build y prueba manual | Members operativo |
 | 5. Mensajería | Pendiente (outbox de Members sin publicador) | Members y RabbitMQ |
 | 6. Booking → Benefits | Pendiente | Booking y mensajería |
 | 7. Benefits completo | Reducida por D-76: queda la gestión de partners e integraciones | Ledger existente |
