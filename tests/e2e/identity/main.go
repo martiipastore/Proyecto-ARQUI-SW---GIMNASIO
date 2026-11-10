@@ -53,6 +53,7 @@ var withMemberships = flag.Bool("memberships", false, "agregar escenarios CB-04 
 var withBooking = flag.Bool("booking", false, "verificar el recorrido de reservas de la etapa 4 con servicios reales")
 var withMessaging = flag.Bool("messaging", false, "agregar RabbitMQ, MongoDB y notificaciones de la etapa 5")
 var withAttendance = flag.Bool("attendance", false, "agregar consumo Booking → Benefits, historial y recuperación de etapa 6")
+var withClub = flag.Bool("club", false, "agregar administración del Club de etapa 7: integraciones, vinculación y reversiones")
 
 func must(err error) {
 	if err != nil {
@@ -631,6 +632,9 @@ func run() {
 		if *withAttendance {
 			attendanceFlow(gatewayURL, benefitsURL, mailURL, membersEnv["MEMBERS_AMQP_URL"], passwordUser, today, sql, adminHeaders, login, func() { stopBenefits() }, resumeBenefits)
 		}
+		if *withClub {
+			clubFlow(gatewayURL, benefitsURL, passwordUser, sql, adminHeaders, login)
+		}
 	}
 	result.Passed = true
 }
@@ -958,8 +962,126 @@ func attendanceFlow(base, benefitsURL, mailURL, amqpURL, password, today string,
 	mark("puntos_evento_invalido_en_DLQ_sin_modificar_ledger")
 }
 
+// clubFlow cubre la etapa 7: HU-10 (CA-10.1 a 10.4), HU-11 (CA-11.1 a 11.3),
+// CA-35.3 y HU-CB-07. Todas las operaciones pasan por el gateway con JWT real;
+// SQL solo inspecciona resultados. Catálogo, canjes y débitos quedan fuera (D-76).
+func clubFlow(base, benefitsURL, password string, sql func(string, string) string, admin func(string) map[string]string, login func(string, string, int) string) {
+	student := sql("members_db", "SELECT id FROM usuarios WHERE email='booking-student@example.test';")
+	other := sql("members_db", "SELECT id FROM usuarios WHERE email='recovery-student@example.test';")
+	studentJWT := login("booking-student@example.test", password, 200)
+	bearer := func(token string) map[string]string { return map[string]string{"Authorization": "Bearer " + token} }
+	ledgerOK := func(user string) {
+		ensure(sql("benefits_db", fmt.Sprintf("SELECT c.saldo>=0 AND c.saldo=COALESCE(sum(m.puntos),0) AND c.ultima_secuencia=count(m.id) FROM cuentas c JOIN movimientos_puntos m ON m.cuenta_id=c.id WHERE c.alumno_id='%s' GROUP BY c.id;", user)) == "t", "Ledger no explica el saldo")
+	}
+
+	status, created := request(base, "POST", "/api/v1/benefits/partners", admin(""), map[string]any{"nombre": "Integración E2E", "max_puntos_operacion": 1000, "max_puntos_dia": 5000, "max_solicitudes_minuto": 600})
+	ensure(status == 201 && created["estado"] == "ACTIVO" && created["permite_registro"] == false, "Alta de integración incorrecta")
+	partner, key := created["id"].(string), created["api_key"].(string)
+	ensure(len(key) == 64, "API key no emitida")
+	ensure(sql("benefits_db", fmt.Sprintf("SELECT api_key_hash=sha256(convert_to('%s','UTF8')) FROM partners WHERE id='%s';", key, partner)) == "t", "No guarda solo el hash")
+	status, list := request(base, "GET", "/api/v1/benefits/partners", admin(""), nil)
+	raw, err := json.Marshal(list)
+	must(err)
+	ensure(status == 200 && !strings.Contains(string(raw), key), "El listado expone la API key")
+	mark("club_alta_integracion_activa_y_api_key_una_sola_vez")
+
+	status, _ = request(base, "GET", "/api/v1/benefits/partners", bearer(studentJWT), nil)
+	ensure(status == 403, "Alumno administra integraciones")
+	status, _ = request(base, "POST", "/api/v1/benefits/movements/"+uuid()+"/revert", map[string]string{"Authorization": "Bearer " + studentJWT, "Idempotency-Key": "alumno-revert-01", "X-User-Role": "ADMINISTRADOR"}, map[string]string{"motivo": "Escalada"})
+	ensure(status == 403, "Cabecera de rol falsa aceptada")
+	status, _ = request(benefitsURL, "GET", "/api/v1/benefits/partners", map[string]string{"X-User-Id": student, "X-User-Role": "ADMINISTRADOR"}, nil)
+	ensure(status == 401, "Benefits acepta identidad sin el gateway")
+	mark("club_solo_administrador_e_identidad_del_gateway")
+
+	link := func(user, external string) int {
+		status, _ := request(base, "POST", "/api/v1/benefits/partners/"+partner+"/links", admin(""), map[string]string{"usuario_id": user, "external_user_id": external})
+		return status
+	}
+	ensure(link(student, "socio-e2e") == 201, "No vincula la cuenta")
+	ensure(link(student, "socio-e2e") == 200, "Vínculo repetido con efectos")
+	ensure(link(other, "socio-e2e") == 409, "CA-10.4: identificador reutilizado")
+	partnerHeaders := func(apiKey, idem string) map[string]string {
+		return map[string]string{"X-API-Key": apiKey, "Idempotency-Key": idem}
+	}
+	status, credit := request(base, "POST", "/partner-api/v2/accounts/socio-e2e/credits", partnerHeaders(key, "club-e2e-credit-01"), map[string]any{"eventId": "club-e2e-01", "points": 100, "reason": "Compra vinculada E2E", "reference": "club-e2e-01"})
+	ensure(status == 201, "CA-10.3: el partner no opera con su identificador")
+	creditID := credit["movementId"].(string)
+	ledgerOK(student)
+	mark("club_vinculacion_CA10_3_y_rechazo_CA10_4")
+
+	status, rotated := request(base, "POST", "/api/v1/benefits/partners/"+partner+"/rotate-key", admin(""), nil)
+	ensure(status == 200, "No rota la credencial")
+	newKey := rotated["api_key"].(string)
+	status, _ = request(base, "GET", "/partner-api/v2/accounts/socio-e2e/balance", map[string]string{"X-API-Key": key}, nil)
+	ensure(status == 401, "La key anterior sigue vigente")
+	status, _ = request(base, "GET", "/partner-api/v2/accounts/socio-e2e/balance", map[string]string{"X-API-Key": newKey}, nil)
+	ensure(status == 200, "La key nueva no autentica")
+	config := map[string]any{"nombre": "Integración E2E", "activo": false, "permite_consulta": true, "permite_puntos": true, "permite_registro": false, "requiere_evento": true, "max_puntos_operacion": 1000, "max_puntos_dia": 5000, "max_solicitudes_minuto": 600}
+	status, _ = request(base, "PUT", "/api/v1/benefits/partners/"+partner, admin(""), config)
+	ensure(status == 200, "No desactiva la integración")
+	status, _ = request(base, "GET", "/partner-api/v2/accounts/socio-e2e/balance", map[string]string{"X-API-Key": newKey}, nil)
+	ensure(status == 403, "CA-10.2: integración inactiva opera")
+	config["activo"] = true
+	status, _ = request(base, "PUT", "/api/v1/benefits/partners/"+partner, admin(""), config)
+	ensure(status == 200, "No reactiva la integración")
+	ensure(sql("benefits_db", fmt.Sprintf("SELECT count(*) FROM auditoria_club WHERE partner_id='%s';", partner)) == "5", "Auditoría incompleta")
+	mark("club_rotacion_revoca_key_anterior_desactivacion_CA10_2_y_auditoria")
+
+	before := sql("benefits_db", fmt.Sprintf("SELECT saldo FROM cuentas WHERE alumno_id='%s';", student))
+	revert := func(movement, idem, reason string) (int, map[string]any) {
+		return request(base, "POST", "/api/v1/benefits/movements/"+movement+"/revert", admin(idem), map[string]string{"motivo": reason})
+	}
+	status, reverted := revert(creditID, "club-revert-0001", "Compra anulada")
+	ensure(status == 201 && reverted["movimiento"].(map[string]any)["puntos"] == float64(-100), "CA-11.1: compensatorio incorrecto")
+	status, replay := revert(creditID, "club-revert-0001", "Compra anulada")
+	ensure(status == 200 && replay["movimiento"].(map[string]any)["id"] == reverted["movimiento"].(map[string]any)["id"], "Reintento con la misma clave duplicó")
+	status, conflict := revert(creditID, "club-revert-0001", "Otro motivo")
+	ensure(status == 409 && conflict["code"] == "CONFLICTO_IDEMPOTENCIA", "Clave reutilizada con otros datos")
+	status, again := revert(creditID, "club-revert-0002", "Compra anulada")
+	ensure(status == 409 && again["code"] == "TRANSICION_INVALIDA", "CA-11.2: revierte dos veces")
+	ledgerOK(student)
+	status, account := request(base, "GET", "/api/v1/benefits/accounts/"+student, admin(""), nil)
+	ensure(status == 200 && fmt.Sprint(account["saldo"]) == fmt.Sprint(int64(mustInt(before))-100), "Saldo administrado incorrecto")
+	states := map[string]string{}
+	for _, item := range account["items"].([]any) {
+		m := item.(map[string]any)
+		states[m["id"].(string)] = m["estado"].(string)
+	}
+	ensure(states[creditID] == "REVERTIDO", "Original no figura REVERTIDO")
+	ensure(len(account["vinculaciones"].([]any)) == 1, "Vinculaciones de la cuenta incorrectas")
+	status, own := request(base, "GET", "/api/v1/benefits/me/movements", bearer(studentJWT), nil)
+	ensure(status == 200 && own["items"].([]any)[0].(map[string]any)["origen"] == "REVERSION", "El alumno no ve la reversión")
+	status, partnerPage := request(base, "GET", "/partner-api/v2/accounts/socio-e2e/movements", map[string]string{"X-API-Key": newKey}, nil)
+	ensure(status == 200 && partnerPage["totalItems"] == float64(1), "RN-26: el partner ve movimientos ajenos")
+	mark("club_reversion_CA11_1_CA11_2_idempotente_estado_y_aislamiento")
+
+	attendance := sql("benefits_db", fmt.Sprintf("SELECT m.id FROM movimientos_puntos m JOIN cuentas c ON c.id=m.cuenta_id WHERE c.alumno_id='%s' AND m.tipo='ASISTENCIA' LIMIT 1;", student))
+	current := mustInt(sql("benefits_db", fmt.Sprintf("SELECT saldo FROM cuentas WHERE alumno_id='%s';", student)))
+	status, result := revert(attendance, "club-revert-0003", "Ingreso registrado por error")
+	// El orden asistencia/ausencia de la etapa 6 deja 400 o 500: con 400 aplica
+	// CA-11.3 (saldo insuficiente); con 500 la reversión procede (CA-35.3).
+	if current >= 500 {
+		ensure(status == 201, "CA-35.3: no revierte la asistencia")
+	} else {
+		ensure(status == 422 && result["code"] == "SALDO_INSUFICIENTE", "CA-11.3: saldo negativo permitido")
+	}
+	ensure(sql("booking_db", fmt.Sprintf("SELECT count(*) FROM reservas WHERE alumno_id='%s' AND estado='ASISTIDA';", student)) == "1", "La reversión modificó la asistencia")
+	ledgerOK(student)
+	mark("club_reversion_asistencia_CA35_3_o_saldo_insuficiente_CA11_3")
+}
+
+func mustInt(s string) int {
+	var n int
+	_, err := fmt.Sscanf(s, "%d", &n)
+	must(err)
+	return n
+}
+
 func main() {
 	flag.Parse()
+	if *withClub {
+		*withAttendance = true
+	}
 	if *withAttendance {
 		*withMessaging = true
 	}
@@ -984,6 +1106,10 @@ func main() {
 	if *withAttendance {
 		result.Stage = "Entrega final - etapa 6"
 		result.Scope += "; Booking outbox, real Benefits consumer, internal points ledger, own movement history, deduplication and Benefits restart"
+	}
+	if *withClub {
+		result.Stage = "Entrega final - etapa 7"
+		result.Scope += "; Club administration through the gateway: integrations, one-time API keys, rotation, deactivation, account links, admin account view and idempotent reversals"
 	}
 	failed := false
 	func() {
@@ -1012,6 +1138,9 @@ func main() {
 	}
 	if *withAttendance {
 		path = filepath.Join("docs", "evidence", "entrega-final", "etapa6", "attendance-e2e.json")
+	}
+	if *withClub {
+		path = filepath.Join("docs", "evidence", "entrega-final", "etapa7", "club-e2e.json")
 	}
 	must(os.MkdirAll(filepath.Dir(path), 0755))
 	data, err := json.MarshalIndent(result, "", "  ")

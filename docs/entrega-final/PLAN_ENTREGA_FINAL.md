@@ -188,7 +188,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 > [contrato v2](../contracts/benefits-api.v2.yaml): registro, créditos, saldo
 > y movimientos. La gestión de integraciones y el despliegue siguen pendientes.
 
-**Estado:** Pendiente.
+**Estado:** Verificación técnica local cerrada el 10/11/2026 con el alcance reducido: gestión de integraciones (alta con API key única, permisos, límites, rotación, desactivación y vinculación), cuenta de una persona para el administrador y reversión idempotente de movimientos con auditoría. PostgreSQL real, vet, build y E2E de 38 escenarios aprobados. Revisión de otro integrante pendiente. Ver [ETAPA_7_CLUB.md](ETAPA_7_CLUB.md).
 
 **Objetivo:** completar catálogo, canje, administración y operaciones faltantes del contrato propio.
 
@@ -403,7 +403,7 @@ El calendario se recalibra al conocer la fecha del grupo y la capacidad externa.
 
 ## 9. Seguimiento
 
-Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4, 5 y 6 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
+Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4, 5, 6 y 7 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
 
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
@@ -414,7 +414,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 4. Booking | Verificación técnica local cerrada el 10/11: integración PostgreSQL, vet, build y 20 escenarios E2E aprobados; revisión visual en etapa 11 | Revisión de otro integrante para integrar |
 | 5. Mensajería | Verificación técnica local cerrada el 10/11: 26 escenarios E2E y retención TTL sin destino aprobados | Revisión de otro integrante para integrar |
 | 6. Booking → Benefits | Verificación técnica local cerrada el 10/11: 32 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
-| 7. Benefits completo | Reducida por D-76: queda la gestión de partners e integraciones | Ledger existente |
+| 7. Benefits completo | Reducida por D-76. Verificación técnica local cerrada el 10/11: integraciones, vinculación, cuenta para el administrador y reversiones; 38 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
 | 8. Búsqueda | Pendiente | Booking y OpenSearch |
 | 9. Caché | Pendiente | Flujo de lectura medido |
 | 10. Training y nutrición | Pendiente | Identidad y asignaciones |

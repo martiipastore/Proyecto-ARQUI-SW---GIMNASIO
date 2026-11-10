@@ -116,6 +116,9 @@ func run(cfg config.Config, log *slog.Logger) error {
 		benefitshttp.RegisterRegistrations(router, application.NewRegistro(client, db, benefits), auth, cfg.ServiceKey, log)
 		benefitshttp.RegisterAccountHistory(router, bookingEvents, cfg.ServiceKey)
 	}
+	// Etapa 7: administración del Club. Sin GYM_INTERNAL_SERVICE_KEY válida las
+	// rutas responden 401: solo el gateway autenticado puede llegar a ellas.
+	benefitshttp.RegisterAdministration(router, application.NewAdministracion(db, system.Clock{}, system.IDs{}, system.Secrets{}), cfg.ServiceKey, log)
 	router.NoRoute(benefitshttp.PartnerFallback)
 	router.NoMethod(benefitshttp.PartnerFallback)
 	return httpserver.Run(ctx, log, httpserver.Options{

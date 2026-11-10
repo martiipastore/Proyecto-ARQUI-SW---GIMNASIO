@@ -245,3 +245,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .checkin-title { font-size: 1.6rem; font-weight: 700; }
 .checkin-ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok); }
 .checkin-denied { color: var(--bad); background: var(--bad-bg); border-color: var(--bad); }
+
+/* Etapa 7: administración del Club (integraciones y cuentas). */
+.inline-form .check { display: flex; gap: 0.4rem; align-items: center; }
+.club-card input[type="checkbox"] { width: auto; }
+.plain-list { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 1rem; }
+.secret { display: block; padding: 0.6rem; overflow-wrap: anywhere; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }

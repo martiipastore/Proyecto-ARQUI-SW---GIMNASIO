@@ -11,6 +11,17 @@ type Clock struct{}
 
 func (Clock) Now() time.Time { return time.Now().UTC() }
 
+// Secrets emite API keys de 256 bits en hexadecimal, como cmd/partneradmin.
+type Secrets struct{}
+
+func (Secrets) NewSecret() (string, error) {
+	var bytes [32]byte
+	if _, err := rand.Read(bytes[:]); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", bytes[:]), nil
+}
+
 type IDs struct{}
 
 func (IDs) NewID() (string, error) {

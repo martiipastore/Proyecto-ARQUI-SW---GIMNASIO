@@ -43,14 +43,19 @@ type DatosMovimiento struct {
 	Puntos, Secuencia       int64
 	Motivo, Referencia      string
 	OcurridoEn, AplicadoEn  time.Time
+	// RevierteID identifica el original de un compensatorio (HU-11, RN-25).
+	RevierteID string
 }
 
 type MovimientoPuntos struct{ datos DatosMovimiento }
 
 func NuevoMovimiento(datos DatosMovimiento) (MovimientoPuntos, error) {
-	validoImporte := datos.PartnerID != "" && datos.Tipo == "" && datos.OrigenID == "" && datos.Puntos >= 1 && datos.Puntos <= 1000000
-	if datos.PartnerID == "" && datos.OrigenID != "" {
+	validoImporte := datos.PartnerID != "" && datos.Tipo == "" && datos.OrigenID == "" && datos.RevierteID == "" && datos.Puntos >= 1 && datos.Puntos <= 1000000
+	if datos.PartnerID == "" && datos.OrigenID != "" && datos.RevierteID == "" {
 		validoImporte = (datos.Tipo == Asistencia && datos.Puntos == 500) || (datos.Tipo == PenalizacionInasistencia && datos.Puntos >= -100 && datos.Puntos <= 0)
+	}
+	if datos.Tipo == Reversion {
+		validoImporte = datos.PartnerID == "" && datos.OrigenID == "" && datos.RevierteID != "" && datos.RevierteID != datos.ID && datos.Puntos >= -1000000 && datos.Puntos <= 100
 	}
 	if datos.ID == "" || datos.CuentaID == "" || datos.Secuencia < 1 || !validoImporte || datos.OcurridoEn.IsZero() || datos.AplicadoEn.IsZero() || !TextoValido(datos.Motivo, 3, 200) || !TextoValido(datos.Referencia, 1, 100) {
 		return MovimientoPuntos{}, ErrOperacionInvalida
@@ -107,6 +112,8 @@ func (r ResultadoOperacion) Error() error {
 type PaginaMovimientos struct {
 	Movimientos []MovimientoPuntos
 	Total       int64
+	// RevertidoPor relaciona cada original de la página con su compensatorio.
+	RevertidoPor map[string]string
 }
 
 type Partner struct {
