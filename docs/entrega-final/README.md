@@ -12,6 +12,7 @@ Esta carpeta reúne la planificación y las referencias propias de la presentaci
 | [ETAPA_2_IDENTIDAD.md](ETAPA_2_IDENTIDAD.md) | Login, sesión y rutas protegidas por rol; resumen de la seguridad ya implementada (etapa 2) |
 | [ETAPA_1_CONTRATOS_RECORRIDOS.md](ETAPA_1_CONTRATOS_RECORRIDOS.md) | Prioridades, rutas, pantallas con sus contratos, wireflows, datos de demostración y decisiones del equipo (etapa 1) |
 | [ETAPA_3_MEMBERS.md](ETAPA_3_MEMBERS.md) | Padrón de personas, asignaciones, vigencia para Booking y pantallas de administración; lista de pruebas pendientes con Docker (etapa 3) |
+| [ETAPA_4_BOOKING.md](ETAPA_4_BOOKING.md) | Actividades, clases, reservas, ingreso por DNI y ausencias; invariantes en la base y pruebas pendientes con Docker (etapa 4) |
 
 ## Fuentes de verdad
 

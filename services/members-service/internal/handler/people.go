@@ -199,19 +199,23 @@ func RegisterPeople(r *gin.Engine, s *service.People, secret string) {
 	})
 
 	internal := r.Group("/internal/v1", internalOnly(secret), withTimeout)
-	internal.GET("/alumnos", func(c *gin.Context) {
-		query := c.Request.URL.Query()
-		if len(query) != 1 || len(query["ids"]) != 1 {
-			peopleError(c, model.ErrInvalid)
-			return
+	summaries := func(find func(context.Context, []string) ([]model.StudentSummary, error)) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			query := c.Request.URL.Query()
+			if len(query) != 1 || len(query["ids"]) != 1 {
+				peopleError(c, model.ErrInvalid)
+				return
+			}
+			out, err := find(c.Request.Context(), strings.Split(query.Get("ids"), ","))
+			if err != nil {
+				peopleError(c, err)
+				return
+			}
+			c.JSON(200, gin.H{"items": out})
 		}
-		out, err := s.StudentsByID(c.Request.Context(), strings.Split(query.Get("ids"), ","))
-		if err != nil {
-			peopleError(c, err)
-			return
-		}
-		c.JSON(200, gin.H{"items": out})
-	})
+	}
+	internal.GET("/alumnos", summaries(s.StudentsByID))
+	internal.GET("/profesores", summaries(s.TeachersByID))
 	// POST para que el DNI no viaje en la URL ni quede en logs de acceso.
 	internal.POST("/alumnos/buscar-dni", func(c *gin.Context) {
 		var in struct {

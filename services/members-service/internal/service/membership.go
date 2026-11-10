@@ -260,12 +260,15 @@ func (s *Memberships) Coverage(ctx context.Context, user string, dates []string)
 	today := model.ArgentinaDate(s.now())
 	out := model.Coverage{StudentActive: active, CoveredOn: map[string]model.DateCoverage{}, EvaluatedAt: s.now().UTC().Format(time.RFC3339)}
 	// Un alumno dado de baja no tiene membresía vigente para reservar (RN-12).
-	out.CoveredToday = active && model.CoveringMembership(memberships, today) != nil
+	if m := model.CoveringMembership(memberships, today); active && m != nil {
+		end := m.End
+		out.CoveredToday, out.ExpiresToday = true, &end
+	}
 	for _, d := range dates {
 		coverage := model.DateCoverage{}
 		if m := model.CoveringMembership(memberships, d); active && m != nil {
-			id := m.ID
-			coverage = model.DateCoverage{Covered: true, MembershipID: &id}
+			id, end := m.ID, m.End
+			coverage = model.DateCoverage{Covered: true, MembershipID: &id, Expires: &end}
 		}
 		out.CoveredOn[d] = coverage
 	}

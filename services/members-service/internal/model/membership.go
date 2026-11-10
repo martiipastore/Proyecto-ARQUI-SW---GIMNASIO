@@ -95,6 +95,7 @@ func CoveringMembership(memberships []Membership, date string) *Membership {
 type DateCoverage struct {
 	Covered      bool    `json:"vigente"`
 	MembershipID *string `json:"membresia_id"`
+	Expires      *string `json:"vence"`
 }
 
 // Coverage es la respuesta de la consulta interna de vigencia que usa booking
@@ -102,6 +103,7 @@ type DateCoverage struct {
 type Coverage struct {
 	StudentActive bool                    `json:"alumno_activo"`
 	CoveredToday  bool                    `json:"vigente_hoy"`
+	ExpiresToday  *string                 `json:"vence_hoy"`
 	CoveredOn     map[string]DateCoverage `json:"vigente_en"`
 	EvaluatedAt   string                  `json:"evaluado_en"`
 }
