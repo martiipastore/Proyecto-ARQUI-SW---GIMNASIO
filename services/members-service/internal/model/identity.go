@@ -41,6 +41,10 @@ type User struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	External bool   `json:"external_registration"`
+	// State permite rechazar el acceso de un usuario dado de baja (CA-01.4).
+	State string `json:"status"`
+	// Person agrega los datos del padrón para "Mi cuenta" (users.v1).
+	Person *Person `json:"persona,omitempty"`
 }
 
 type Fulfillment struct {

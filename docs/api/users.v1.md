@@ -1,8 +1,9 @@
-# API de usuarios del gimnasio — v1 (diseño)
+# API de usuarios del gimnasio — v1
 
 Servicio: members-service (Capas). Base: `<gateway>/api/v1`. Historias: HU-01, HU-02,
 HU-21 (mis alumnos), RN-30, RN-33, RN-34 y RN-36. Convenciones comunes en
-[README.md](README.md). Implementación: etapa 3 de la entrega final.
+[README.md](README.md). Implementado en la etapa 3 de la entrega final
+([ETAPA_3_MEMBERS.md](../entrega-final/ETAPA_3_MEMBERS.md)); reglas del padrón en D-78.
 
 ## Endpoints
 
@@ -89,4 +90,10 @@ desde ese momento, sin período de gracia (RN-30); la historia se conserva.
 | GET /internal/v1/alumnos?ids=a,b | booking (listados, HU-21) | `{items:[{id,nombre,apellido,estado}]}`; hasta 100 ids |
 | POST /internal/v1/alumnos/buscar-dni con `{"dni":"…"}` | booking (ingreso por DNI, HU-22) | `{id,nombre,apellido,estado}` o 404 |
 | GET /internal/v1/asignaciones?profesional_id=&alumno_id= | training (RN-30) | `{"vigente":true}`; sin caché (D-33) |
-| GET /internal/v1/alumnos/{id}/vigencia?fechas=AAAA-MM-DD,… | booking (reservar, RN-12) | `{vigente_hoy, vigente_en:{fecha:{vigente, membresia_id}}, evaluado_en}` (ARCHITECTURE §4.2) |
+| GET /internal/v1/alumnos/{id}/vigencia?fechas=AAAA-MM-DD,… | booking (reservar, RN-12) | `{alumno_activo, vigente_hoy, vigente_en:{fecha:{vigente, membresia_id}}, evaluado_en}`; hasta 31 fechas; un alumno dado de baja no tiene vigencia (ARCHITECTURE §4.2) |
+
+Ejemplo de vigencia:
+
+```json
+{"alumno_activo":true,"vigente_hoy":true,"vigente_en":{"2026-11-20":{"vigente":true,"membresia_id":"…"},"2026-12-20":{"vigente":false,"membresia_id":null}},"evaluado_en":"2026-11-09T15:00:00Z"}
+```

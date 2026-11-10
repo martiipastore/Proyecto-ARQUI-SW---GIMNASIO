@@ -77,6 +77,35 @@ func (m Membership) At(today string) Membership {
 	return m
 }
 
+// CoveringMembership devuelve la membresía ACTIVA que cubre la fecha (RN-01:
+// inicio ≤ fecha ≤ vencimiento, día de vencimiento incluido, S-04), o nil. Las
+// membresías activas de un alumno no se superponen (RN-02), así que hay a lo
+// sumo una.
+func CoveringMembership(memberships []Membership, date string) *Membership {
+	for i := range memberships {
+		m := memberships[i]
+		if m.State == "ACTIVA" && m.Start <= date && date <= m.End {
+			return &m
+		}
+	}
+	return nil
+}
+
+// DateCoverage indica si una fecha está cubierta y por qué membresía.
+type DateCoverage struct {
+	Covered      bool    `json:"vigente"`
+	MembershipID *string `json:"membresia_id"`
+}
+
+// Coverage es la respuesta de la consulta interna de vigencia que usa booking
+// para reservar (ARCHITECTURE §4.2, RN-12): vigente hoy y en cada fecha pedida.
+type Coverage struct {
+	StudentActive bool                    `json:"alumno_activo"`
+	CoveredToday  bool                    `json:"vigente_hoy"`
+	CoveredOn     map[string]DateCoverage `json:"vigente_en"`
+	EvaluatedAt   string                  `json:"evaluado_en"`
+}
+
 func ArgentinaDate(now time.Time) string {
 	location, err := time.LoadLocation("America/Argentina/Buenos_Aires")
 	if err != nil {

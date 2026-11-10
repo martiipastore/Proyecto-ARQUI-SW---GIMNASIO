@@ -78,7 +78,22 @@ func (p *Postgres) RenewActivation(ctx context.Context, email string, generate f
 	var id, state string
 	err = tx.QueryRow(ctx, `SELECT r.id::text,r.estado FROM registros_externos r JOIN usuarios u ON u.id=r.usuario_id WHERE u.email=$1 AND NOT r.token_consumido AND (r.estado='pending_verification' OR (r.estado='completed' AND u.password_hash IS NULL)) ORDER BY r.creado_en DESC LIMIT 1 FOR UPDATE OF r`, email).Scan(&id, &state)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
+		// Cuenta creada por el administrador que todavía no eligió contraseña.
+		err = tx.QueryRow(ctx, `SELECT a.id::text FROM activaciones_cuenta a JOIN usuarios u ON u.id=a.usuario_id WHERE u.email=$1 AND NOT a.consumida AND u.password_hash IS NULL AND u.estado='ACTIVO' FOR UPDATE OF a`, email).Scan(&id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		hash, encrypted, err := generate(id)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, `UPDATE activaciones_cuenta SET token_hash=$2,token_cifrado=$3,token_expira=$4,correo_enviado_en=NULL,proximo_intento=now() WHERE id=$1`, id, hash, encrypted, now.Add(24*time.Hour)); err != nil {
+			return err
+		}
+		return tx.Commit(ctx)
 	}
 	if err != nil {
 		return err
@@ -217,7 +232,12 @@ func (p *Postgres) Activate(ctx context.Context, tokenHash, passwordHash []byte,
 	var id, user, partner, external string
 	err = tx.QueryRow(ctx, `SELECT id::text,usuario_id::text,partner_id::text,external_user_id FROM registros_externos WHERE token_hash=$1 AND NOT token_consumido AND token_expira>$2 FOR UPDATE`, tokenHash, now).Scan(&id, &user, &partner, &external)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return model.ErrUnauthorized
+		// No es un enlace de registro externo: puede ser de una cuenta creada
+		// por el administrador (D-78).
+		if err = activateAccount(ctx, tx, tokenHash, passwordHash, now); err != nil {
+			return err
+		}
+		return tx.Commit(ctx)
 	}
 	if err != nil {
 		return err
@@ -246,16 +266,76 @@ func (p *Postgres) Activate(ctx context.Context, tokenHash, passwordHash []byte,
 func (p *Postgres) Password(ctx context.Context, email string) (model.User, []byte, error) {
 	var u model.User
 	var hash []byte
-	err := p.pool.QueryRow(ctx, `SELECT id::text,nombre,email,registro_externo,rol,password_hash FROM usuarios WHERE email=$1`, email).Scan(&u.ID, &u.Name, &u.Email, &u.External, &u.Role, &hash)
+	err := p.pool.QueryRow(ctx, `SELECT id::text,nombre,email,registro_externo,rol,estado,password_hash FROM usuarios WHERE email=$1`, email).Scan(&u.ID, &u.Name, &u.Email, &u.External, &u.Role, &u.State, &hash)
 	return u, hash, err
 }
 func (p *Postgres) User(ctx context.Context, id string) (model.User, error) {
-	var u model.User
-	err := p.pool.QueryRow(ctx, `SELECT id::text,nombre,email,registro_externo,rol FROM usuarios WHERE id=$1`, id).Scan(&u.ID, &u.Name, &u.Email, &u.External, &u.Role)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return u, model.ErrUnauthorized
+	person, err := p.Person(ctx, id)
+	if errors.Is(err, model.ErrNotFound) {
+		return model.User{}, model.ErrUnauthorized
 	}
-	return u, err
+	if err != nil {
+		return model.User{}, err
+	}
+	return model.User{ID: person.ID, Name: person.Name, Email: person.Email, External: person.External, Role: person.Role, State: person.State, Person: &person}, nil
+}
+
+// ProcessAccountEmail envía un enlace pendiente de una cuenta creada por el
+// administrador (D-78). Si SMTP falla, se reintenta con espera creciente.
+func (p *Postgres) ProcessAccountEmail(ctx context.Context, send func(context.Context, string, string, []byte, string) error) (bool, error) {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(context.WithoutCancel(ctx)) }()
+	var id, email, name string
+	var token []byte
+	err = tx.QueryRow(ctx, `SELECT a.id::text,u.email,u.nombre,a.token_cifrado FROM activaciones_cuenta a JOIN usuarios u ON u.id=a.usuario_id WHERE a.correo_enviado_en IS NULL AND NOT a.consumida AND a.token_cifrado IS NOT NULL AND a.proximo_intento<=now() AND u.estado='ACTIVO' ORDER BY a.proximo_intento,a.creada_en LIMIT 1 FOR UPDATE OF a SKIP LOCKED`).Scan(&id, &email, &name, &token)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	callErr := send(ctx, email, name, token, id)
+	if callErr == nil {
+		_, err = tx.Exec(ctx, `UPDATE activaciones_cuenta SET correo_enviado_en=now() WHERE id=$1`, id)
+	} else {
+		_, err = tx.Exec(ctx, `UPDATE activaciones_cuenta SET intentos=intentos+1,proximo_intento=now()+make_interval(secs=>LEAST(3600,5*(intentos+1))) WHERE id=$1`, id)
+	}
+	if err != nil {
+		return true, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return true, err
+	}
+	return true, callErr
+}
+
+// activateAccount consume el enlace de una cuenta creada por el administrador.
+func activateAccount(ctx context.Context, tx pgx.Tx, tokenHash, passwordHash []byte, now time.Time) error {
+	var id, user string
+	err := tx.QueryRow(ctx, `SELECT a.id::text,a.usuario_id::text FROM activaciones_cuenta a JOIN usuarios u ON u.id=a.usuario_id WHERE a.token_hash=$1 AND NOT a.consumida AND a.token_expira>$2 AND u.estado='ACTIVO' FOR UPDATE OF a`, tokenHash, now).Scan(&id, &user)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.ErrUnauthorized
+	}
+	if err != nil {
+		return err
+	}
+	var current []byte
+	if err = tx.QueryRow(ctx, `SELECT password_hash FROM usuarios WHERE id=$1 FOR UPDATE`, user).Scan(&current); err != nil {
+		return err
+	}
+	if len(current) == 0 {
+		if len(passwordHash) == 0 {
+			return model.ErrInvalid
+		}
+		if _, err = tx.Exec(ctx, `UPDATE usuarios SET password_hash=$2 WHERE id=$1 AND password_hash IS NULL`, user, passwordHash); err != nil {
+			return err
+		}
+	}
+	_, err = tx.Exec(ctx, `UPDATE activaciones_cuenta SET consumida=true,token_cifrado=NULL WHERE id=$1`, id)
+	return err
 }
 
 func (p *Postgres) UpgradePassword(ctx context.Context, id string, old, upgraded []byte) error {

@@ -209,3 +209,30 @@ func (p *Postgres) ExpireMemberships(ctx context.Context, today string, now time
 	tag, err := p.pool.Exec(ctx, `UPDATE membresias SET estado='VENCIDA',modificada_por=NULL,motivo='Vencimiento automático',actualizada_en=$2 WHERE estado='ACTIVA' AND fecha_vencimiento<$1::date`, today, now)
 	return tag.RowsAffected(), membershipError(err)
 }
+
+// ActiveMemberships lee el estado del alumno y sus membresías ACTIVA para la
+// consulta de vigencia (RN-01, RN-12). No se cachea (ADR-007).
+func (p *Postgres) ActiveMemberships(ctx context.Context, user string) (bool, []model.Membership, error) {
+	var role, state string
+	err := p.pool.QueryRow(ctx, `SELECT rol,estado FROM usuarios WHERE id=$1`, user).Scan(&role, &state)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil, model.ErrMembershipNotFound
+	}
+	if err != nil {
+		return false, nil, membershipError(err)
+	}
+	rows, err := p.pool.Query(ctx, `SELECT id::text,fecha_inicio::text,fecha_vencimiento::text,estado FROM membresias WHERE usuario_id=$1 AND estado='ACTIVA' ORDER BY fecha_inicio`, user)
+	if err != nil {
+		return false, nil, membershipError(err)
+	}
+	defer rows.Close()
+	out := []model.Membership{}
+	for rows.Next() {
+		var m model.Membership
+		if err = rows.Scan(&m.ID, &m.Start, &m.End, &m.State); err != nil {
+			return false, nil, membershipError(err)
+		}
+		out = append(out, m)
+	}
+	return role == "ALUMNO" && state == "ACTIVO", out, membershipError(rows.Err())
+}

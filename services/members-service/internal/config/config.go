@@ -18,12 +18,14 @@ type Config struct {
 	BenefitsURL                                          string
 	SMTPHost, SMTPPort, SMTPFrom, SMTPUser, SMTPPassword string
 	SMTPAllowPlaintext                                   bool
-	HTTPAddr                                             string
-	DBDSN                                                string
-	LogLevel                                             string
-	ShutdownTimeout                                      time.Duration
-	HealthTimeout                                        time.Duration
-	WorkerInterval                                       time.Duration
+	// Administrador inicial: se crea una sola vez si se configura (users.v1).
+	AdminEmail, AdminPassword, AdminName string
+	HTTPAddr                             string
+	DBDSN                                string
+	LogLevel                             string
+	ShutdownTimeout                      time.Duration
+	HealthTimeout                        time.Duration
+	WorkerInterval                       time.Duration
 }
 
 // Load lee la configuración del entorno.
@@ -43,6 +45,9 @@ func Load() (Config, error) {
 		SMTPUser:                l.String("MEMBERS_SMTP_USER", ""),
 		SMTPPassword:            l.String("MEMBERS_SMTP_PASSWORD", ""),
 		SMTPAllowPlaintext:      l.String("MEMBERS_SMTP_ALLOW_PLAINTEXT", "false") == "true",
+		AdminEmail:              l.String("MEMBERS_ADMIN_EMAIL", ""),
+		AdminPassword:           l.String("MEMBERS_ADMIN_PASSWORD", ""),
+		AdminName:               l.String("MEMBERS_ADMIN_NAME", "Administrador"),
 		HTTPAddr:                l.String("MEMBERS_HTTP_ADDR", ":8081"),
 		DBDSN:                   l.Required("MEMBERS_DB_DSN"),
 		LogLevel:                l.String("LOG_LEVEL", "info"),

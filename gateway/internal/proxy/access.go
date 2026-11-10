@@ -28,7 +28,10 @@ func (p *Proxy) authenticate(w http.ResponseWriter, r *http.Request, path string
 	// privados quedan restringidos a administración hasta definir su matriz por
 	// operación al implementar cada dominio. Nunca dar permisos por defecto.
 	self := (r.Method == http.MethodGet && (path == "/api/v1/users/me" || path == "/api/v1/benefits/me" || path == "/api/v1/memberships/me" || path == "/api/v1/memberships/types")) || (r.Method == http.MethodPost && path == "/api/v1/auth/logout")
-	if !self && claims.Role != access.Admin {
+	// Profesor y nutricionista ven sus alumnos asignados (users.v1, RN-30);
+	// members vuelve a verificar la asignación sobre el recurso.
+	professional := r.Method == http.MethodGet && path == "/api/v1/users/me/students" && (claims.Role == access.Teacher || claims.Role == access.Nutritionist)
+	if !self && !professional && claims.Role != access.Admin {
 		problem.WriteHTTP(w, r, problem.New(403, "SIN_PERMISO", "Sin permiso", "Tu rol no permite esta operación."))
 		return false
 	}

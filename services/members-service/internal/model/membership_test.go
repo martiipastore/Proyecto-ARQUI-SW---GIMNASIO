@@ -48,3 +48,28 @@ func TestMembresiaVencimientoSegunTipo(t *testing.T) {
 	_, ok := MembershipType{}.EndFor(time.Now())
 	require.False(t, ok, "sin duración no hay vencimiento calculable")
 }
+
+// RN-01, RN-12 y S-04: una fecha está cubierta por una membresía ACTIVA si cae
+// entre inicio y vencimiento, ambos incluidos; cancelada o fuera de rango, no.
+func TestMembresiaCubreFecha(t *testing.T) {
+	memberships := []Membership{
+		{ID: "cancelada", State: "CANCELADA", Start: "2026-11-01", End: "2026-11-30"},
+		{ID: "noviembre", State: "ACTIVA", Start: "2026-11-09", End: "2026-12-08"},
+		{ID: "renovada", State: "ACTIVA", Start: "2026-12-09", End: "2027-01-08"},
+	}
+	for date, want := range map[string]string{
+		"2026-11-08": "",
+		"2026-11-09": "noviembre",
+		"2026-12-08": "noviembre",
+		"2026-12-09": "renovada",
+		"2027-01-09": "",
+	} {
+		got := CoveringMembership(memberships, date)
+		if want == "" {
+			require.Nil(t, got, date)
+			continue
+		}
+		require.NotNil(t, got, date)
+		require.Equal(t, want, got.ID, date)
+	}
+}

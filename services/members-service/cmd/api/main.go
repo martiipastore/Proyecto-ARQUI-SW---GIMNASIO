@@ -62,8 +62,20 @@ func run(cfg config.Config, log *slog.Logger) error {
 			return err
 		}
 		handler.RegisterIdentity(router, identity, cfg.ServiceKey)
+		people := service.NewPeople(db, identity, nil)
+		if cfg.AdminEmail != "" {
+			created, err := people.SeedAdmin(ctx, cfg.AdminEmail, cfg.AdminName, cfg.AdminPassword)
+			if err != nil {
+				return fmt.Errorf("administrador inicial inválido: revisar MEMBERS_ADMIN_EMAIL y MEMBERS_ADMIN_PASSWORD (12 a 72 caracteres)")
+			}
+			if created {
+				log.Info("administrador inicial creado")
+			}
+		}
+		handler.RegisterPeople(router, people, cfg.ServiceKey)
 		memberships := service.NewMemberships(db, nil)
 		handler.RegisterMemberships(router, memberships, cfg.ServiceKey)
+		handler.RegisterCoverage(router, memberships, cfg.ServiceKey)
 		if cfg.BackgroundWorkerEnabled {
 			if cfg.WorkerInterval <= 0 {
 				return fmt.Errorf("MEMBERS_WORKER_INTERVAL debe ser mayor que cero")
