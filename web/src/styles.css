@@ -220,3 +220,14 @@ th {
 .page > button { margin-top: 1rem; padding: 0.7rem 1rem; font: inherit; cursor: pointer; }
 .club-card dt { font-weight: 700; }
 .club-card dd { margin: 0 0 0.5rem; }
+
+/* Etapa 3: listados y formularios de administración. */
+.filters, .inline-form { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin: 1rem 0; }
+.filters label, .inline-form label { display: grid; gap: 0.3rem; }
+.filters input, .filters select, .inline-form input, .inline-form select, .club-card select { padding: 0.5rem; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+.filters button, .inline-form button, li button { padding: 0.5rem 0.9rem; font: inherit; cursor: pointer; }
+li button { margin-left: 0.5rem; }
+.data-table { width: 100%; border-collapse: collapse; background: var(--surface); }
+.data-table th, .data-table td { padding: 0.6rem; text-align: left; border-bottom: 1px solid var(--border); }
+.pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+.page > section + section, .page > dl + section, .page > p + section { margin-top: 1rem; }

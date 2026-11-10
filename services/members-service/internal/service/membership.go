@@ -27,6 +27,8 @@ type MembershipRepository interface {
 	MembershipTypes(context.Context) ([]model.MembershipType, error)
 	MembershipPage(context.Context, string, string, int, int) (model.MembershipPage, error)
 	ExpireMemberships(context.Context, string, time.Time) (int64, error)
+	// ActiveMemberships devuelve si el alumno está ACTIVO y sus membresías ACTIVA.
+	ActiveMemberships(context.Context, string) (bool, []model.Membership, error)
 }
 type Memberships struct {
 	repo MembershipRepository
@@ -237,4 +239,35 @@ func (s *Memberships) Cancel(ctx context.Context, actor, role, key, id, reason s
 }
 func (s *Memberships) Expire(ctx context.Context) (int64, error) {
 	return s.repo.ExpireMemberships(ctx, model.ArgentinaDate(s.now()), s.now().UTC())
+}
+
+// Coverage responde, sin caché, si el alumno tiene membresía vigente hoy y en
+// cada fecha pedida, con la membresía que cubre cada una (RN-01, RN-12, D-03;
+// ADR-007: la vigencia no se cachea). La usa booking para reservar.
+func (s *Memberships) Coverage(ctx context.Context, user string, dates []string) (model.Coverage, error) {
+	if !uuidIdentity.MatchString(user) || len(dates) > 31 {
+		return model.Coverage{}, model.ErrInvalid
+	}
+	for _, d := range dates {
+		if _, err := date(d); err != nil {
+			return model.Coverage{}, err
+		}
+	}
+	active, memberships, err := s.repo.ActiveMemberships(ctx, user)
+	if err != nil {
+		return model.Coverage{}, err
+	}
+	today := model.ArgentinaDate(s.now())
+	out := model.Coverage{StudentActive: active, CoveredOn: map[string]model.DateCoverage{}, EvaluatedAt: s.now().UTC().Format(time.RFC3339)}
+	// Un alumno dado de baja no tiene membresía vigente para reservar (RN-12).
+	out.CoveredToday = active && model.CoveringMembership(memberships, today) != nil
+	for _, d := range dates {
+		coverage := model.DateCoverage{}
+		if m := model.CoveringMembership(memberships, d); active && m != nil {
+			id := m.ID
+			coverage = model.DateCoverage{Covered: true, MembershipID: &id}
+		}
+		out.CoveredOn[d] = coverage
+	}
+	return out, nil
 }

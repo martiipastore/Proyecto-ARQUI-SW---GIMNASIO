@@ -104,3 +104,15 @@ func TestRutasPrivadasYRolesFallanCerrados(t *testing.T) {
 	f.router.ServeHTTP(w, req)
 	require.Equal(t, 401, w.Code)
 }
+
+// users.v1 y RN-30: "mis alumnos" solo para profesor y nutricionista (y
+// administración); un alumno recibe 403 aunque falsifique su rol.
+func TestMisAlumnosSoloProfesionales(t *testing.T) {
+	f := newFixture(t, nil)
+	for role, want := range map[string]int{access.Teacher: 200, access.Nutritionist: 200, access.Student: 403, access.Admin: 200} {
+		headers := map[string]string{"Authorization": "Bearer " + testJWT(t, role, time.Now()), "X-User-Role": access.Teacher}
+		require.Equal(t, want, f.do("GET", "/api/v1/users/me/students", headers).Code, role)
+	}
+	teacher := map[string]string{"Authorization": "Bearer " + testJWT(t, access.Teacher, time.Now())}
+	require.Equal(t, 403, f.do("GET", "/api/v1/users", teacher).Code, "el listado completo es solo de administración")
+}

@@ -2,8 +2,11 @@ import { ReactNode, useEffect } from 'react';
 import { homeFor, Role, SessionProvider, useSession } from './auth/session';
 import { AccountPage } from './pages/AccountPage';
 import { ActivationPage } from './pages/ActivationPage';
-import { AccessDeniedPage, NotFoundPage, PendingPage } from './pages/InfoPages';
+import { PeoplePage } from './pages/admin/PeoplePage';
+import { PersonPage } from './pages/admin/PersonPage';
+import { AccessDeniedPage, NotFoundPage } from './pages/InfoPages';
 import { LoginPage } from './pages/LoginPage';
+import { MyStudentsPage } from './pages/MyStudentsPage';
 import { StudentHomePage } from './pages/StudentHomePage';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 import { navigate, takeActivationToken, useRoute } from './router';
@@ -26,28 +29,24 @@ const ROUTES: Record<string, RouteDef> = {
   '/activar': { roles: [], render: () => <ActivationPage token={activationToken} /> },
   '/cuenta': { roles: ALL_ROLES, render: () => <AccountPage /> },
   '/app': { roles: ['ALUMNO'], render: () => <StudentHomePage /> },
-  '/admin': {
-    roles: ['ADMINISTRADOR'],
-    render: () => <PendingPage title="Administración" items={['Alumnos, profesionales y asignaciones (etapa 3)', 'Actividades, horarios y clases (etapa 4)', 'Integraciones del Club (etapa 7)']} />,
-  },
+  '/admin': { roles: ['ADMINISTRADOR'], render: () => <Redirect to="/admin/personas" /> },
+  '/admin/personas': { roles: ['ADMINISTRADOR'], render: () => <PeoplePage /> },
   // Pública como /api/v1/status: sirve para verificar el stack aunque la
   // identidad esté apagada en local (valor por defecto del Compose).
   '/estado': { roles: [], render: () => <SystemStatusPage /> },
-  '/prof': {
-    roles: ['PROFESOR'],
-    render: () => <PendingPage title="Profesor" items={['Mis clases y sus alumnos (etapa 4)', 'Mis alumnos y planes de entrenamiento (etapa 10)']} />,
-  },
-  '/nutri': {
-    roles: ['NUTRICIONISTA'],
-    render: () => <PendingPage title="Nutricionista" items={['Mis pacientes, planes alimenticios y mediciones (etapa 10)', 'Consultas de pacientes (etapa 10)']} />,
-  },
+  // Mis clases (etapa 4) y planes (etapa 10) se suman a estos inicios.
+  '/prof': { roles: ['PROFESOR'], render: () => <MyStudentsPage title="Mis alumnos" /> },
+  '/nutri': { roles: ['NUTRICIONISTA'], render: () => <MyStudentsPage title="Mis pacientes" /> },
 };
+
+// Rutas con parámetro: el detalle de una persona lleva su id en la dirección.
+const PERSON_ROUTE = /^\/admin\/personas\/([0-9a-fA-F-]{36})$/;
 
 const NAV: Record<Role, { path: string; label: string }[]> = {
   ALUMNO: [{ path: '/app', label: 'Inicio' }],
-  ADMINISTRADOR: [{ path: '/admin', label: 'Administración' }, { path: '/estado', label: 'Estado del sistema' }],
-  PROFESOR: [{ path: '/prof', label: 'Inicio' }],
-  NUTRICIONISTA: [{ path: '/nutri', label: 'Inicio' }],
+  ADMINISTRADOR: [{ path: '/admin/personas', label: 'Personas' }, { path: '/estado', label: 'Estado del sistema' }],
+  PROFESOR: [{ path: '/prof', label: 'Mis alumnos' }],
+  NUTRICIONISTA: [{ path: '/nutri', label: 'Mis pacientes' }],
 };
 
 function Redirect({ to }: { to: string }) {
@@ -59,6 +58,12 @@ function Screen({ path }: { path: string }) {
   const { user } = useSession();
   if (path === '/') {
     return <Redirect to={user ? homeFor(user.role) : '/login'} />;
+  }
+  const person = PERSON_ROUTE.exec(path);
+  if (person) {
+    if (!user) return <Redirect to="/login" />;
+    if (user.role !== 'ADMINISTRADOR') return <AccessDeniedPage />;
+    return <PersonPage key={person[1]} id={person[1]} />;
   }
   const route = ROUTES[path];
   if (!route) return <NotFoundPage />;

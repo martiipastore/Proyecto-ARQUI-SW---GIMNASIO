@@ -8,7 +8,7 @@ APIs internas entre servicios. La API pública para otros grupos es otra: está 
 |---|---|---|
 | [auth.v1.md](auth.v1.md) | members-service: activación, login, logout y cuenta propia | Implementado (CB-03) |
 | [memberships.v1.md](memberships.v1.md) | members-service: tipos, asignación, renovación y cancelación | Implementado (CB-04, D-77) |
-| [users.v1.md](users.v1.md) | members-service: alumnos, profesionales, asignaciones y APIs internas | Diseñado en la etapa 1 de la entrega final |
+| [users.v1.md](users.v1.md) | members-service: alumnos, profesionales, asignaciones y APIs internas | Implementado en la etapa 3 de la entrega final; pendiente de prueba con Docker |
 | [booking.v1.md](booking.v1.md) | booking-service: actividades, horarios, clases, reservas e ingreso | Diseñado en la etapa 1 de la entrega final |
 | [benefits.v1.md](benefits.v1.md) | benefits-service: saldo y movimientos propios, administración del Club | Parcial: `GET /benefits/me` implementado |
 | [training.v1.md](training.v1.md) | training-service: planes, mediciones y consultas nutricionales | Diseñado en la etapa 1 de la entrega final |

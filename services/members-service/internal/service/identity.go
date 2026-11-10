@@ -31,6 +31,9 @@ type IdentityRepository interface {
 	UpgradePassword(context.Context, string, []byte, []byte) error
 	ProcessRegistration(context.Context, func(context.Context, model.Fulfillment) (int64, error), func(string) ([]byte, []byte, error), time.Time) (bool, error)
 	ProcessEmail(context.Context, func(context.Context, string, []byte, int64, bool, string, string) error) (bool, error)
+	// ProcessAccountEmail envía un enlace pendiente de una cuenta creada por el
+	// administrador: email, nombre, token cifrado e id de la activación.
+	ProcessAccountEmail(context.Context, func(context.Context, string, string, []byte, string) error) (bool, error)
 }
 
 type BenefitsClient interface {
@@ -203,8 +206,9 @@ func (s *Identity) Login(ctx context.Context, email, password string) (string, e
 		return "", model.ErrUnauthorized
 	}
 	user, hash, err := s.repo.Password(ctx, email)
-	// Mismo coste para un correo inexistente; no revela altas externas.
-	if err != nil || len(hash) == 0 {
+	// Mismo coste y mismo error para un correo inexistente, sin contraseña o de
+	// una persona dada de baja (CA-01.4): no revela altas ni bajas.
+	if err != nil || len(hash) == 0 || user.State != "ACTIVO" {
 		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(password))
 		return "", model.ErrUnauthorized
 	}
@@ -287,6 +291,21 @@ func (s *Identity) Process(ctx context.Context) error {
 		}
 		body += s.publicURL + "/#activate=" + url.QueryEscape(string(token)) + "\nEl enlace vence a las 24 horas. Si no solicitaste esta operación, ignorá este correo.\n"
 		return s.mail.Send(ctx, model.Email{To: email, Subject: subject, Body: body, MessageID: id + "-" + kind})
+	})
+	if err != nil {
+		return err
+	}
+	_, err = s.repo.ProcessAccountEmail(ctx, func(ctx context.Context, email, name string, encrypted []byte, id string) error {
+		n := s.cipher.NonceSize()
+		if len(encrypted) < n {
+			return fmt.Errorf("token cifrado inválido")
+		}
+		token, err := s.cipher.Open(nil, encrypted[:n], encrypted[n:], []byte(id))
+		if err != nil {
+			return err
+		}
+		body := fmt.Sprintf("Hola %s:\nEl gimnasio creó tu cuenta. Establecé tu contraseña (12 a 72 caracteres) desde este enlace de un solo uso:\n%s/#activate=%s\nEl enlace vence a las 24 horas. Si no lo esperabas, ignorá este correo.\n", name, s.publicURL, url.QueryEscape(string(token)))
+		return s.mail.Send(ctx, model.Email{To: email, Subject: "Activá tu cuenta del gimnasio", Body: body, MessageID: id + "-account"})
 	})
 	return err
 }
