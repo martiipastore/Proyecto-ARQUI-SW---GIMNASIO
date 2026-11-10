@@ -97,7 +97,7 @@ las integraciones de Members y Benefits y el E2E de 14 escenarios (PR #14,
 ## 4. Recorrido principal
 
 Se mantiene el recorrido de [PLAN_ENTREGA_FINAL §4](PLAN_ENTREGA_FINAL.md#4-recorrido-principal-propuesto)
-con un ajuste por D-76 (sin canjes), **propuesto para confirmar con el equipo**:
+con un ajuste por D-76 (sin canjes), **confirmado por el equipo el 09/11/2026 (D-85)**:
 
 1. El administrador da de alta al alumno y le asigna una membresía. *(Members, etapa 3)*
 2. La membresía se persiste y produce una notificación asíncrona. *(Members → RabbitMQ → Notification, etapa 5)*
@@ -164,4 +164,4 @@ que dependen de la asignación del proveedor.
 | Etapa 15, VM ARM con Traefik | Publicado en Vercel (D-75, ADR-021) | Reemplaza la prueba de compatibilidad ARM de esta etapa por la verificación de producción |
 | "CI verde" en los criterios de aceptación | GitHub Actions bloqueado por facturación | `scripts/linea-base.ps1` como verificación previa a integrar |
 | Calendario (congelar el 8/11) | Vencido; los repositorios se descargan el 11/11 | El equipo debe priorizar qué etapas entran |
-| Diseño del frontend | Existen `DISENO_FRONTEND.md` y `docs/PLAN_DISENO_FRONTEND.md` (FD-01 a FD-05) | Confirmar cuál gobierna la etapa 11 |
+| Diseño del frontend | Existen `DISENO_FRONTEND.md` y `docs/PLAN_DISENO_FRONTEND.md` (FD-01 a FD-05) | Resuelto: manda `DISENO_FRONTEND.md` (D-84) |

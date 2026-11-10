@@ -64,7 +64,7 @@ Comportamiento:
 
 ## 3. Decisión tomada en esta etapa (a confirmar por el equipo)
 
-**Ruteo por hash, sin librería.** Era la decisión abierta 4 de la etapa 1. Se eligió la
+**Ruteo por hash, sin librería.** Era la decisión abierta 4 de la etapa 1; el equipo la aprobó como D-80. Se eligió la
 opción que no agrega herramientas, por la regla académica del equipo. Además:
 
 - funciona igual en Nginx, en el servidor de Vite y en Vercel, sin configurar el

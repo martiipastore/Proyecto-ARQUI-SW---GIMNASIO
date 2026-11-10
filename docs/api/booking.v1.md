@@ -76,9 +76,8 @@ Errores de reservar y cancelar (catálogo de ARCHITECTURE §12.1):
 
 ## Ingreso por DNI (HU-22, D-36 a D-39)
 
-`POST /check-ins` con `{"dni":"40123456"}` y `Idempotency-Key`, desde la terminal de
-recepción. La credencial de la terminal está pendiente de decisión (ver la etapa 1 de la
-entrega final, §7).
+`POST /check-ins` con `{"dni":"40123456"}` y `Idempotency-Key`, desde la pantalla de
+recepción. Lo usa el ADMINISTRADOR (D-82); no hay credencial de terminal ni rol propio.
 
 | Resultado | HTTP | Cuerpo |
 |---|---|---|

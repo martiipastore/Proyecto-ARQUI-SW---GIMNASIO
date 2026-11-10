@@ -70,7 +70,7 @@ cargar esas variables con valores propios.
   las altas del administrador, completar al usuario externo del Club con el mismo
   email, DNI de 7 u 8 dígitos, fechas de nacimiento entre 1900 y ayer, sin edad mínima.
 - **D-79** (aprobada): Redis solo en local; se implementa en la etapa 12.
-- **D-80** (propuesta): ruteo del frontend por hash, de la etapa 2.
+- **D-80** (aprobada): ruteo del frontend por hash, de la etapa 2.
 
 El Word de decisiones no se regeneró por falta de disco. Hay que correr
 `scripts/sync-club-docs.ps1` como indica [PLAN_CLUB_BENEFICIOS.md](../PLAN_CLUB_BENEFICIOS.md).
