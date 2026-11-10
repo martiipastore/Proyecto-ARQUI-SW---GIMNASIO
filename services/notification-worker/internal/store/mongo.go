@@ -1,6 +1,5 @@
 // Package store guarda en notifications_db (MongoDB) los mensajes procesados,
-// para que el consumidor sea idempotente. Las colecciones se agregan junto con
-// el consumidor de membresia.activada.
+// para que el consumidor sea idempotente mediante documentos atómicos.
 package store
 
 import (

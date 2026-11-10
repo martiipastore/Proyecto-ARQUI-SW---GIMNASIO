@@ -38,6 +38,7 @@ func (c CuentaBeneficios) Secuencia() int64 { return c.secuencia }
 
 // DatosMovimiento es una copia para cruzar puertos, sin tags ni infraestructura.
 type DatosMovimiento struct {
+	Tipo, OrigenID          string
 	ID, CuentaID, PartnerID string
 	Puntos, Secuencia       int64
 	Motivo, Referencia      string
@@ -47,7 +48,11 @@ type DatosMovimiento struct {
 type MovimientoPuntos struct{ datos DatosMovimiento }
 
 func NuevoMovimiento(datos DatosMovimiento) (MovimientoPuntos, error) {
-	if datos.ID == "" || datos.CuentaID == "" || datos.PartnerID == "" || datos.Secuencia < 1 || datos.Puntos < 1 || datos.Puntos > 1000000 || datos.OcurridoEn.IsZero() || datos.AplicadoEn.IsZero() || !TextoValido(datos.Motivo, 3, 200) || !TextoValido(datos.Referencia, 1, 100) {
+	validoImporte := datos.PartnerID != "" && datos.Tipo == "" && datos.OrigenID == "" && datos.Puntos >= 1 && datos.Puntos <= 1000000
+	if datos.PartnerID == "" && datos.OrigenID != "" {
+		validoImporte = (datos.Tipo == Asistencia && datos.Puntos == 500) || (datos.Tipo == PenalizacionInasistencia && datos.Puntos >= -100 && datos.Puntos <= 0)
+	}
+	if datos.ID == "" || datos.CuentaID == "" || datos.Secuencia < 1 || !validoImporte || datos.OcurridoEn.IsZero() || datos.AplicadoEn.IsZero() || !TextoValido(datos.Motivo, 3, 200) || !TextoValido(datos.Referencia, 1, 100) {
 		return MovimientoPuntos{}, ErrOperacionInvalida
 	}
 	return MovimientoPuntos{datos: datos}, nil

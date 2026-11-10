@@ -136,7 +136,8 @@ func TestLedger_PostgreSQLReal(t *testing.T) {
 	require.NoError(t, db.Migrate(ctx)) // Desde base vacía y repetición segura.
 	var migraciones int
 	require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migraciones))
-	require.Equal(t, 5, migraciones)
+	require.Equal(t, 6, migraciones)
+	t.Run("Booking", func(t *testing.T) { verificarBooking(t, db) })
 	t.Run("CB02", func(t *testing.T) { verificarClub(t, db, dsn) })
 	t.Run("club_registro_adopta_cuenta_existente_y_no_duplica_credito", func(t *testing.T) {
 		f := nuevaFixture(t, db)

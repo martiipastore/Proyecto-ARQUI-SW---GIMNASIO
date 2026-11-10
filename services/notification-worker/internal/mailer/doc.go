@@ -1,3 +1,3 @@
-// Package mailer contendrá el envío de emails por SMTP (Mailpit en local).
-// Se agrega en la etapa de membresías.
+// Package mailer envía emails por SMTP con TLS y plazo acotado.
+// Mailpit local admite texto plano solo mediante configuración explícita.
 package mailer

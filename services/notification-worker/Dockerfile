@@ -16,6 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     cd services/notification-worker && go build -ldflags="-s -w" -o /out/notification-worker ./cmd/worker
 
 FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
 RUN adduser -D -H -u 10001 app
 USER app
 COPY --from=build /out/notification-worker /app/notification-worker

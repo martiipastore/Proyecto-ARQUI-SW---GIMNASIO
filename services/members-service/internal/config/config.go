@@ -9,6 +9,8 @@ import (
 
 // Config de members-service.
 type Config struct {
+	MessagingEnabled                                     bool
+	AMQPURL                                              string
 	IdentityEnabled                                      bool
 	BackgroundWorkerEnabled                              bool
 	ServiceKey                                           string
@@ -32,6 +34,8 @@ type Config struct {
 func Load() (Config, error) {
 	l := config.New()
 	cfg := Config{
+		MessagingEnabled:        l.String("MEMBERS_MESSAGING_ENABLED", "false") == "true",
+		AMQPURL:                 l.String("MEMBERS_AMQP_URL", ""),
 		IdentityEnabled:         l.String("MEMBERS_IDENTITY_ENABLED", "false") == "true",
 		BackgroundWorkerEnabled: l.String("MEMBERS_BACKGROUND_WORKER_ENABLED", "true") == "true",
 		ServiceKey:              l.String("GYM_INTERNAL_SERVICE_KEY", ""),

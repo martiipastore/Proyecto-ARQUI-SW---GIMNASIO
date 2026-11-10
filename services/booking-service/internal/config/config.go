@@ -9,12 +9,14 @@ import (
 
 // Config de booking-service.
 type Config struct {
-	HTTPAddr        string
-	IndexerHTTPAddr string
-	DBDSN           string
-	LogLevel        string
-	ShutdownTimeout time.Duration
-	HealthTimeout   time.Duration
+	MessagingEnabled bool
+	AMQPURL          string
+	HTTPAddr         string
+	IndexerHTTPAddr  string
+	DBDSN            string
+	LogLevel         string
+	ShutdownTimeout  time.Duration
+	HealthTimeout    time.Duration
 	// Enabled activa actividades, clases, reservas e ingreso (etapa 4). Apagado,
 	// el servicio solo expone salud, como antes de la etapa.
 	Enabled            bool
@@ -28,6 +30,8 @@ type Config struct {
 func Load() (Config, error) {
 	l := config.New()
 	cfg := Config{
+		MessagingEnabled:   l.String("BOOKING_MESSAGING_ENABLED", "false") == "true",
+		AMQPURL:            l.String("BOOKING_AMQP_URL", ""),
 		HTTPAddr:           l.String("BOOKING_HTTP_ADDR", ":8082"),
 		IndexerHTTPAddr:    l.String("BOOKING_INDEXER_HTTP_ADDR", ":8086"),
 		DBDSN:              l.Required("BOOKING_DB_DSN"),

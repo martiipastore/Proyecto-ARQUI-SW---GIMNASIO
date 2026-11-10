@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:metalfitness:events:inasistencia.registrada:v1",
+  "title": "Ausencia detectada al cierre automático de clase",
+  "type": "object",
+  "required": ["event_id", "event_type", "event_version", "occurred_at", "producer", "data"],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "event_type": {"const": "inasistencia.registrada"},
+    "event_version": {"const": 1},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "producer": {"const": "booking-service"},
+    "correlation_id": {"type": "string"},
+    "traceparent": {"type": "string"},
+    "data": {
+      "type": "object",
+      "required": ["reserva_id", "clase_id", "alumno_id", "puntos_penalizacion"],
+      "properties": {
+        "reserva_id": {"type": "string", "format": "uuid"},
+        "clase_id": {"type": "string", "format": "uuid"},
+        "alumno_id": {"type": "string", "format": "uuid"},
+        "actividad_id": {"type": "string", "format": "uuid"},
+        "clase_inicio": {"type": "string", "format": "date-time"},
+        "registrada_en": {"type": "string", "format": "date-time"},
+        "puntos_penalizacion": {"const": 100}
+      }
+    }
+  }
+}

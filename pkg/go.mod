@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.34.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.34.0

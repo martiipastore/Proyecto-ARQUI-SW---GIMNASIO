@@ -18,6 +18,7 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/messaging"
 	bookinghttp "github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/http"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/members"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/postgres"
@@ -54,13 +55,28 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}
 	defer db.Close()
 
-	router := bookinghttp.NewRouter(log, cfg.HealthTimeout, health.Check{Name: "postgres", Fn: db.Ping})
+	var relay *messaging.Relay
+	checks := []health.Check{{Name: "postgres", Fn: db.Ping}}
+	if cfg.MessagingEnabled {
+		if !cfg.Enabled || cfg.AMQPURL == "" {
+			return errors.New("mensajería requiere BOOKING_ENABLED=true y BOOKING_AMQP_URL")
+		}
+		relay = &messaging.Relay{URL: cfg.AMQPURL, Log: log, Publish: db.PublicarOutbox, Routes: []messaging.Route{{Queue: "benefits.asistencia-registrada", Key: "asistencia.registrada"}, {Queue: "benefits.inasistencia-registrada", Key: "inasistencia.registrada"}}}
+		checks = append(checks, health.Check{Name: "rabbitmq", Fn: relay.Ready, Partial: true})
+	}
+	router := bookinghttp.NewRouter(log, cfg.HealthTimeout, checks...)
 	if cfg.Enabled {
 		if len(cfg.InternalServiceKey) < 32 {
 			return errors.New("BOOKING_ENABLED requiere GYM_INTERNAL_SERVICE_KEY de al menos 32 caracteres")
 		}
 		if err = db.Migrate(ctx); err != nil {
 			return err
+		}
+		if relay != nil {
+			relayCtx, cancel := context.WithCancel(ctx)
+			done := make(chan struct{})
+			defer func() { cancel(); <-done }()
+			go func() { defer close(done); relay.Run(relayCtx) }()
 		}
 		reloj := relojSistema{}
 		membersClient := members.Client{

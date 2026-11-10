@@ -50,7 +50,7 @@ func (p *Proxy) authenticate(w http.ResponseWriter, r *http.Request, path string
 	// Solo están implementados cuenta propia/saldo y logout. Los otros recursos
 	// privados quedan restringidos a administración hasta definir su matriz por
 	// operación al implementar cada dominio. Nunca dar permisos por defecto.
-	self := (r.Method == http.MethodGet && (path == "/api/v1/users/me" || path == "/api/v1/benefits/me" || path == "/api/v1/memberships/me" || path == "/api/v1/memberships/types")) || (r.Method == http.MethodPost && path == "/api/v1/auth/logout")
+	self := (r.Method == http.MethodGet && (path == "/api/v1/users/me" || path == "/api/v1/benefits/me" || path == "/api/v1/benefits/me/movements" || path == "/api/v1/memberships/me" || path == "/api/v1/memberships/types")) || (r.Method == http.MethodPost && path == "/api/v1/auth/logout")
 	// Profesor y nutricionista ven sus alumnos asignados (users.v1, RN-30);
 	// members vuelve a verificar la asignación sobre el recurso.
 	professional := r.Method == http.MethodGet && path == "/api/v1/users/me/students" && (claims.Role == access.Teacher || claims.Role == access.Nutritionist)
