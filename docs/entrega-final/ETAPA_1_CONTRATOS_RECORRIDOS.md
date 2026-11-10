@@ -37,7 +37,9 @@ la presentación; **P2** completa el SPEC; **fuera** quedó descartado por el eq
 ## 2. Rutas del frontend
 
 La aplicación es una SPA servida en el mismo dominio que el gateway. El enlace de
-activación actual (`/#activate=<token>`) se conserva.
+activación actual (`/#activate=<token>`) se conserva. Las rutas llevan `#` adelante
+(`#/app/clases`) por el ruteo por hash (D-80). La tabla refleja lo implementado hasta
+la etapa 4; las rutas de etapas futuras son el diseño acordado.
 
 | Área | Ruta | Pantalla | Rol |
 |---|---|---|---|
@@ -46,30 +48,31 @@ activación actual (`/#activate=<token>`) se conserva.
 | Pública | `/#activate=…` | Elegir contraseña o confirmar vinculación | Persona con enlace |
 | Administración | `/recepcion` | Pantalla de ingreso por DNI | ADMINISTRADOR (D-82) |
 | Alumno | `/app` | Resumen: membresía, próximas reservas y saldo | ALUMNO |
-| Alumno | `/app/clases` y `/app/clases/:id` | Búsqueda y detalle; reservar | ALUMNO |
+| Alumno | `/app/clases` | Búsqueda con ocupación; reservar desde el listado (etapa 4) | ALUMNO |
 | Alumno | `/app/reservas` | Mis reservas e historial; cancelar | ALUMNO |
 | Alumno | `/app/membresia` | Mi membresía e historial | ALUMNO |
 | Alumno | `/app/puntos` | Saldo y movimientos | ALUMNO |
 | Alumno | `/app/entrenamiento` | Mi plan de entrenamiento | ALUMNO |
 | Alumno | `/app/nutricion` | Plan alimenticio, mediciones y consultas | ALUMNO |
-| Común | `/app/cuenta` | Mi cuenta y cierre de sesión | Todos los roles |
+| Común | `/cuenta` | Mi cuenta; el cierre de sesión está en la barra superior (etapa 2) | Todos los roles |
 | Administrador | `/admin/personas` y `/admin/personas/:id` | Alumnos y profesionales; membresías y asignaciones de la persona | ADMINISTRADOR |
 | Administrador | `/admin/actividades` | Actividades y horarios; generar clases | ADMINISTRADOR |
 | Administrador | `/admin/clases` y `/admin/clases/:id` | Clases, capacidad, cancelación y asistencias | ADMINISTRADOR |
 | Administrador | `/admin/club` | Integraciones y movimientos de una persona | ADMINISTRADOR |
 | Pública | `/estado` | Estado del sistema (pantalla actual); pública como `/api/v1/status`, ver [etapa 2](ETAPA_2_IDENTIDAD.md) | Todos |
 | Profesor | `/prof/clases` y `/prof/clases/:id` | Mis clases y sus alumnos | PROFESOR |
-| Profesor | `/prof/alumnos` y `/prof/alumnos/:id` | Mis alumnos y su plan de entrenamiento | PROFESOR |
-| Nutricionista | `/nutri/pacientes` y `/nutri/pacientes/:id` | Pacientes, plan alimenticio y mediciones | NUTRICIONISTA |
+| Profesor | `/prof` | Mis alumnos asignados (etapa 3); el plan de entrenamiento se suma en la etapa 10 | PROFESOR |
+| Nutricionista | `/nutri` | Mis pacientes (etapa 3); plan alimenticio y mediciones en la etapa 10 | NUTRICIONISTA |
 | Nutricionista | `/nutri/consultas` | Consultas pendientes y respuestas | NUTRICIONISTA |
 
-Tras el login, cada rol entra a su inicio: `/app`, `/admin/personas`, `/prof/clases` o
-`/nutri/pacientes`. Una ruta de otro rol muestra "acceso denegado"; el backend vuelve a
+Tras el login, cada rol entra a su inicio: `/app`, `/admin/personas`, `/prof` o
+`/nutri`. Una ruta de otro rol muestra "acceso denegado"; el backend vuelve a
 verificar siempre (RN-30). El JWT vive solo en memoria y un 401 lleva al login (auth.v1).
 
-Hoy el gateway solo deja pasar a los roles no administradores por sus rutas propias
-(`/users/me`, `/benefits/me`, `/memberships/me`). Cada etapa que implemente un contrato
-amplía esa matriz en `gateway/internal/proxy/access.go` según la columna "Quién".
+El gateway deja pasar a los roles no administradores solo por sus rutas propias: cuenta,
+saldo y membresía (etapa 2), "mis alumnos" (etapa 3) y las rutas de booking de cada rol
+(etapa 4, `bookingAllowed`). Cada etapa que implemente un contrato amplía esa matriz en
+`gateway/internal/proxy/access.go` según la columna "Quién".
 
 ## 3. Matriz pantalla → endpoint → permisos → estados → errores
 
@@ -83,7 +86,7 @@ Estados comunes a todas las pantallas: **cargando**, **error** (con `correlation
 | Mi cuenta | GET /users/me, POST /auth/logout | Todos | — | 401 |
 | Resumen del alumno | GET /memberships/me, GET /bookings/me, GET /benefits/me | ALUMNO | Sin membresía vigente (aviso de que no puede reservar, CA-12.2) | 404 `CUENTA_NO_ENCONTRADA` |
 | Búsqueda de clases | GET /classes, GET /activities | ALUMNO | Sin resultados; completa; ya reservada | 400 en filtros |
-| Detalle y reserva | GET /classes/{id}, POST /bookings | ALUMNO | Reservando (sin doble envío); reservada | `MEMBRESIA_NO_VIGENTE`, `SIN_CUPO`, `RESERVA_DUPLICADA`, `TURNO_MUSCULACION_DIARIO`, `SUPERPOSICION_RESERVA`, `CLASE_NO_FUTURA`, 503 |
+| Reserva (desde la búsqueda; sin detalle propio en la etapa 4) | POST /bookings | ALUMNO | Reservando (sin doble envío); reservada | `MEMBRESIA_NO_VIGENTE`, `SIN_CUPO`, `RESERVA_DUPLICADA`, `TURNO_MUSCULACION_DIARIO`, `SUPERPOSICION_RESERVA`, `CLASE_NO_FUTURA`, 503 |
 | Mis reservas | GET /bookings/me, POST /bookings/{id}/cancel | ALUMNO | Vacío; ya cancelada | `PLAZO_CANCELACION_VENCIDO` |
 | Mi membresía | GET /memberships/me | ALUMNO | Sin membresías; vencida; programada | — |
 | Mis puntos | GET /benefits/me, GET /benefits/me/movements | ALUMNO | Sin movimientos; cuenta en creación | 404 `CUENTA_NO_ENCONTRADA` |
