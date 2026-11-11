@@ -43,3 +43,34 @@ func TestTrainingAllowed(t *testing.T) {
 		}
 	}
 }
+
+// D-94: la cuponera interna solo abre al alumno el catálogo, el canje y sus
+// cupones. La gestión (beneficios, búsqueda por código, uso y anulación) queda
+// para el administrador, que pasa por la regla general de su rol.
+func TestBenefitsAllowed(t *testing.T) {
+	const id = "6f1c2a8e-3b7d-4c1e-9a2b-1d2e3f4a5b6c"
+	casos := []struct {
+		method, path string
+		permitidos   []string
+	}{
+		{http.MethodGet, "/api/v1/benefits/catalog", []string{access.Student}},
+		{http.MethodPost, "/api/v1/benefits/redemptions", []string{access.Student}},
+		{http.MethodGet, "/api/v1/benefits/me/redemptions", []string{access.Student}},
+		{http.MethodGet, "/api/v1/benefits/redemptions", nil},
+		{http.MethodPost, "/api/v1/benefits/redemptions/" + id + "/use", nil},
+		{http.MethodPost, "/api/v1/benefits/redemptions/" + id + "/cancel", nil},
+		{http.MethodGet, "/api/v1/benefits/rewards", nil},
+		{http.MethodPost, "/api/v1/benefits/rewards", nil},
+		{http.MethodPut, "/api/v1/benefits/rewards/" + id, nil},
+		{http.MethodPost, "/api/v1/benefits/catalog", nil},
+	}
+	for _, c := range casos {
+		for _, rol := range []string{access.Student, access.Teacher, access.Nutritionist} {
+			esperado := false
+			for _, p := range c.permitidos {
+				esperado = esperado || p == rol
+			}
+			require.Equal(t, esperado, benefitsAllowed(c.method, c.path, rol), "%s %s como %s", c.method, c.path, rol)
+		}
+	}
+}

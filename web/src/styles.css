@@ -1073,3 +1073,51 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
   .cut-in::after { display: none; }
   .activity-link { transform: none !important; }
 }
+
+/* Cuponera interna del Club (D-94). El cupón es un ticket con su código
+   destacado; al canjear se "sella" con una animación solo de CSS (D-89). */
+.points-actions { display: flex; align-items: center; gap: 0.8rem; }
+.points-actions a { color: var(--accent); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.07em; text-decoration: none; text-transform: uppercase; }
+.rewards-balance { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1.2rem; padding: 1.2rem 1.4rem; color: var(--accent-ink); background: var(--accent); }
+.rewards-balance > span { font-size: 0.67rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
+.rewards-balance > strong { display: flex; align-items: baseline; gap: 0.4rem; font-family: var(--display-font); font-size: clamp(3rem, 7vw, 4.6rem); font-style: italic; line-height: 0.9; }
+.rewards-balance > strong small { font-family: var(--body-font); font-size: 0.75rem; font-style: normal; font-weight: 900; text-transform: uppercase; }
+.rewards-balance > p { flex-basis: 100%; margin: 0; font-size: 0.85rem; }
+.reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.reward-card { display: flex; flex-direction: column; gap: 0.6rem; padding: 1.2rem; border: 1px solid var(--border); background: var(--surface); transition: border-color 160ms ease, transform 160ms ease; }
+.reward-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.reward-card header { display: flex; align-items: baseline; gap: 0.35rem; color: var(--accent); }
+.reward-card header strong { font-family: var(--display-font); font-size: 2.4rem; font-style: italic; line-height: 1; }
+.reward-card header span { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; }
+.reward-card h3 { margin: 0; font-size: 1.1rem; }
+.reward-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.reward-card button { margin-top: auto; min-height: 44px; padding: 0.6rem 1rem; font: inherit; font-weight: 800; cursor: pointer; }
+.reward-card button:disabled { cursor: not-allowed; opacity: 0.75; }
+.coupon-list { display: grid; gap: 0.8rem; margin: 0; padding: 0; list-style: none; }
+.coupon-ticket { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.6rem 1.2rem; padding: 1rem 1.2rem; border: 1px dashed var(--border); background: var(--surface); }
+.coupon-ticket > div { display: grid; gap: 0.3rem; min-width: 0; }
+.coupon-ticket strong { font-size: 1.05rem; }
+.coupon-ticket small { color: var(--muted); }
+.coupon-ticket small a { color: var(--accent); }
+.coupon-code { padding: 0.45rem 0.75rem; color: var(--accent); font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 800; letter-spacing: 0.14em; border: 1px solid var(--accent); background: var(--bg); }
+.coupon-actions { display: flex; flex-wrap: wrap; grid-column: 1 / -1; gap: 0.6rem; }
+.coupon-actions button { min-height: 40px; padding: 0.5rem 0.9rem; font: inherit; cursor: pointer; }
+.coupon-usado, .coupon-anulado { opacity: 0.68; }
+.coupon-usado .coupon-code, .coupon-anulado .coupon-code { color: var(--muted); border-color: var(--border); text-decoration: line-through; }
+.status-used { color: var(--muted); background: rgb(167 172 163 / 10%); }
+.status-used::before { background: var(--muted); }
+.coupon-fresh { border: 2px solid var(--accent); animation: coupon-stamp 520ms cubic-bezier(.2, 1.4, .4, 1) both; }
+.coupon-fresh > div > span { color: var(--accent); font-size: 0.67rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
+.coupon-fresh .coupon-code { animation: coupon-code-in 700ms 200ms ease-out both; }
+.coupon-filter { display: inline-grid; gap: 0.4rem; margin-bottom: 0.4rem; }
+@keyframes coupon-stamp { from { opacity: 0; transform: scale(1.08) rotate(-1.5deg); } to { opacity: 1; transform: none; } }
+@keyframes coupon-code-in { from { letter-spacing: 0.6em; opacity: 0; } to { letter-spacing: 0.14em; opacity: 1; } }
+@media (max-width: 620px) {
+  .coupon-ticket { grid-template-columns: 1fr; }
+  .coupon-code { justify-self: start; }
+  .points-actions { justify-content: space-between; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coupon-fresh, .coupon-fresh .coupon-code { animation: none; }
+  .reward-card, .reward-card:hover { transition: none; transform: none; }
+}

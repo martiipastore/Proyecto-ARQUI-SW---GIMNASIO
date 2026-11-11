@@ -71,6 +71,8 @@ func movimientosJSON(p domain.PaginaMovimientos, admin bool) []gin.H {
 			origin = "INASISTENCIA"
 		case domain.Reversion:
 			origin = "REVERSION"
+		case domain.Canje:
+			origin = "CANJE"
 		}
 		item := gin.H{"id": m.ID, "fecha": m.OcurridoEn, "aplicado_en": m.AplicadoEn, "motivo": m.Motivo, "puntos": m.Puntos, "estado": p.EstadoMovimiento(m.ID), "origen": origin, "origen_id": m.OrigenID, "referencia": m.Referencia, "secuencia": m.Secuencia}
 		if m.RevierteID != "" {

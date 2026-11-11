@@ -62,6 +62,8 @@ func (h adminHandlers) fallo(c *gin.Context, err error) {
 		problem.Write(c, problem.New(404, "CUENTA_NO_ENCONTRADA", "Cuenta inexistente", "La persona todavía no tiene cuenta de puntos."))
 	case errors.Is(err, domain.ErrVinculoEnConflicto):
 		problem.Write(c, problem.New(409, "CONFLICTO_IDENTIDAD", "Vínculo en conflicto", "El identificador externo o la cuenta ya están vinculados de otra forma para esta integración."))
+	case errors.Is(err, domain.ErrCanjeSoloPorAnulacion):
+		problem.Write(c, problem.New(409, "TRANSICION_INVALIDA", "Movimiento de canje", "Para devolver los puntos de un canje, anulalo desde la cuponera."))
 	case errors.Is(err, domain.ErrMovimientoRevertido):
 		problem.Write(c, problem.New(409, "TRANSICION_INVALIDA", "Movimiento no reversible", "El movimiento ya fue revertido o es una reversión."))
 	case errors.Is(err, domain.ErrSaldoInsuficiente):

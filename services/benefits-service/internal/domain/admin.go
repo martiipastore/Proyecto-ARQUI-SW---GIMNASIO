@@ -8,7 +8,8 @@ import (
 )
 
 // Administración del Club (etapa 7 de la entrega final): HU-10, HU-11, HU-35 y
-// HU-CB-07 con RN-22/23/25/26. Catálogo, canjes y débitos quedan fuera (D-76).
+// HU-CB-07 con RN-22/23/25/26. Los débitos y la API de partners siguen sin
+// canjes (D-76); la cuponera interna está en canje.go (D-94).
 
 const (
 	Reversion        = "REVERSION"
@@ -33,7 +34,16 @@ func ExternalIDValido(s string) bool { return identificadorExterno.MatchString(s
 // El original no cambia (RN-22); el saldo nunca queda negativo (RN-23); un
 // movimiento se revierte una sola vez y una reversión no se revierte (RN-25).
 // Revertir una asistencia no modifica la asistencia de Booking (CA-35.3).
+// El débito de un canje solo se compensa anulando el canje (D-94), para que el
+// cupón y su movimiento no queden en estados distintos.
 func (c CuentaBeneficios) Revertir(original DatosMovimiento, yaRevertido bool, id, motivo string, ahora time.Time) (CuentaBeneficios, MovimientoPuntos, error) {
+	if original.Tipo == Canje && original.CuentaID == c.id {
+		return c, MovimientoPuntos{}, ErrCanjeSoloPorAnulacion
+	}
+	return c.compensar(original, yaRevertido, id, motivo, ahora)
+}
+
+func (c CuentaBeneficios) compensar(original DatosMovimiento, yaRevertido bool, id, motivo string, ahora time.Time) (CuentaBeneficios, MovimientoPuntos, error) {
 	if original.ID == "" || original.CuentaID != c.id {
 		return c, MovimientoPuntos{}, ErrMovimientoNoEncontrado
 	}

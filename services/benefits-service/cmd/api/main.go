@@ -177,6 +177,9 @@ func run(cfg config.Config, log *slog.Logger) error {
 	// Etapa 7: administración del Club. Sin GYM_INTERNAL_SERVICE_KEY válida las
 	// rutas responden 401: solo el gateway autenticado puede llegar a ellas.
 	benefitshttp.RegisterAdministration(router, application.NewAdministracion(db, system.Clock{}, system.IDs{}, system.Secrets{}), cfg.ServiceKey, log)
+	// D-94: cuponera interna (catálogo y canjes de la aplicación). No se publica
+	// en la API de partners, que sigue sin canjes (D-76).
+	benefitshttp.RegisterCuponera(router, application.NewCuponera(db, system.Clock{}, system.IDs{}, system.Codigos{}), cfg.ServiceKey, log)
 	router.NoRoute(benefitshttp.PartnerFallback)
 	router.NoMethod(benefitshttp.PartnerFallback)
 	return httpserver.Run(ctx, log, httpserver.Options{
