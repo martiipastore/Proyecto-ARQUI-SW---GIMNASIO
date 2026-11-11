@@ -54,7 +54,7 @@ func run(cfg gwconfig.Config, log *slog.Logger) error {
 		}
 	}()
 
-	transport := correlation.Transport{Base: telemetry.Transport{Base: http.DefaultTransport}}
+	transport := correlation.Transport{Base: telemetry.Transport{Base: proxy.NewTransport()}}
 
 	p, err := proxy.New(cfg, transport, log)
 	if err != nil {

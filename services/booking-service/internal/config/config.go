@@ -30,6 +30,12 @@ type Config struct {
 	IndexerEnabled bool
 	OpenSearchURL  string
 	SearchTimeout  time.Duration
+	// Etapa 9: caché del catálogo de actividades en Redis (ADR-007, D-88).
+	CacheEnabled  bool
+	RedisAddr     string
+	RedisPassword string
+	CacheTTL      time.Duration
+	CacheTimeout  time.Duration
 }
 
 // Load lee la configuración del entorno.
@@ -53,6 +59,11 @@ func Load() (Config, error) {
 		IndexerEnabled:     l.String("BOOKING_INDEXER_ENABLED", "false") == "true",
 		OpenSearchURL:      l.String("BOOKING_OPENSEARCH_URL", "http://opensearch:9200"),
 		SearchTimeout:      l.Duration("BOOKING_SEARCH_TIMEOUT", 2*time.Second),
+		CacheEnabled:       l.String("BOOKING_CACHE_ENABLED", "false") == "true",
+		RedisAddr:          l.String("BOOKING_REDIS_ADDR", "redis:6379"),
+		RedisPassword:      l.String("BOOKING_REDIS_PASSWORD", ""),
+		CacheTTL:           l.Duration("BOOKING_CACHE_TTL", 10*time.Minute),
+		CacheTimeout:       l.Duration("BOOKING_CACHE_TIMEOUT", 100*time.Millisecond),
 	}
 	return cfg, l.Err()
 }

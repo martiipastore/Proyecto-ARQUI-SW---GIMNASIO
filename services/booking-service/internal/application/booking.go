@@ -59,6 +59,23 @@ type Servicio struct {
 	// búsqueda sigue en PostgreSQL como en la etapa 4.
 	indice ports.IndiceClases
 	marcas ports.ReservasDelAlumno
+	// cache acelera el catálogo de actividades (etapa 9); nil = sin caché.
+	cache ports.CacheActividades
+}
+
+// ConCache activa cache-aside del catálogo de actividades (ADR-007, D-88). La
+// caché nunca decide reservas ni generación: esas operaciones leen PostgreSQL.
+func (s *Servicio) ConCache(c ports.CacheActividades) *Servicio {
+	s.cache = c
+	return s
+}
+
+// invalidarCatalogo borra la copia después de confirmar una escritura. Si Redis
+// no responde, la copia vieja dura como máximo el TTL (límite documentado).
+func (s *Servicio) invalidarCatalogo(ctx context.Context) {
+	if s.cache != nil {
+		_ = s.cache.Invalidar(ctx)
+	}
 }
 
 // New cablea los casos de uso con sus puertos de salida.
@@ -95,9 +112,21 @@ func dependencia(err error) error {
 
 // ---- Actividades y horarios (HU-06, HU-07) ----
 
-// Actividades lista el catálogo (CA-06.1).
+// Actividades lista el catálogo (CA-06.1). Con caché aplica cache-aside: un
+// acierto evita PostgreSQL; un miss o una caché caída leen la fuente (ADR-007).
 func (s *Servicio) Actividades(ctx context.Context) ([]domain.Actividad, error) {
-	return s.catalogo.Actividades(ctx)
+	if s.cache == nil {
+		return s.catalogo.Actividades(ctx)
+	}
+	if items, ok, err := s.cache.Leer(ctx); err == nil && ok {
+		return items, nil
+	}
+	items, err := s.catalogo.Actividades(ctx)
+	if err != nil {
+		return nil, err
+	}
+	_ = s.cache.Guardar(ctx, items)
+	return items, nil
 }
 
 // CrearActividad da de alta una actividad grupal (RN-08); Musculación ya existe.
@@ -113,7 +142,11 @@ func (s *Servicio) CrearActividad(ctx context.Context, a Actor, nombre string, c
 	if err = nueva.Validar(); err != nil {
 		return domain.Actividad{}, err
 	}
-	return s.catalogo.CrearActividad(ctx, a.ID, nueva)
+	creada, err := s.catalogo.CrearActividad(ctx, a.ID, nueva)
+	if err == nil {
+		s.invalidarCatalogo(ctx)
+	}
+	return creada, err
 }
 
 // ModificarActividad cambia nombre, capacidad máxima o estado (CA-06.2, CA-06.3, RN-34).
@@ -124,7 +157,7 @@ func (s *Servicio) ModificarActividad(ctx context.Context, a Actor, id string, n
 	if !patronUUID.MatchString(id) || (nombre == nil && capacidad == nil && activa == nil) {
 		return domain.Actividad{}, domain.ErrValidacion
 	}
-	return s.catalogo.ModificarActividad(ctx, a.ID, id, func(actual domain.Actividad, conReservas bool) (domain.Actividad, error) {
+	modificada, err := s.catalogo.ModificarActividad(ctx, a.ID, id, func(actual domain.Actividad, conReservas bool) (domain.Actividad, error) {
 		if nombre != nil {
 			n, err := domain.NormalizarNombre(*nombre)
 			if err != nil {
@@ -143,6 +176,10 @@ func (s *Servicio) ModificarActividad(ctx context.Context, a Actor, id string, n
 		}
 		return actual, actual.Validar()
 	})
+	if err == nil {
+		s.invalidarCatalogo(ctx)
+	}
+	return modificada, err
 }
 
 // Horarios lista los horarios de una actividad.

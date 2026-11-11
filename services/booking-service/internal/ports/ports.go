@@ -59,6 +59,15 @@ type Catalogo interface {
 	CancelarClase(ctx context.Context, actor, id, motivo string, validar func(domain.Clase) error) (domain.Clase, error)
 }
 
+// CacheActividades guarda una copia no autoritativa del catálogo (etapa 9,
+// ADR-007, D-88). encontrado=false es un miss; un error significa que la caché
+// no respondió y el caso de uso lee la fuente.
+type CacheActividades interface {
+	Leer(ctx context.Context) (items []domain.Actividad, encontrado bool, err error)
+	Guardar(ctx context.Context, items []domain.Actividad) error
+	Invalidar(ctx context.Context) error
+}
+
 // IndiceClases es el modelo de lectura de búsqueda (etapa 8, ADR-014). Devuelve
 // las clases sin ReservadaPorMi: ese dato del alumno sale de PostgreSQL.
 type IndiceClases interface {

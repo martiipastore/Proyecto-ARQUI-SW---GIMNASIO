@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -23,8 +24,11 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/members"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/opensearch"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/postgres"
+	bookingredis "github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/redis"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/application"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/config"
+	"github.com/gin-gonic/gin"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 const serviceName = "booking-service"
@@ -76,7 +80,25 @@ func run(cfg config.Config, log *slog.Logger) error {
 		// ADR-014/D-45: sin OpenSearch solo falla la búsqueda; reservar sigue.
 		checks = append(checks, health.Check{Name: "opensearch", Fn: indice.Ping, Partial: true})
 	}
+	var cache *bookingredis.Actividades
+	if cfg.CacheEnabled {
+		if !cfg.Enabled {
+			return errors.New("la caché requiere BOOKING_ENABLED=true")
+		}
+		client := goredis.NewClient(&goredis.Options{Addr: cfg.RedisAddr, Password: cfg.RedisPassword, DialTimeout: cfg.CacheTimeout, ReadTimeout: cfg.CacheTimeout, WriteTimeout: cfg.CacheTimeout, MaxRetries: -1})
+		defer client.Close()
+		cache = &bookingredis.Actividades{Client: client, TTL: cfg.CacheTTL, Timeout: cfg.CacheTimeout, Metricas: &bookingredis.Metricas{}}
+		// ADR-007: Redis es parcial; sin él el catálogo se lee de PostgreSQL.
+		checks = append(checks, health.Check{Name: "redis", Fn: cache.Ping, Partial: true})
+	}
 	router := bookinghttp.NewRouter(log, cfg.HealthTimeout, checks...)
+	if cache != nil {
+		router.GET("/metrics", func(c *gin.Context) {
+			m := cache.Metricas
+			c.Data(200, "text/plain; version=0.0.4", []byte(fmt.Sprintf("activities_cache_hits_total %d\nactivities_cache_misses_total %d\nactivities_cache_errors_total %d\nactivities_cache_invalidations_total %d\nactivities_cache_redis_operations_total %d\nactivities_cache_redis_seconds_total %.6f\n",
+				m.Aciertos.Load(), m.Fallos.Load(), m.Errores.Load(), m.Invalidaciones.Load(), m.Operaciones.Load(), float64(m.MicrosegundosRedis.Load())/1e6)))
+		})
+	}
 	if cfg.Enabled {
 		if len(cfg.InternalServiceKey) < 32 {
 			return errors.New("BOOKING_ENABLED requiere GYM_INTERNAL_SERVICE_KEY de al menos 32 caracteres")
@@ -97,6 +119,10 @@ func run(cfg config.Config, log *slog.Logger) error {
 			HTTP:   &http.Client{Timeout: cfg.MembersTimeout, Transport: correlation.Transport{}},
 		}
 		servicio := application.New(db, db, membersClient, reloj)
+		if cache != nil {
+			servicio.ConCache(cache)
+			log.Info("caché del catálogo de actividades habilitada")
+		}
 		if indice != nil {
 			servicio.ConBusqueda(indice, db)
 			log.Info("búsqueda de clases en OpenSearch habilitada")

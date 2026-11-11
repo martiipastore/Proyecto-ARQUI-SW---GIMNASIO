@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -55,6 +56,7 @@ var withMemberships = flag.Bool("memberships", false, "agregar escenarios CB-04 
 var withBooking = flag.Bool("booking", false, "verificar el recorrido de reservas de la etapa 4 con servicios reales")
 var withMessaging = flag.Bool("messaging", false, "agregar RabbitMQ, MongoDB y notificaciones de la etapa 5")
 var withAttendance = flag.Bool("attendance", false, "agregar consumo Booking → Benefits, historial y recuperación de etapa 6")
+var withCache = flag.Bool("cache", false, "etapa 9: caché del catálogo de actividades en Redis, medida con y sin caché bajo la misma carga")
 var withSearch = flag.Bool("search", false, "agregar búsqueda de clases en OpenSearch de etapa 8: indexer, reindexado, retraso, caída y revalidación")
 var withClub = flag.Bool("club", false, "agregar administración del Club de etapa 7: integraciones, vinculación y reversiones")
 
@@ -258,7 +260,7 @@ func run() {
 	must(err)
 	prefix := "gym-cb03-" + randomHex()[:12]
 	postgresName, mailName := prefix+"-postgres", prefix+"-mailpit"
-	for _, name := range []string{postgresName, mailName, prefix + "-rabbitmq", prefix + "-mongo", prefix + "-opensearch"} {
+	for _, name := range []string{postgresName, mailName, prefix + "-rabbitmq", prefix + "-mongo", prefix + "-opensearch", prefix + "-redis"} {
 		// Only these exact, uniquely generated container names may be removed.
 		defer func(name string) {
 			cleanup, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -411,6 +413,16 @@ func run() {
 		}
 		for k, v := range map[string]string{"BOOKING_HTTP_ADDR": address, "BOOKING_DB_DSN": "postgres://booking:" + password + "@" + pgAddress + "/booking_db?sslmode=disable", "BOOKING_ENABLED": "true", "BOOKING_MEMBERS_URL": membersURL, "BOOKING_CLOSE_INTERVAL": "1s"} {
 			bookingEnv[k] = v
+		}
+		if *withCache {
+			redisAddress := port()
+			docker("", "run", "-d", "--name", prefix+"-redis", "-p", redisAddress+":6379", "redis:7-alpine", "redis-server", "--requirepass", password)
+			eventually("Redis", func() bool {
+				return exec.CommandContext(ctx, "docker", "exec", prefix+"-redis", "redis-cli", "-a", password, "--no-auth-warning", "ping").Run() == nil
+			})
+			bookingEnv["BOOKING_CACHE_ENABLED"] = "false"
+			bookingEnv["BOOKING_REDIS_ADDR"] = redisAddress
+			bookingEnv["BOOKING_REDIS_PASSWORD"] = password
 		}
 		if *withAttendance {
 			bookingEnv["BOOKING_MESSAGING_ENABLED"] = "true"
@@ -640,6 +652,9 @@ func run() {
 		mark("CB04_renovacion_programada_paginacion_y_outbox_atomico")
 		if *withBooking {
 			bookingFlow(gatewayURL, mailURL, sql, adminHeaders, login, passwordUser, today)
+		}
+		if *withCache {
+			cacheFlow(gatewayURL, passwordUser, search, sql, adminHeaders, login)
 		}
 		if *withMessaging {
 			messagingFlow(gatewayURL, mailURL, rabbitURL, notificationURL, password, prefix, mailName, sql, adminHeaders)
@@ -1088,6 +1103,204 @@ func clubFlow(base, benefitsURL, password string, sql func(string, string) strin
 	mark("club_reversion_asistencia_CA35_3_o_saldo_insuficiente_CA11_3")
 }
 
+// medicion resume una fase de carga constante.
+type medicion struct {
+	Requests, Errors                 int
+	Codes                            map[int]int
+	RPS, P50, P95, P99, ConsultasReq float64
+}
+
+// cargar ejecuta vus clientes en bucle cerrado durante d contra path y cuenta
+// los accesos a la tabla fuente (idx_scan + seq_scan) por solicitud.
+func cargar(base, path string, headers map[string]string, vus int, d time.Duration, scans func() float64) medicion {
+	type sample struct {
+		ms     float64
+		ok     bool
+		status int
+	}
+	out := make(chan sample, 1<<16)
+	// Conexiones reutilizadas: el generador no debe agotar puertos efímeros.
+	loader := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{MaxIdleConns: 64, MaxIdleConnsPerHost: 64, IdleConnTimeout: 30 * time.Second}}
+	defer loader.CloseIdleConnections()
+	before := scans()
+	start := time.Now()
+	deadline := start.Add(d)
+	done := make(chan struct{})
+	for i := 0; i < vus; i++ {
+		go func() {
+			defer func() { done <- struct{}{} }()
+			for time.Now().Before(deadline) {
+				req, err := http.NewRequestWithContext(ctx, "GET", base+path, nil)
+				must(err)
+				for k, v := range headers {
+					req.Header.Set(k, v)
+				}
+				t0 := time.Now()
+				res, err := loader.Do(req)
+				ok := err == nil && res.StatusCode == 200
+				status := -1
+				if err == nil {
+					status = res.StatusCode
+					_, _ = io.Copy(io.Discard, res.Body)
+					res.Body.Close()
+				}
+				out <- sample{float64(time.Since(t0).Microseconds()) / 1000, ok, status}
+			}
+		}()
+	}
+	for i := 0; i < vus; i++ {
+		<-done
+	}
+	elapsed := time.Since(start).Seconds()
+	close(out)
+	var lat []float64
+	m := medicion{}
+	for s := range out {
+		m.Requests++
+		if !s.ok {
+			m.Errors++
+			if m.Codes == nil {
+				m.Codes = map[int]int{}
+			}
+			m.Codes[s.status]++
+		}
+		lat = append(lat, s.ms)
+	}
+	sort.Float64s(lat)
+	pct := func(p float64) float64 {
+		if len(lat) == 0 {
+			return 0
+		}
+		return lat[min(len(lat)-1, int(p*float64(len(lat))))]
+	}
+	m.RPS, m.P50, m.P95, m.P99 = float64(m.Requests)/elapsed, pct(0.50), pct(0.95), pct(0.99)
+	if m.Requests > 0 {
+		// PostgreSQL publica las estadísticas de un backend inactivo hasta 10 s después.
+		time.Sleep(11 * time.Second)
+		m.ConsultasReq = (scans() - before) / float64(m.Requests)
+	}
+	return m
+}
+
+// cacheFlow mide los catálogos que ADR-007 permite cachear (etapa 9) con la
+// misma carga: 10 clientes concurrentes durante 20 s tras 3 s de calentamiento.
+func cacheFlow(base, password string, fx searchFixture, sql func(string, string) string, admin func(string) map[string]string, login func(string, string, int) string) {
+	if result.Metrics == nil {
+		result.Metrics = map[string]float64{}
+	}
+	jwt := login("booking-student@example.test", password, 200)
+	headers := map[string]string{"Authorization": "Bearer " + jwt}
+	scans := func(db, table string) func() float64 {
+		return func() float64 {
+			var n float64
+			_, err := fmt.Sscanf(sql(db, fmt.Sprintf("SELECT COALESCE(seq_scan,0)+COALESCE(idx_scan,0) FROM pg_stat_user_tables WHERE relname='%s'; SELECT pg_stat_clear_snapshot();", table)), "%g", &n)
+			must(err)
+			return n
+		}
+	}
+	// Rondas alternadas A/B/A/B en la misma corrida: el ruido de la máquina afecta
+	// a ambos modos por igual. Tipos de membresía (sin caché) es el control.
+	type acumulado struct{ rps, p50, p95, p99, accesos float64 }
+	totales := map[string]*acumulado{}
+	for ronda, conCache := range []bool{false, true, false, true} {
+		modo := "sin_cache"
+		if conCache {
+			modo = "con_cache"
+		}
+		fx.restartBooking(map[string]string{"BOOKING_CACHE_ENABLED": fmt.Sprint(conCache)})
+		for _, target := range []struct{ name, path, db, table string }{
+			{"actividades", "/api/v1/activities", "booking_db", "actividades"},
+			{"control_tipos_membresia", "/api/v1/memberships/types", "members_db", "tipos_membresia"},
+		} {
+			cargar(base, target.path, headers, 10, 3*time.Second, func() float64 { return 0 })
+			m := cargar(base, target.path, headers, 10, 20*time.Second, scans(target.db, target.table))
+			ensure(m.Errors == 0, fmt.Sprintf("Errores durante la medición de %s: %v", target.name, m.Codes))
+			key := target.name + "_" + modo
+			if totales[key] == nil {
+				totales[key] = &acumulado{}
+			}
+			t := totales[key]
+			t.rps, t.p50, t.p95, t.p99, t.accesos = t.rps+m.RPS/2, t.p50+m.P50/2, t.p95+m.P95/2, t.p99+m.P99/2, t.accesos+m.ConsultasReq/2
+			fmt.Printf("ronda %d %s %s: %.0f req/s p50=%.2fms p95=%.2fms p99=%.2fms accesos/req=%.2f\n", ronda+1, target.name, modo, m.RPS, m.P50, m.P95, m.P99, m.ConsultasReq)
+		}
+	}
+	for key, t := range totales {
+		for k, v := range map[string]float64{"rps": t.rps, "p50_ms": t.p50, "p95_ms": t.p95, "p99_ms": t.p99, "accesos_tabla_por_solicitud": t.accesos} {
+			result.Metrics[key+"_"+k] = v
+		}
+	}
+	ensure(totales["actividades_con_cache"].accesos < 0.01, "Con caché el catálogo sigue leyendo booking_db")
+	mark("cache_medicion_alternada_misma_carga_con_control")
+	metric := func(name string) float64 {
+		res, err := client.Get(fx.bookingURL + "/metrics")
+		must(err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		must(err)
+		for _, line := range strings.Split(string(body), "\n") {
+			var v float64
+			if strings.HasPrefix(line, name+" ") {
+				_, err := fmt.Sscanf(strings.TrimPrefix(line, name+" "), "%g", &v)
+				must(err)
+				return v
+			}
+		}
+		panic("Métrica ausente: " + name)
+	}
+	hits, misses := metric("activities_cache_hits_total"), metric("activities_cache_misses_total")
+	result.Metrics["actividades_redis_aciertos"] = hits
+	result.Metrics["actividades_redis_fallos"] = misses
+	result.Metrics["actividades_redis_tasa_aciertos"] = hits / (hits + misses)
+	result.Metrics["actividades_redis_ms_promedio_por_operacion"] = metric("activities_cache_redis_seconds_total") * 1000 / metric("activities_cache_redis_operations_total")
+	ensure(hits/(hits+misses) > 0.99, "La caché no está acertando")
+	mark("cache_metricas_aciertos_fallos_y_latencia_expuestas")
+
+	zumba := sql("booking_db", "SELECT id FROM actividades WHERE nombre='Zumba';")
+	nombre := func() string {
+		status, out := request(base, "GET", "/api/v1/activities", headers, nil)
+		ensure(status == 200, "Catálogo no disponible")
+		for _, item := range out["items"].([]any) {
+			a := item.(map[string]any)
+			if a["id"] == zumba {
+				return a["nombre"].(string)
+			}
+		}
+		return ""
+	}
+	ensure(nombre() == "Zumba", "Catálogo inicial incorrecto")
+	status, _ := request(base, "PUT", "/api/v1/activities/"+zumba, admin(""), map[string]string{"nombre": "Zumba Cardio"})
+	ensure(status == 200, "No modifica la actividad")
+	ensure(nombre() == "Zumba Cardio", "La caché devolvió el nombre viejo después de modificar")
+	ensure(metric("activities_cache_invalidations_total") >= 1, "No se invalidó la copia")
+	mark("cache_invalidacion_por_escritura_visible_en_la_siguiente_lectura")
+
+	docker("", "stop", fx.prefix+"-redis")
+	errorsBefore := metric("activities_cache_errors_total")
+	ensure(nombre() == "Zumba Cardio", "Sin Redis el catálogo no responde desde PostgreSQL")
+	status, health := request(fx.bookingURL, "GET", "/health/ready", nil, nil)
+	ensure(status == 200 && health["status"] == "degraded", "Readiness no informa Redis como dependencia parcial")
+	ensure(metric("activities_cache_errors_total") > errorsBefore, "La falla de Redis no quedó registrada")
+	m := cargar(base, "/api/v1/activities", headers, 10, 5*time.Second, func() float64 { return 0 })
+	ensure(m.Errors == 0, "Sin Redis hubo errores en el catálogo")
+	result.Metrics["actividades_sin_redis_p95_ms"] = m.P95
+	status, _ = request(base, "PUT", "/api/v1/activities/"+zumba, admin(""), map[string]string{"nombre": "Zumba"})
+	ensure(status == 200, "Sin Redis no se puede modificar la actividad")
+	docker("", "start", fx.prefix+"-redis")
+	eventually("readiness recuperada", func() bool {
+		status, health := request(fx.bookingURL, "GET", "/health/ready", nil, nil)
+		return status == 200 && health["status"] == "ready"
+	})
+	// La copia guardada antes de la caída sigue con el nombre viejo: la escritura
+	// hecha sin Redis no pudo invalidarla. Se acota con el TTL (límite documentado)
+	// y el E2E la limpia invalidando con una escritura nueva.
+	status, _ = request(base, "PUT", "/api/v1/activities/"+zumba, admin(""), map[string]string{"nombre": "Zumba"})
+	ensure(status == 200, "No modifica la actividad tras la recuperación")
+	hitsBefore := metric("activities_cache_hits_total")
+	ensure(nombre() == "Zumba" && nombre() == "Zumba", "Catálogo incorrecto tras la recuperación")
+	ensure(metric("activities_cache_hits_total") > hitsBefore, "No vuelve a acertar tras recuperar Redis")
+	mark("cache_redis_caido_degrada_lee_postgres_y_se_recupera")
+}
+
 // searchFixture conecta searchFlow con los procesos que arrancó run().
 type searchFixture struct {
 	bookingURL, prefix, directory, amqpURL, bookingDSN string
@@ -1330,6 +1543,9 @@ func mustInt(s string) int {
 
 func main() {
 	flag.Parse()
+	if *withCache {
+		*withBooking = true
+	}
 	if *withSearch {
 		*withClub = true
 	}
@@ -1365,6 +1581,10 @@ func main() {
 		result.Stage = "Entrega final - etapa 7"
 		result.Scope += "; Club administration through the gateway: integrations, one-time API keys, rotation, deactivation, account links, admin account view and idempotent reversals"
 	}
+	if *withCache {
+		result.Stage = "Entrega final - etapa 9"
+		result.Scope += "; isolated Redis 7, activities catalog cache-aside measured A/B/A/B in the same run (10 closed-loop clients, 20 s) with membership types as control, invalidation and Redis outage"
+	}
 	if *withSearch {
 		result.Stage = "Entrega final - etapa 8"
 		result.Scope += "; isolated OpenSearch 2.17, booking-indexer consuming clase.actualizada, alias reindex with concurrent consumer, filters compared with PostgreSQL, measured write-to-search lag, stale event, revalidation and OpenSearch outage"
@@ -1399,6 +1619,9 @@ func main() {
 	}
 	if *withClub {
 		path = filepath.Join("docs", "evidence", "entrega-final", "etapa7", "club-e2e.json")
+	}
+	if *withCache {
+		path = filepath.Join("docs", "evidence", "entrega-final", "etapa9", "cache-e2e.json")
 	}
 	if *withSearch {
 		path = filepath.Join("docs", "evidence", "entrega-final", "etapa8", "search-e2e.json")
