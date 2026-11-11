@@ -108,7 +108,7 @@ func verificarBooking(t *testing.T, db *DB) {
 		failure := errors.New("fixture antes del commit")
 		err := db.AplicarHecho(ctx, h, "fixture", func(c domain.CuentaBeneficios) (domain.CuentaBeneficios, domain.MovimientoPuntos, error) {
 			return c, domain.MovimientoPuntos{}, failure
-		})
+		}, nil)
 		require.ErrorIs(t, err, failure)
 		var count int
 		require.NoError(t, db.pool.QueryRow(ctx, `SELECT count(*) FROM cuentas WHERE alumno_id=$1`, h.AlumnoID).Scan(&count))

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Propuesto; manual de MELT recibido el 10/11/2026; flujo, servicio consumidor y aprobación pendientes |
+| **Estado** | Reemplazado por [ADR-009 v2](ADR-009-v2-acreditacion-melt.md) el 11/11/2026 |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D9 |
 | **Autores** | Equipo del TPI |

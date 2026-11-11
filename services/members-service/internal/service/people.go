@@ -294,6 +294,22 @@ func (s *People) summaries(ctx context.Context, ids []string, role string) ([]mo
 	return s.repo.SummariesByID(ctx, ids, role)
 }
 
+// ContactEmail entrega el email de un alumno activo a Benefits para acreditarle
+// puntos en el proveedor externo (etapa 13, D-92). Solo por la API interna.
+func (s *People) ContactEmail(ctx context.Context, id string) (string, error) {
+	if !uuidIdentity.MatchString(id) {
+		return "", model.ErrInvalid
+	}
+	person, err := s.repo.Person(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	if person.Role != access.Student || person.State != "ACTIVO" {
+		return "", model.ErrNotFound
+	}
+	return person.Email, nil
+}
+
 // StudentByDNI identifica al alumno en el ingreso por DNI (etapa 4, D-36).
 func (s *People) StudentByDNI(ctx context.Context, dni string) (model.StudentSummary, error) {
 	if !dniPattern.MatchString(dni) {

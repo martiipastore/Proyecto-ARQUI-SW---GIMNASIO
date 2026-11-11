@@ -15,12 +15,18 @@ por defecto. No se publicaron estos cambios en Vercel. Ver
 [etapa 5](entrega-final/ETAPA_5_MENSAJERIA.md). Las afirmaciones siguientes del
 09/11 se conservan como inventario anterior y no describen esos cambios locales.
 
-**Capacidad externa, recepción del 10/11/2026:** se recibió el manual de MELT,
-con catálogo público, registro referido y consultas de sesión/puntos MELT. Está
-documentado en [ETAPA_13_MELT.md](entrega-final/ETAPA_13_MELT.md), junto con la
-copia del proveedor. La implementación sigue pendiente del flujo propio, servicio
-consumidor y coordinaciones; ADR-009 continúa propuesto. No hay llamadas al
-proveedor ni cambios en la arquitectura por esta recepción documental.
+**Capacidad externa (etapa 13, 11/11/2026):** cada asistencia acredita 100 puntos
+en **MELT**, la capacidad del grupo proveedor, mediante su API «Acreditación externa
+de puntos» v1.1.0.
+- **Consumidor:** benefits-service. Registra el envío en la misma transacción que la
+  asistencia (`envios_melt`) y lo entrega en segundo plano, con la referencia estable,
+  timeout de 40 s y reintentos.
+- **Email:** se consulta a Members por una ruta interna.
+- **Usuario:** el alumno ve el estado y el enlace de registro en su inicio.
+- **Fallas:** si MELT cae, la asistencia y los puntos locales no se afectan.
+
+Ver [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md), D-92 y
+[ETAPA_13_MELT.md](entrega-final/ETAPA_13_MELT.md).
 
 **Etapa 6 local, 10/11/2026:** Booking publica asistencia/ausencia desde su outbox
 y Benefits las consume en el mismo ledger de cuenta que los créditos HTTP.
@@ -813,7 +819,8 @@ flowchart LR
 | [ADR-008](adr/ADR-008-contrato-propio.md) | D8 — Contrato propio inicial | Reemplazado por ADR-008 v2 |
 | [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Reemplazado por ADR-008 v3 |
 | [ADR-008 v3](adr/ADR-008-v3-fecha-cuenta-sin-movimientos.md) | D8 — Contrato 1.1.1, fecha de cuenta sin movimientos | Aceptado; flujo mínimo implementado |
-| [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Propuesto; proveedor y contrato pendientes |
+| [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Reemplazado por ADR-009 v2 |
+| [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md) | D9 — Acreditación en MELT por asistencia desde Benefits | Aceptado; validado localmente, prueba con la clave real pendiente |
 | [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Diseño inicial de resiliencia | Reemplazado por v2 |
 | [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | D10 — Presupuestos y recuperación idempotente | Aceptado; ejercicio de etapa 6 validado |
 | [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Diseño inicial de observabilidad | Reemplazado por v2 |
@@ -845,7 +852,7 @@ flowchart LR
 | D6 — Búsqueda | [ADR-014](adr/ADR-014-busqueda-clases.md) | Diseño; implementación pendiente |
 | D7 — Caché | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md) | Diseño; implementación y medición pendientes |
 | D8 — Contrato propio | [ADR-008 v4](adr/ADR-008-v4-capacidad-operativa-club.md) | Aceptado; v2.0.0 publicado |
-| D9 — Consumo del proveedor | [ADR-009](adr/ADR-009-consumo-proveedor.md) | Propuesto; proveedor pendiente |
+| D9 — Consumo del proveedor | [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md) | Aceptado; validado localmente |
 | D10 — Resiliencia | [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | Aceptado; caída controlada validada |
 | D11 — Observabilidad | [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | Primera versión; métricas, tableros y alertas pendientes |
 | D12 — Balanceo | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | Diseño; implementación pendiente |

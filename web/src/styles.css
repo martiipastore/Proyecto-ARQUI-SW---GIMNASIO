@@ -1003,6 +1003,19 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .nutrition-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .nutrition-form > h3, .nutrition-form > button { grid-column: 1 / -1; }
 .reason-action { margin: 0; }
+/* Etapa 13: puntos MELT (club aliado). */
+.melt-panel { overflow: hidden; border: 1px solid var(--border); background: #11130f; }
+.melt-layout { display: grid; grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr); }
+.melt-summary { display: grid; align-content: center; gap: 0.6rem; padding: clamp(1.5rem, 4vw, 3rem); border-right: 1px solid var(--border); background: repeating-linear-gradient(135deg, transparent 0 22px, rgb(234 255 33 / 4%) 23px 24px), #151812; }
+.melt-summary > span { color: var(--accent); font-size: 0.67rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
+.melt-summary > strong { display: flex; align-items: baseline; gap: 0.5rem; font-family: var(--display-font); font-size: clamp(3.5rem, 7vw, 6rem); font-style: italic; line-height: 0.85; }
+.melt-summary > strong small { color: var(--muted); font-family: var(--body-font); font-size: 0.72rem; font-style: normal; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+.melt-summary p { max-width: 36ch; margin: 0; color: var(--muted); font-size: 0.85rem; }
+.melt-summary .melt-total { color: var(--text); font-weight: 800; }
+.melt-summary .button { justify-self: start; margin-top: 0.5rem; text-decoration: none; }
+.melt-list { min-width: 0; padding: clamp(1.25rem, 3vw, 2.5rem); }
+.melt-pendiente_registro .movement-value { border-color: rgb(255 215 82 / 40%); color: var(--warn); }
+.melt-rechazado .movement-value { border-color: rgb(255 107 95 / 35%); color: var(--bad); }
 .admin-page .plain-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); margin: 0; }
 .admin-page .plain-list > .club-card { max-width: none; align-content: start; padding: 1.2rem; background: rgb(20 22 19 / 88%); }
 .admin-page .plain-list > .club-card > h2 { font-size: 1.7rem; }
@@ -1035,7 +1048,8 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .activity-link { transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 180ms ease-out; }
 
 @media (max-width: 900px) {
-  .plan-columns, .nutrition-form { grid-template-columns: 1fr; }
+  .plan-columns, .nutrition-form, .melt-layout { grid-template-columns: 1fr; }
+  .melt-summary { border-right: 0; border-bottom: 1px solid var(--border); }
   .admin-page .data-table:not(.responsive-table) { display: block; overflow-x: auto; }
 }
 

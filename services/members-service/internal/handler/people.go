@@ -215,6 +215,16 @@ func RegisterPeople(r *gin.Engine, s *service.People, secret string) {
 		}
 	}
 	internal.GET("/alumnos", summaries(s.StudentsByID))
+	// Etapa 13 (D-92): Benefits obtiene el email para acreditar en MELT.
+	internal.GET("/alumnos/:id/contacto", func(c *gin.Context) {
+		email, err := s.ContactEmail(c.Request.Context(), c.Param("id"))
+		if err != nil {
+			peopleError(c, err)
+			return
+		}
+		c.Header("Cache-Control", "no-store")
+		c.JSON(200, gin.H{"email": email})
+	})
 	internal.GET("/profesores", summaries(s.TeachersByID))
 	// POST para que el DNI no viaje en la URL ni quede en logs de acceso.
 	internal.POST("/alumnos/buscar-dni", func(c *gin.Context) {

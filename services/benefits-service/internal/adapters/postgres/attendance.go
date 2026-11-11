@@ -10,7 +10,7 @@ import (
 // AplicarHecho confirma movimiento, cuenta y recibo en la misma transacción.
 // El callback aplica las reglas del dominio sobre el saldo bloqueado. Todos los
 // créditos HTTP y eventos comparten SELECT FOR UPDATE sobre la misma cuenta.
-func (d *DB) AplicarHecho(ctx context.Context, h domain.HechoBooking, fingerprint string, apply func(domain.CuentaBeneficios) (domain.CuentaBeneficios, domain.MovimientoPuntos, error)) (err error) {
+func (d *DB) AplicarHecho(ctx context.Context, h domain.HechoBooking, fingerprint string, apply func(domain.CuentaBeneficios) (domain.CuentaBeneficios, domain.MovimientoPuntos, error), envio *domain.EnvioMelt) (err error) {
 	defer func() { err = storageError(err) }()
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
@@ -64,6 +64,13 @@ func (d *DB) AplicarHecho(ctx context.Context, h domain.HechoBooking, fingerprin
 		}
 		if _, err = tx.Exec(ctx, `UPDATE cuentas SET saldo=$2,ultima_secuencia=$3 WHERE id=$1`, nueva.ID(), nueva.Saldo(), nueva.Secuencia()); err != nil {
 			return err
+		}
+		// Etapa 13: el envío a MELT nace en la misma transacción que la
+		// asistencia; una reentrega del evento no lo duplica (origen único).
+		if envio != nil {
+			if err = insertarEnvioMelt(ctx, tx, *envio); err != nil {
+				return err
+			}
 		}
 	}
 	if _, err = tx.Exec(ctx, `INSERT INTO mensajes_booking_procesados(event_id,tipo,origen_id,huella,movimiento_id) VALUES($1,$2,$3,$4,$5)`, h.EventoID, h.Tipo, h.OrigenID, fingerprint, movement); err != nil {

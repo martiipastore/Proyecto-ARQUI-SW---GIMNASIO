@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from '../auth/session';
 import { day, Pagina, range, Reserva } from './booking/types';
+import { MeltPoints } from './MeltPoints';
 import { PointsHistory } from './PointsHistory';
 
 interface MembershipSummary {
@@ -111,6 +112,7 @@ export function StudentHomePage() {
       </section>
 
       <PointsHistory />
+      <MeltPoints />
     </main>
   );
 }

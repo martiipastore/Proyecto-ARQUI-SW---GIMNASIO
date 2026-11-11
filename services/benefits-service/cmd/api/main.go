@@ -19,11 +19,13 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
 	bookingamqp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/amqp"
 	benefitshttp "github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/http"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/melt"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/members"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/postgres"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/adapters/system"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/application"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/config"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
@@ -68,6 +70,45 @@ func run(cfg config.Config, log *slog.Logger) error {
 
 	bookingEvents := application.NewBookingEvents(db, system.Clock{}, system.IDs{})
 	checks := []health.Check{{Name: "postgres", Fn: db.Ping}}
+
+	// Etapa 13 (D-92, ADR-009 v2): cada asistencia registra en la misma
+	// transacción un envío de puntos a MELT; este proceso los entrega en segundo
+	// plano. Una falla del proveedor no afecta la asistencia ni los puntos locales,
+	// por eso MELT no forma parte de /health/ready.
+	var enviosMelt *application.EnviosMelt
+	if cfg.MeltEnabled {
+		if len(cfg.ServiceKey) < 32 {
+			return fmt.Errorf("BENEFITS_MELT_ENABLED requiere GYM_INTERNAL_SERVICE_KEY de al menos 32 caracteres")
+		}
+		if cfg.MeltKey == "" {
+			log.Warn("BENEFITS_MELT_PARTNER_KEY vacía: MELT responderá 401 y los envíos quedan pendientes hasta configurarla")
+		}
+		bookingEvents.ConEnviosMelt()
+		contactos := members.Client{URL: cfg.MembersURL, Secret: cfg.ServiceKey, HTTP: &http.Client{Timeout: 3 * time.Second}}
+		proveedor := melt.Client{URL: cfg.MeltURL, Key: cfg.MeltKey, HTTP: &http.Client{Timeout: cfg.MeltTimeout}}
+		enviosMelt = application.NewEnviosMelt(db, proveedor, contactos, system.Clock{})
+		meltCtx, cancel := context.WithCancel(ctx)
+		done := make(chan struct{})
+		defer func() { cancel(); <-done }()
+		go func() {
+			defer close(done)
+			ticker := time.NewTicker(cfg.MeltInterval)
+			defer ticker.Stop()
+			for {
+				if n, err := enviosMelt.Procesar(meltCtx, 20); err != nil && meltCtx.Err() == nil {
+					log.Warn("no se pudieron procesar los envíos a MELT", slog.Any("error", err))
+				} else if n > 0 {
+					log.Info("envíos a MELT procesados", slog.Int("cantidad", n))
+				}
+				select {
+				case <-meltCtx.Done():
+					return
+				case <-ticker.C:
+				}
+			}
+		}()
+		log.Info("acreditación en MELT activa", slog.Int64("puntos_por_asistencia", domain.PuntosMeltPorAsistencia))
+	}
 	var workers []*messaging.Consumer
 	if cfg.MessagingEnabled {
 		if cfg.AMQPURL == "" {
@@ -115,6 +156,9 @@ func run(cfg config.Config, log *slog.Logger) error {
 		client := members.Client{URL: cfg.MembersURL, Secret: cfg.ServiceKey, HTTP: &http.Client{Timeout: 3500 * time.Millisecond}}
 		benefitshttp.RegisterRegistrations(router, application.NewRegistro(client, db, benefits), auth, cfg.ServiceKey, log)
 		benefitshttp.RegisterAccountHistory(router, bookingEvents, cfg.ServiceKey)
+	}
+	if enviosMelt != nil {
+		benefitshttp.RegisterMeltHistory(router, enviosMelt, cfg.ServiceKey)
 	}
 	// Etapa 7: administración del Club. Sin GYM_INTERNAL_SERVICE_KEY válida las
 	// rutas responden 401: solo el gateway autenticado puede llegar a ellas.

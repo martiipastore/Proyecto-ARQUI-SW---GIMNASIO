@@ -239,6 +239,12 @@ services:
       GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
       BENEFITS_MEMBERS_URL: http://members-service:8081
       BENEFITS_DB_DSN: postgres://benefits_user:${BENEFITS_DB_PASSWORD}@postgres:5432/benefits_db?sslmode=disable
+      # Etapa 13 (D-92): 100 puntos MELT por asistencia. La clave la comparte MELT
+      # por privado; va solo en .env.
+      BENEFITS_MELT_ENABLED: ${BENEFITS_MELT_ENABLED:-false}
+      BENEFITS_MELT_URL: ${BENEFITS_MELT_URL:-https://melt-gateway-prueba.onrender.com/api/v1}
+      BENEFITS_MELT_PARTNER_KEY: ${BENEFITS_MELT_PARTNER_KEY:-}
+      BENEFITS_MELT_TIMEOUT: ${BENEFITS_MELT_TIMEOUT:-40s}
     ports:
       - "127.0.0.1:8083:8083"
     depends_on:

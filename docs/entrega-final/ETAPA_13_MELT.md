@@ -1,170 +1,79 @@
 # Etapa 13 — Integración externa con MELT
 
-**Estado al 10/11/2026:** documentación recibida y analizada; implementación y
-verificación contra el proveedor pendientes. El equipo confirmó que este PDF es
-toda la información que recibió. Se prepara esta referencia para continuar el
-[plan final](PLAN_ENTREGA_FINAL.md) en orden; no se adelanta la implementación.
+**Estado al 11/11/2026:** implementada y validada de punta a punta contra el servidor
+real de MELT **con la clave de integración**: una asistencia generó el envío de 100
+puntos y MELT respondió `202` (pendiente de registro, porque el alumno no tiene
+cuenta en MELT); el alumno ve el botón **Registrarme en MELT**. Decisión:
+[ADR-009 v2](../adr/ADR-009-v2-acreditacion-melt.md) y D-92.
 
-## 1. Fuente y alcance de esta recepción
+## 1. Fuentes
 
-- Proveedor: **MELT**.
-- Fuente: [Manual_integracion_MELT_Grupo_Gimnasio.pdf](../contracts/providers/melt/Manual_integracion_MELT_Grupo_Gimnasio.pdf), 5 páginas.
-- Copia recibida el 10/11/2026, sin número de versión o fecha de emisión explícitos.
-- SHA-256: `7e150c2a7790ed4baedfeb1eb8e7a30deed1e4bf873b35fdb23d19c2fd3d6ff9`.
-- Base declarada por el proveedor: `https://melt-gateway.onrender.com`.
-- Prefijo: `/api/v1`; HTTPS y JSON cuando corresponda.
-
-Este documento resume el manual, no certifica disponibilidad ni compatibilidad
-del despliegue actual. No se hicieron llamadas a MELT, altas de usuarios ni envíos
-de datos. El manual describe el contrato externo; sus recomendaciones no aprueban
-por sí solas cambios en el SPEC, la arquitectura o el alcance de METALFITNESS.
-
-## 2. APIs documentadas
-
-| Método y ruta externa | Autenticación MELT | Información confirmada y página |
+| Fecha | Qué se recibió | Uso |
 |---|---|---|
-| `GET /api/v1/tratamientos` | Pública | Listado, búsqueda, filtros y paginación; pp. 1–2 |
-| `GET /api/v1/tratamientos/{id}` | Pública | Detalle por ID de texto; 200, 400, 404 y 503; p. 2 |
-| `POST /api/v1/auth/registro` | Pública | Alta de cliente con referido opcional; 201 y estado del beneficio; pp. 2–3 |
-| `POST /api/v1/auth/login` | Credenciales personales MELT | 200 con token Bearer, expiración y usuario; nombres exactos de campos no especificados; p. 3 |
-| `GET /api/v1/beneficios/mis-puntos` | Bearer MELT, rol `cliente` | Saldo de la identidad MELT autenticada; sin puntos: cero y movimientos vacíos; p. 3 |
+| 10/11/2026 | [Manual PDF](../contracts/providers/melt/Manual_integracion_MELT_Grupo_Gimnasio.pdf): catálogo, registro referido, login y puntos MELT | Histórico. No definía un flujo que afectara al gimnasio; queda reemplazado por la API del 11/11 |
+| 11/11/2026 | API «Acreditación externa de puntos» **v1.1.0**: [OpenAPI](../contracts/providers/melt/acreditar-puntos-v1.openapi.yaml) (SHA-256 `521a79c7cecc25fd124389509513462e95ef467c251611569cba6c1a68179d0b`) y [guía de integración](../contracts/providers/melt/INTEGRACION-GIMNASIO.md), copiados de la rama `feature/api-acreditacion-puntos-externos` del repositorio de MELT | Contrato vigente de la integración y base del test de contrato |
 
-No se documentan operaciones administrativas que debamos consumir. Los IDs de
-tratamientos se conservan como strings, exactamente como llegan. `TRAT-001` es
-un ejemplo ilustrativo, no un dato confirmado del catálogo real.
+Base: `https://melt-gateway-prueba.onrender.com/api/v1` (entorno académico de
+integración, en Render gratuito). Primer acceso medido: **25 s** hasta responder.
 
-### Catálogo: parámetros y respuesta (pp. 1–2)
+## 2. Flujo de negocio (decidido por el equipo el 11/11/2026)
 
-Todos los parámetros son opcionales y deben codificarse en la URL.
+1. El alumno reserva y la recepción registra su ingreso por DNI.
+2. Booking publica `asistencia.registrada`; Benefits acredita **500 puntos del
+   gimnasio** y, **en la misma transacción**, registra un envío de **100 puntos a MELT**
+   con la referencia `metalfitness-asistencia-<id de la asistencia>`.
+3. Un proceso de Benefits (cada 5 s) obtiene el email del alumno desde Members y llama
+   a `POST /beneficios/acreditaciones` con `X-Partner-Key`.
+4. Según la respuesta de MELT:
 
-| Parámetro | Tipo | Valores, límites o default documentados |
-|---|---|---|
-| `q` | string | Coincidencias en nombre y keywords |
-| `categoria` | string | `Facial`, `Corporal`, `Depilación`, `Manos y uñas` |
-| `precioMax` | number | Mayor o igual a cero |
-| `page` | integer | Default 1; no se precisa tratamiento de valores inválidos |
-| `limit` | integer | Default 10; máximo 50 |
-| `sort` | string | `nombre` o `precio`; default `nombre` |
-| `order` | string | `asc` o `desc`; default `asc` |
+   | Respuesta | Estado del envío | Qué ve el alumno |
+   |---|---|---|
+   | `201` / `200` | `ACREDITADO` | «Acreditados en MELT» |
+   | `202` | `PENDIENTE_REGISTRO` | «Esperan tu registro» y el botón **Registrarme en MELT** con el enlace privado. Benefits repite la misma solicitud cada 2 minutos: MELT devuelve el mismo pendiente mientras el enlace esté vigente (verificado: mismo `venceEn`) y responde `200` cuando la persona se registra, así que la tarjeta pasa a «Acreditados». El enlace vence a los 7 días; vencido, se renueva repitiendo la misma solicitud |
+   | `5xx`, timeout, red o `401` | `PENDIENTE_ENVIO` | «Enviando a MELT»; reintento a los 10 s, 20 s, 40 s… hasta 10 min, siempre con la misma referencia |
+   | `400`, `404`, `409`, `415`, `422` | `RECHAZADO` | «No acreditados», con el motivo |
 
-El ejemplo de listado contiene `tratamientos` y `pagination`, con `page`, `limit`,
-`total` y `totalPages`. Cada tratamiento del ejemplo contiene `id`, `nombre`,
-`descripcion`, `categoria`, `precio`, `moneda`, `duracionMinutos`, `imagenes`,
-`keywords` y `profesionalesIds`. El ejemplo usa ARS, pero no establece una regla
-universal de moneda, campos obligatorios o nulabilidad. Un listado vacío es válido.
-El esquema exacto de detalle no está explicitado: no asumir que sea idéntico al listado.
+Las ausencias no se envían. La cantidad la decide el gimnasio; MELT no conoce
+membresías ni asistencias.
 
-### Registro referido y beneficio (pp. 2–3)
+## 3. Qué se implementó
 
-El cuerpo documentado contiene `nombre`, `email`, `password` y `codigoReferido`.
-El alta pública crea un usuario MELT con rol `cliente`; no permite elegir roles.
-No se precisan validaciones completas de longitud o complejidad de contraseña.
-
-`CODIGO_A_COORDINAR` es un placeholder: **el PDF no entrega el código definitivo**.
-Debe enviarse el valor acordado sin alteraciones. Si falta o no coincide, el
-beneficio no aplica. La configuración descrita otorga **100 puntos por alta nueva
-en MELT con código válido**, sin conversión a pesos ni aplicación retroactiva.
-
-La respuesta 201 incluye el usuario y `beneficioRegistro`:
-
-| Valor | Tratamiento descrito por MELT |
+| Componente | Cambio |
 |---|---|
-| `acreditado` | Beneficio acreditado |
-| `pendiente_reintento_en_login` | Cuenta creada; Auth de MELT reintenta el beneficio al iniciar sesión; no volver a registrar |
-| `no_aplica` | No correspondía el beneficio, por ejemplo por código ausente o inválido |
+| Benefits — dominio | `PuntosMeltPorAsistencia = 100`; `EnvioMelt` con estados, espera creciente acotada y renovación del enlace vencido |
+| Benefits — aplicación | `BookingEvents.ConEnviosMelt()` crea el envío junto con la asistencia; `EnviosMelt.Procesar` entrega los envíos vencidos; `MisEnvios` |
+| Benefits — PostgreSQL | Migración `008_envios_melt.sql`: un envío por asistencia (`origen_id` único), referencia única, coherencia estado/enlace y trigger que impide cambiar la referencia, los puntos o el origen, y borrar envíos |
+| Benefits — anticorrupción | `internal/adapters/melt`: cuerpo exacto del contrato y traducción de cada código a un resultado de dominio |
+| Benefits — HTTP | `GET /api/v1/benefits/me/melt` para el alumno; el enlace solo se entrega vigente y a su destinatario |
+| Members | `GET /internal/v1/alumnos/{id}/contacto`: email de un alumno activo, solo con la clave interna; el gateway no lo expone |
+| Gateway | Ruta propia `/api/v1/benefits/me/melt` habilitada para cualquier rol autenticado (Benefits filtra por `X-User-Id`) |
+| Frontend | Tarjeta «Puntos MELT» en el inicio del alumno |
+| Configuración | `BENEFITS_MELT_ENABLED`, `BENEFITS_MELT_URL`, `BENEFITS_MELT_PARTNER_KEY` (solo `.env`), `BENEFITS_MELT_TIMEOUT` (40 s) |
 
-MELT declara que la acreditación es idempotente, pero no documenta una
-`Idempotency-Key` ni una garantía de replay del POST de registro. Un timeout no
-autoriza repetir automáticamente la creación de cuenta. Un 409 puede indicar
-email ya existente; no equivale a demostrar si se acreditó el beneficio.
+**Seguridad:**
+- La clave nunca se registra en logs ni se commitea.
+- El email no se guarda en benefits_db ni aparece en logs.
+- El enlace de registro no se registra en logs (lo pide MELT).
 
-Los 100 puntos de este flujo pertenecen al sistema de MELT según el manual. No
-hay un contrato de callback que ordene acreditarlos en el ledger del gimnasio.
-No reemplazan los 500 puntos por asistencia del gimnasio, no se suman a ellos por
-suposición y no se equiparan las cuentas ni las membresías de ambos sistemas.
-Si se pretende un efecto en nuestra cuenta, se deberá coordinar explícitamente.
+## 4. Pruebas
 
-### Login y puntos MELT (p. 3)
-
-Login recibe `email` y `password`. Para consultar puntos se usa
-`Authorization: Bearer <token>` emitido por MELT para un cliente. El JWT de
-METALFITNESS no se supone válido en MELT. No se reciben credenciales reales en el PDF.
-El manual no define refresh, duración numérica del token ni el JSON completo de
-login o saldo; no inventar campos para construir un cliente o un mock.
-
-## 3. Errores, disponibilidad y coordinación
-
-El manual usa el HTTP status y el campo externo `error`; los cuerpos pueden
-variar por endpoint. No afirma que cumplan RFC 7807. Documenta (pp. 3–4):
-
-| HTTP | Significado habitual indicado por MELT |
+| Prueba | Resultado |
 |---|---|
-| 200 / 201 | Consulta/login/replay exitoso o recurso creado, según endpoint |
-| 400 | JSON, parámetros o campos inválidos |
-| 401 | Token ausente/inválido o credenciales inválidas |
-| 403 | Permisos insuficientes o código no autorizado |
-| 404 | Tratamiento o ruta inexistente |
-| 409 | Conflicto, por ejemplo email duplicado |
-| 422 | Plan/membresía sin configuración, si aplica a otro registro externo |
-| 500 / 503 | Error interno o indisponibilidad temporal |
+| **Test de contrato** (`adapters/melt/contract_test.go`) sobre el OpenAPI versionado de MELT: versión 1.x, operación, cabecera `X-Partner-Key`, URL base, nuestra solicitud dentro del esquema (`additionalProperties: false`, un solo destinatario y un solo identificador, longitudes), códigos interpretados y campos del `202` | Aprobado |
+| Adaptador contra un servidor simulado: cuerpo y cabeceras, cada código, `202` sin enlace o con enlace no HTTPS, timeout y red caída | Aprobado |
+| Dominio y caso de uso: 100 por asistencia, ausencias excluidas, referencia estable, espera creciente acotada, MELT caído, Members caído, alumno dado de baja | Aprobado |
+| PostgreSQL real (testcontainers): envío en la misma transacción, reentrega del evento sin duplicar, ausencias, enlace vigente y vencido, inmutabilidad, flag apagado | Aprobado |
+| Members: tests de servicio y handler | Aprobados |
+| **Punta a punta contra el MELT real, sin clave** | Ingreso por DNI → saldo local de 500 a 1.000 → envío registrado → `401 PARTNER_NO_AUTORIZADO` → envío «Enviando a MELT» con reintento, sin afectar los puntos locales |
+| **Punta a punta contra el MELT real, con la clave** (11/11, 13:57) | El primer reintento con clave falló de forma transitoria (MELT despertando) y se reprogramó. El siguiente obtuvo `202` con `registroUrl` HTTPS y vencimiento a 7 días → estado «Esperan tu registro» y botón **Registrarme en MELT** en la tarjeta del alumno. Repetir la solicitud con la misma referencia devolvió el mismo pendiente (idempotente) |
 
-Esta tabla es general: no implica que cada endpoint devuelva todos los códigos.
-El 422 no basta para inferir un endpoint privado, cuerpo de membresía ni flujo
-MELT → gimnasio que el manual no especifica.
+## 5. Pendiente
 
-MELT advierte que Render puede demorar el primer acceso si el servicio estaba
-inactivo (p. 5). Recomienda espera creciente y reintentos limitados ante 503; no
-fija timeouts, cantidad de intentos, cuotas ni SLA. Esos parámetros y la
-degradación visible del gimnasio se definirán según el flujo elegido.
-
-La p. 4 distingue dos coordinaciones:
-
-- El origen HTTPS del frontend se solicita para CORS **si** hay llamadas directas
-  desde navegador. El manual contempla esa alternativa, pero la arquitectura del
-  gimnasio exige frontend → gateway propio → servicio consumidor → gateway MELT
-  mediante puerto/adaptador (ADR-009 propuesto). No se adopta acceso directo desde
-  la SPA por leer el PDF. CORS no reemplaza autenticación.
-- Si MELT necesita invocar una API nuestra, se deben acordar URL backend HTTPS,
-  método, ruta, JSON, autenticación, headers, respuestas, errores y reintentos.
-  El PDF describe qué intercambiar, **no especifica esa llamada**. Nuestro
-  contrato v2 existente no queda automáticamente acordado por este manual.
-
-## 4. Pendientes para implementar la etapa 13
-
-| Pendiente | Impacto |
-|---|---|
-| Código de referido definitivo y confirmación de los 100 puntos vigentes | Impide demostrar el beneficio referido; no impide una futura consulta pública del catálogo |
-| Flujo de negocio, actor, pantalla y efecto observable en METALFITNESS | Un catálogo aislado no demuestra por sí solo la integración relevante requerida por SPEC §1.5 |
-| Servicio consumidor, HU/RN, puerto y modelo propio | Completar ADR-009 antes de implementar; esta recepción no los decide |
-| Esquemas completos y errores representativos de detalle, registro, login y saldo | El PDF da ejemplos y descripciones parciales; falta validar compatibilidad |
-| Semántica ante resultado indeterminado del registro | Evitar duplicación de altas y beneficios; no asumir replay del POST |
-| Timeouts, reintentos, límites, costos y disponibilidad | Justificar con el flujo y pruebas; no inventar valores atribuidos al proveedor |
-| Necesidad real de login MELT y manejo de sus credenciales/sesión | El catálogo no requiere token; no incorporar captura de contraseñas por defecto |
-| Llamada inversa MELT → gimnasio, si se necesita | Acordar explícitamente contrato y efecto; no inventar callback ni secreto |
-| CORS, si se propone cambiar a consumo directo | Evaluar primero la arquitectura propia; no es requisito de una llamada servidor a servidor |
-
-No se pide al equipo un segundo documento que no recibió. Esta lista conserva
-lo que el PDF deja abierto para coordinar cuando se implemente la etapa.
-
-## 5. Verificación prevista, todavía no ejecutada
-
-1. Confirmar contrato vigente y disponibilidad por el gateway público de MELT;
-   registrar versión recibida, entorno y fecha de la prueba.
-2. Probar listado, filtros combinados, acentos/URL encoding, paginación, orden,
-   listado vacío, campos adicionales y preservación de IDs de texto.
-3. Probar detalle existente, ID inválido, inexistente, timeout, 500 y 503; la UI
-   debe distinguir vacío de indisponibilidad y traducir errores al contrato propio.
-4. Si se aprueba el flujo referido: registrar un usuario de prueba coordinado con
-   código real, observar los tres estados de `beneficioRegistro` y no registrar
-   otra vez ante beneficio pendiente. Validar email duplicado y resultado ambiguo.
-5. Si se necesita sesión MELT: probar login, rechazo de credenciales, expiración,
-   consulta de puntos propios y cuenta sin puntos. No reutilizar el JWT local.
-6. Demostrar idempotencia del beneficio y recuperación sin altas ni acreditaciones
-   duplicadas; los mocks se derivan solo de partes conocidas del contrato.
-7. Integrar el flujo aprobado desde el frontend a través del servicio consumidor,
-   con degradación visible y sin alterar reservas, membresías o puntos locales
-   por una falla externa. Completar ADR-009, trazas y evidencia de D9.
-
-No se agregan endpoints, variables de entorno, secretos, dependencias ni reglas
-de negocio con esta preparación documental. Continúa el trabajo por etapas desde
-la 6; la 13 sigue pendiente de implementación.
+1. En la demostración: abrir el enlace desde la tarjeta, registrarse en MELT con
+   `alumno@gym.local` y ver que, en un máximo de 2 minutos, la tarjeta pasa a
+   «Acreditados en MELT» (`200`).
+2. Antes de la demostración, «despertar» MELT (Render gratuito tarda ~25 s).
+3. Jornada de fallas: mostrar MELT caído o lento sin efecto en la asistencia
+   (POSTMORTEM, etapa 14).
+4. Pedir al grupo de MELT que rote la clave después de la evaluación: se compartió por
+   un canal no privado.

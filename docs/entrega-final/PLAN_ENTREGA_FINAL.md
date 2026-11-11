@@ -291,7 +291,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 13 — Capacidad externa y D9
 
-**Estado:** Manual de MELT recibido y documentado el 10/11/2026; implementación y validación pendientes. Ver [ETAPA_13_MELT.md](ETAPA_13_MELT.md) y la copia del PDF enlazada allí. El PDF es toda la información recibida: falta el código de referido definitivo y definir el flujo relevante, el servicio consumidor y los detalles no especificados. No se adelantó esta etapa ni se hicieron llamadas al proveedor.
+**Estado:** Implementada y validada localmente el 11/11/2026 contra el MELT real: cada asistencia acredita 100 puntos en MELT desde Benefits (registro en la misma transacción, entrega en segundo plano con referencia estable y reintentos), test de contrato sobre el OpenAPI de MELT v1.1.0, tarjeta del alumno. Con la clave, MELT respondió 202 con enlace de registro. Ver [ETAPA_13_MELT.md](ETAPA_13_MELT.md), ADR-009 v2 y D-92.
 
 **Objetivo:** incorporar la capacidad de otro grupo a un flujo principal relevante.
 
@@ -420,7 +420,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 10. Training y nutrición | Verificación técnica local cerrada el 10/11: planes, mediciones y consultas con MongoDB; autorización por asignación sin caché; 27 escenarios E2E | Revisión de otro integrante para integrar |
 | 11. Frontend completo | Validación funcional local cerrada el 11/11: cuatro roles y recorrido principal desde la interfaz, firma visual, móvil a 375 px | Revisión de otro integrante; logo y fotos oficiales |
 | 12. Borde y balanceo | Control de tráfico validado el 11/11 (tests con Redis real y stack local); balanceo pendiente | Confirmar soporte de Traefik para D-51 antes del balanceo |
-| 13. Capacidad externa | MELT: manual recibido y documentado el 10/11; implementación pendiente | Flujo/servicio consumidor, código de referido y contrato incompleto de algunas respuestas; ver ETAPA_13_MELT.md |
+| 13. Capacidad externa | Implementada y validada el 11/11 contra el MELT real con la clave: 100 puntos MELT por asistencia desde Benefits, `202` con enlace de registro, test de contrato y tarjeta del alumno | Demostrar el registro en MELT en vivo |
 | 14. Observabilidad final | Pendiente | Flujos integrados |
 | 15. Nube | Resuelta con Vercel (D-75); falta publicar el PR #14 | Acceso a la cuenta de Vercel |
 | 16. Verificación final | Pendiente | Todas las anteriores |

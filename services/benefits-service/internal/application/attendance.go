@@ -14,10 +14,18 @@ type BookingEvents struct {
 	ledger ports.BookingLedger
 	clock  ports.Clock
 	ids    ports.IDGenerator
+	melt   bool
 }
 
 func NewBookingEvents(l ports.BookingLedger, c ports.Clock, ids ports.IDGenerator) *BookingEvents {
-	return &BookingEvents{l, c, ids}
+	return &BookingEvents{ledger: l, clock: c, ids: ids}
+}
+
+// ConEnviosMelt hace que cada asistencia nueva registre también su envío a
+// MELT en la misma transacción (etapa 13, D-92).
+func (b *BookingEvents) ConEnviosMelt() *BookingEvents {
+	b.melt = true
+	return b
 }
 
 func (b *BookingEvents) Aplicar(ctx context.Context, h domain.HechoBooking) error {
@@ -33,13 +41,23 @@ func (b *BookingEvents) Aplicar(ctx context.Context, h domain.HechoBooking) erro
 	h.ClaseID = strings.ToLower(h.ClaseID)
 	h.OcurridoEn = h.OcurridoEn.UTC()
 	fingerprint := fmt.Sprintf("%x", sha256.Sum256([]byte(strings.Join([]string{h.Tipo, h.AlumnoID, h.OrigenID, h.ReservaID, h.ClaseID, h.OcurridoEn.Format(time.RFC3339Nano)}, "|"))))
+	var envio *domain.EnvioMelt
+	if b.melt {
+		id, err := b.ids.NewID()
+		if err != nil {
+			return err
+		}
+		if e, ok := domain.EnvioMeltDeAsistencia(h, id, b.clock.Now()); ok {
+			envio = &e
+		}
+	}
 	return b.ledger.AplicarHecho(ctx, h, fingerprint, func(c domain.CuentaBeneficios) (domain.CuentaBeneficios, domain.MovimientoPuntos, error) {
 		id, err := b.ids.NewID()
 		if err != nil {
 			return c, domain.MovimientoPuntos{}, err
 		}
 		return c.AplicarBooking(h, id, b.clock.Now())
-	})
+	}, envio)
 }
 
 func (b *BookingEvents) Historial(ctx context.Context, user string, page, size int) (domain.PaginaMovimientos, error) {
