@@ -4,7 +4,7 @@ import { Assignment, fullName } from './admin/types';
 
 // Mis alumnos o pacientes asignados (users.v1, HU-21, CA-02.4, RN-30). Los
 // alumnos con reserva en las clases del profesor se suman con booking (D-09).
-export function MyStudentsPage({ title }: { title: string }) {
+export function MyStudentsPage({ title, detailBase, detailLabel }: { title: string; detailBase: string; detailLabel: string }) {
   const { authRequest } = useSession();
   const [items, setItems] = useState<Assignment[] | null>(null);
   const [message, setMessage] = useState('');
@@ -26,7 +26,7 @@ export function MyStudentsPage({ title }: { title: string }) {
       ) : (
         <table className="data-table">
           <thead>
-            <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Asignado desde</th></tr>
+            <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Asignado desde</th><th>{detailLabel}</th></tr>
           </thead>
           <tbody>
             {items.map((a) => a.alumno && (
@@ -35,6 +35,7 @@ export function MyStudentsPage({ title }: { title: string }) {
                 <td>{a.alumno.email}</td>
                 <td>{a.alumno.telefono ?? '—'}</td>
                 <td>{a.desde.slice(0, 10)}</td>
+                <td><a href={`${detailBase}${a.alumno_id}`}>Ver</a></td>
               </tr>
             ))}
           </tbody>

@@ -251,3 +251,8 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .club-card input[type="checkbox"] { width: auto; }
 .plain-list { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 1rem; }
 .secret { display: block; padding: 0.6rem; overflow-wrap: anywhere; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+
+/* Etapa 10: planes, mediciones y consultas. */
+.club-card.wide { max-width: 960px; }
+.club-card textarea, .inline-form textarea { width: 100%; padding: 0.5rem; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+.club-card fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: grid; gap: 0.5rem; }

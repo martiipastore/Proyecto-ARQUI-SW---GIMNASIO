@@ -56,6 +56,7 @@ var withMemberships = flag.Bool("memberships", false, "agregar escenarios CB-04 
 var withBooking = flag.Bool("booking", false, "verificar el recorrido de reservas de la etapa 4 con servicios reales")
 var withMessaging = flag.Bool("messaging", false, "agregar RabbitMQ, MongoDB y notificaciones de la etapa 5")
 var withAttendance = flag.Bool("attendance", false, "agregar consumo Booking → Benefits, historial y recuperación de etapa 6")
+var withTraining = flag.Bool("training", false, "etapa 10: entrenamiento, nutrición, mediciones y consultas con MongoDB y training-service reales")
 var withCache = flag.Bool("cache", false, "etapa 9: caché del catálogo de actividades en Redis, medida con y sin caché bajo la misma carga")
 var withSearch = flag.Bool("search", false, "agregar búsqueda de clases en OpenSearch de etapa 8: indexer, reindexado, retraso, caída y revalidación")
 var withClub = flag.Bool("club", false, "agregar administración del Club de etapa 7: integraciones, vinculación y reversiones")
@@ -349,9 +350,10 @@ func run() {
 	for k, v := range map[string]string{"MEMBERS_DB_DSN": "postgres://members:" + password + "@" + pgAddress + "/members_db?sslmode=disable", "MEMBERS_HTTP_ADDR": membersAddress, "MEMBERS_IDENTITY_ENABLED": "true", "MEMBERS_ACTIVATION_ENCRYPTION_KEY": randomHex(), "MEMBERS_JWT_PRIVATE_KEY": private, "MEMBERS_PUBLIC_URL": gatewayURL, "MEMBERS_BENEFITS_URL": faultProxy.URL, "MEMBERS_SMTP_HOST": smtpHost, "MEMBERS_SMTP_PORT": smtpPort, "MEMBERS_SMTP_FROM": "fixture@example.test", "MEMBERS_SMTP_ALLOW_PLAINTEXT": "true"} {
 		membersEnv[k] = v
 	}
-	var rabbitURL, notificationURL string
+	var rabbitURL, notificationURL, mongoAddress string
 	if *withMessaging {
-		amqpAddress, managementAddress, mongoAddress := port(), port(), port()
+		var amqpAddress, managementAddress string
+		amqpAddress, managementAddress, mongoAddress = port(), port(), port()
 		docker("", "run", "-d", "--name", prefix+"-rabbitmq", "-e", "RABBITMQ_DEFAULT_USER=fixture", "-e", "RABBITMQ_DEFAULT_PASS="+password, "-e", "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2", "-p", amqpAddress+":5672", "-p", managementAddress+":15672", "rabbitmq:3-management")
 		docker("", "run", "-d", "--name", prefix+"-mongo", "-p", mongoAddress+":27017", "mongo:7")
 		rabbitURL = "http://" + managementAddress
@@ -376,9 +378,19 @@ func run() {
 		defer stopNotification()
 		ready(notificationURL)
 	}
+	if *withTraining && mongoAddress == "" {
+		mongoAddress = port()
+		docker("", "run", "-d", "--name", prefix+"-mongo", "-p", mongoAddress+":27017", "mongo:7")
+	}
 	stopMembers := startBinary(directory, "members", "./services/members-service/cmd/api", membersEnv)
-	defer stopMembers()
+	defer func() { stopMembers() }()
 	ready(membersURL)
+	// Etapa 10: pausar Members prueba que training falla cerrada (ADR-007).
+	pauseMembers := func() { stopMembers() }
+	resumeMembers := func() {
+		stopMembers = startBinary(directory, "members", "./services/members-service/cmd/api", membersEnv)
+		ready(membersURL)
+	}
 	benefitsEnv := map[string]string{}
 	for k, v := range common {
 		benefitsEnv[k] = v
@@ -403,6 +415,27 @@ func run() {
 	}
 	for k, v := range map[string]string{"GATEWAY_HTTP_ADDR": gatewayAddress, "GATEWAY_JWT_PUBLIC_KEY": public, "GATEWAY_MEMBERS_URL": membersURL, "GATEWAY_BENEFITS_URL": benefitsURL} {
 		gatewayEnv[k] = v
+	}
+	if *withTraining {
+		address := port()
+		trainingEnv := map[string]string{}
+		for k, v := range common {
+			trainingEnv[k] = v
+		}
+		for k, v := range map[string]string{"TRAINING_HTTP_ADDR": address, "TRAINING_MONGO_URI": "mongodb://" + mongoAddress, "TRAINING_MONGO_DB": "training_db", "TRAINING_ENABLED": "true", "TRAINING_MEMBERS_URL": membersURL} {
+			trainingEnv[k] = v
+		}
+		stopTraining := startBinary(directory, "training", "./services/training-service/cmd/api", trainingEnv)
+		defer stopTraining()
+		eventuallyWithin("training listo", 2*time.Minute, func() bool {
+			res, err := client.Get("http://" + address + "/health/ready")
+			if err != nil {
+				return false
+			}
+			defer res.Body.Close()
+			return res.StatusCode == 200
+		})
+		gatewayEnv["GATEWAY_TRAINING_URL"] = "http://" + address
 	}
 	var search searchFixture
 	if *withBooking {
@@ -652,6 +685,9 @@ func run() {
 		mark("CB04_renovacion_programada_paginacion_y_outbox_atomico")
 		if *withBooking {
 			bookingFlow(gatewayURL, mailURL, sql, adminHeaders, login, passwordUser, today)
+		}
+		if *withTraining {
+			trainingFlow(gatewayURL, mailURL, passwordUser, prefix, sql, adminHeaders, login, pauseMembers, resumeMembers)
 		}
 		if *withCache {
 			cacheFlow(gatewayURL, passwordUser, search, sql, adminHeaders, login)
@@ -1103,6 +1139,147 @@ func clubFlow(base, benefitsURL, password string, sql func(string, string) strin
 	mark("club_reversion_asistencia_CA35_3_o_saldo_insuficiente_CA11_3")
 }
 
+// trainingFlow cubre la etapa 10 (training.v1): HU-17, HU-18, HU-23 a HU-25,
+// HU-33, HU-34, RN-28 a RN-31, RN-37, D-33 y E2E-08 del SPEC. Todo pasa por el
+// gateway con JWT reales; mongosh solo verifica las garantías de la base.
+func trainingFlow(base, mailURL, password, prefix string, sql func(string, string) string, admin func(string) map[string]string, login func(string, string, int) string, pauseMembers, resumeMembers func()) {
+	create := func(role, email, dni string) (string, string) {
+		status, person := request(base, "POST", "/api/v1/users", admin(""), map[string]string{"rol": role, "nombre": "Persona", "apellido": "Training", "dni": dni, "email": email, "fecha_nacimiento": "1990-01-01"})
+		ensure(status == 201, "No crea persona para training")
+		_, text := mail(mailURL, email, "")
+		status, _ = request(base, "POST", "/api/v1/auth/activate", nil, map[string]string{"token": activation(text), "password": password})
+		ensure(status == 200, "No activa persona de training")
+		return person["id"].(string), login(email, password, 200)
+	}
+	bearer := func(token string) map[string]string { return map[string]string{"Authorization": "Bearer " + token} }
+	assign := func(professional, student string) {
+		status, _ := request(base, "POST", "/api/v1/users/"+professional+"/assignments", admin(""), map[string]string{"alumno_id": student})
+		ensure(status == 201, "No asigna profesional")
+	}
+	mongo := func(js string) string {
+		return docker("", "exec", prefix+"-mongo", "mongosh", "--quiet", "training_db", "--eval", js)
+	}
+	student := sql("members_db", "SELECT id FROM usuarios WHERE email='booking-student@example.test';")
+	professor := sql("members_db", "SELECT id FROM usuarios WHERE email='booking-prof@example.test';")
+	studentJWT := login("booking-student@example.test", password, 200)
+	professorJWT := login("booking-prof@example.test", password, 200)
+	nutri, nutriJWT := create("NUTRICIONISTA", "nutri-a@example.test", "31888777")
+	_, otherNutriJWT := create("NUTRICIONISTA", "nutri-b@example.test", "31888666")
+	_, otherProfJWT := create("PROFESOR", "prof-b@example.test", "30999888")
+	assign(professor, student)
+	assign(nutri, student)
+	mark("training_profesionales_reales_y_asignaciones_en_members")
+
+	plan := func(series int) map[string]any {
+		return map[string]any{"alumno_id": student, "objetivo": "Hipertrofia", "vigencia_desde": "2026-11-01", "vigencia_hasta": "2099-12-31", "observaciones": "Progresión semanal",
+			"dias": []any{map[string]any{"nombre": "Día A", "descripcion": "Tren inferior", "ejercicios": []any{map[string]any{"nombre": "Sentadilla", "grupo_muscular": "Piernas", "series": series, "repeticiones": 10, "peso_sugerido": 40, "descanso_segundos": 90, "observaciones": ""}}}}}
+	}
+	status, _ := request(base, "GET", "/api/v1/training/plans/me", bearer(studentJWT), nil)
+	ensure(status == 404, "CA-17.2: sin plan no responde 404")
+	status, first := request(base, "POST", "/api/v1/training/plans", bearer(professorJWT), plan(4))
+	ensure(status == 201 && first["estado"] == "VIGENTE", "CA-23.1: no crea plan vigente")
+	status, mine := request(base, "GET", "/api/v1/training/plans/me", bearer(studentJWT), nil)
+	ensure(status == 200 && mine["dias"].([]any)[0].(map[string]any)["ejercicios"].([]any)[0].(map[string]any)["nombre"] == "Sentadilla", "CA-17.1: el alumno no ve su plan")
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(professorJWT), plan(3))
+	ensure(status == 201, "No crea el segundo plan")
+	status, plans := request(base, "GET", "/api/v1/training/plans?alumno_id="+student, bearer(professorJWT), nil)
+	historial := plans["historial"].([]any)
+	ensure(status == 200 && len(historial) == 1 && historial[0].(map[string]any)["id"] == first["id"] && historial[0].(map[string]any)["estado"] == "FINALIZADO", "CA-23.2: el anterior no quedó finalizado en el historial")
+	status, invalid := request(base, "POST", "/api/v1/training/plans", bearer(professorJWT), plan(0))
+	ensure(status == 400 && invalid["code"] == "VALIDACION", "CA-23.3: acepta series 0")
+	mark("training_plan_vigente_historial_y_validaciones_CA23")
+
+	plansBefore := mongo("db.planes_entrenamiento.countDocuments()")
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(otherProfJWT), plan(4))
+	ensure(status == 403, "CA-23.4: profesor no asignado crea plan")
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(nutriJWT), plan(4))
+	ensure(status == 403, "CA-23.5/E2E-08: nutricionista crea plan de entrenamiento")
+	status, _ = request(base, "POST", "/api/v1/nutrition/plans", bearer(professorJWT), map[string]string{"alumno_id": student, "desayuno": "Avena"})
+	ensure(status == 403, "CA-24.2: profesor carga plan alimenticio")
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(studentJWT), plan(4))
+	ensure(status == 403, "Un alumno crea planes")
+	status, _ = request(base, "GET", "/api/v1/training/plans?alumno_id="+student, bearer(otherProfJWT), nil)
+	ensure(status == 403, "RN-30: profesor no asignado ve planes ajenos")
+	status, _ = request(base, "GET", "/api/v1/training/plans/me", nil, nil)
+	ensure(status == 401, "Training sin autenticación")
+	ensure(mongo("db.planes_entrenamiento.countDocuments()") == plansBefore, "Un rechazo modificó datos")
+	mark("training_autorizacion_por_rol_y_asignacion_RN30")
+
+	status, _ = request(base, "POST", "/api/v1/nutrition/plans", bearer(nutriJWT), map[string]string{"alumno_id": student, "observaciones": "Sin comidas"})
+	ensure(status == 400, "RN-29: plan sin comidas")
+	status, _ = request(base, "POST", "/api/v1/nutrition/plans", bearer(nutriJWT), map[string]string{"alumno_id": student, "desayuno": "Avena con fruta", "almuerzo": "Pollo y verduras", "cena": "Pescado"})
+	ensure(status == 201, "CA-24.1: no carga plan alimenticio")
+	status, food := request(base, "GET", "/api/v1/nutrition/plans/me", bearer(studentJWT), nil)
+	ensure(status == 200 && food["desayuno"] == "Avena con fruta", "CA-18.1: el alumno no ve su plan alimenticio")
+	todayAR := sql("members_db", `SELECT (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date;`)
+	measure := func(date string, fat float64) (int, map[string]any) {
+		return request(base, "POST", "/api/v1/nutrition/measurements", bearer(nutriJWT), map[string]any{"alumno_id": student, "fecha": date, "peso": 72.5, "porcentaje_grasa": fat, "porcentaje_muscular": 40, "masa_muscular": 30, "observaciones": ""})
+	}
+	status, _ = measure(todayAR, 20)
+	ensure(status == 201, "CA-25.1: no registra medición")
+	status, _ = measure("2026-01-15", 24)
+	ensure(status == 201, "No registra medición anterior")
+	status, _ = measure(todayAR, 120)
+	ensure(status == 400, "CA-25.3: acepta % grasa 120")
+	status, _ = measure("2099-01-01", 20)
+	ensure(status == 400, "CA-25.4: acepta fecha futura")
+	status, measures := request(base, "GET", "/api/v1/nutrition/measurements/me", bearer(studentJWT), nil)
+	items := measures["items"].([]any)
+	ensure(status == 200 && len(items) == 2 && items[0].(map[string]any)["fecha"] == "2026-01-15", "CA-18.2: mediciones no ordenadas por fecha")
+	id := items[0].(map[string]any)["id"].(string)
+	for _, method := range []string{"PUT", "DELETE"} {
+		status, _ = request(base, method, "/api/v1/nutrition/measurements/"+id, bearer(nutriJWT), map[string]any{"peso": 1})
+		ensure(status == 403 || status == 404 || status == 405, "CA-25.2: una medición se puede modificar o borrar")
+	}
+	ensure(mongo("db.mediciones.countDocuments()") == "2", "Las mediciones cambiaron")
+	mark("nutricion_plan_alimenticio_y_mediciones_inmutables_CA24_CA25")
+
+	externalJWT := login("new@example.test", password, 200)
+	status, noNutri := request(base, "POST", "/api/v1/nutrition/questions", bearer(externalJWT), map[string]string{"pregunta": "¿Puedo comer pan?"})
+	ensure(status == 422 && noNutri["code"] == "SIN_NUTRICIONISTA", "CA-33.2: consulta sin nutricionista")
+	status, _ = request(base, "POST", "/api/v1/nutrition/questions", bearer(studentJWT), map[string]string{"pregunta": "  "})
+	ensure(status == 400, "CA-33.4: consulta vacía")
+	status, question := request(base, "POST", "/api/v1/nutrition/questions", bearer(studentJWT), map[string]string{"pregunta": "¿Puedo reemplazar la colación por fruta?"})
+	ensure(status == 201 && question["estado"] == "PENDIENTE", "CA-33.1/E2E-08: consulta no queda PENDIENTE")
+	qid := question["id"].(string)
+	status, inbox := request(base, "GET", "/api/v1/nutrition/questions", bearer(nutriJWT), nil)
+	ensure(status == 200 && len(inbox["items"].([]any)) == 1 && inbox["items"].([]any)[0].(map[string]any)["id"] == qid, "E2E-08: la nutricionista no ve la consulta")
+	status, otherInbox := request(base, "GET", "/api/v1/nutrition/questions", bearer(otherNutriJWT), nil)
+	ensure(status == 200 && len(otherInbox["items"].([]any)) == 0, "CA-34.3: otra nutricionista ve consultas ajenas")
+	status, _ = request(base, "POST", "/api/v1/nutrition/questions/"+qid+"/answer", bearer(otherNutriJWT), map[string]string{"respuesta": "Sí"})
+	ensure(status == 403, "CA-34.3: otra nutricionista responde")
+	status, answered := request(base, "POST", "/api/v1/nutrition/questions/"+qid+"/answer", bearer(nutriJWT), map[string]string{"respuesta": "Sí, una fruta de estación."})
+	ensure(status == 200 && answered["estado"] == "RESPONDIDA", "CA-34.2: no responde")
+	status, again := request(base, "POST", "/api/v1/nutrition/questions/"+qid+"/answer", bearer(nutriJWT), map[string]string{"respuesta": "Otra"})
+	ensure(status == 409 && again["code"] == "TRANSICION_INVALIDA", "CA-34.4: responde dos veces")
+	status, history := request(base, "GET", "/api/v1/nutrition/questions/me", bearer(studentJWT), nil)
+	seen := history["items"].([]any)[0].(map[string]any)
+	ensure(status == 200 && seen["respuesta"] == "Sí, una fruta de estación." && seen["nutricionista_id"] == nutri && seen["respondida_en"] != nil, "CA-33.3: el alumno no ve la respuesta")
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(nutriJWT), plan(4))
+	ensure(status == 403, "E2E-08: la nutricionista crea un plan de entrenamiento")
+	mark("consultas_nutricionales_E2E08_CA33_CA34")
+
+	status, _ = request(base, "POST", "/api/v1/users/"+professor+"/assignments/"+student+"/revoke", admin(""), map[string]string{})
+	ensure(status == 200, "No revoca la asignación")
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(professorJWT), plan(4))
+	ensure(status == 403, "RN-30: la revocación no aplica en la siguiente operación")
+	assign(professor, student)
+	pauseMembers()
+	status, down := request(base, "POST", "/api/v1/training/plans", bearer(professorJWT), plan(4))
+	ensure(status == 503 && down["code"] == "DEPENDENCIA_NO_DISPONIBLE", "ADR-007: sin Members no falla cerrada")
+	status, _ = request(base, "GET", "/api/v1/training/plans/me", bearer(studentJWT), nil)
+	ensure(status == 200, "La consulta propia depende de Members")
+	resumeMembers()
+	status, _ = request(base, "POST", "/api/v1/training/plans", bearer(professorJWT), plan(4))
+	ensure(status == 201, "No se recupera al volver Members")
+	ensure(mongo(`db.planes_entrenamiento.countDocuments({estado:"VIGENTE"})`) == "1", "Más de un plan vigente")
+	mark("training_revocacion_inmediata_y_members_caido_falla_cerrada")
+
+	ensure(strings.Contains(mongo(`try { db.mediciones.insertOne({_id:"x",alumno_id:"a",nutricionista_id:"n",fecha:"2026-01-01",peso:-1.5,porcentaje_grasa:10.5,porcentaje_muscular:10.5,registrada_en:new Date()}); "aceptada" } catch (e) { "rechazada" }`), "rechazada"), "El validador acepta peso negativo")
+	ensure(strings.Contains(mongo(`try { db.planes_entrenamiento.insertOne({_id:"y",alumno_id:"`+student+`",profesor_id:"p",estado:"VIGENTE",dias:[{}]}); "aceptada" } catch (e) { "rechazada" }`), "rechazada"), "Dos planes VIGENTE en la base")
+	mark("training_garantias_de_la_base_validador_e_indice_unico")
+}
+
 // medicion resume una fase de carga constante.
 type medicion struct {
 	Requests, Errors                 int
@@ -1543,7 +1720,7 @@ func mustInt(s string) int {
 
 func main() {
 	flag.Parse()
-	if *withCache {
+	if *withCache || *withTraining {
 		*withBooking = true
 	}
 	if *withSearch {
@@ -1580,6 +1757,10 @@ func main() {
 	if *withClub {
 		result.Stage = "Entrega final - etapa 7"
 		result.Scope += "; Club administration through the gateway: integrations, one-time API keys, rotation, deactivation, account links, admin account view and idempotent reversals"
+	}
+	if *withTraining {
+		result.Stage = "Entrega final - etapa 10"
+		result.Scope += "; isolated MongoDB 7 and real training-service: training and nutrition plans, immutable measurements, nutrition questions, gateway role matrix, assignment revocation and Members outage"
 	}
 	if *withCache {
 		result.Stage = "Entrega final - etapa 9"
@@ -1622,6 +1803,9 @@ func main() {
 	}
 	if *withCache {
 		path = filepath.Join("docs", "evidence", "entrega-final", "etapa9", "cache-e2e.json")
+	}
+	if *withTraining {
+		path = filepath.Join("docs", "evidence", "entrega-final", "etapa10", "training-e2e.json")
 	}
 	if *withSearch {
 		path = filepath.Join("docs", "evidence", "entrega-final", "etapa8", "search-e2e.json")

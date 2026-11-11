@@ -245,6 +245,34 @@ func RegisterPeople(r *gin.Engine, s *service.People, secret string) {
 		}
 		c.JSON(200, gin.H{"vigente": ok})
 	})
+	// Etapa 10: listas vigentes para training (RN-30, RN-37), sin datos de contacto.
+	internal.GET("/asignaciones/vigentes", func(c *gin.Context) {
+		query := c.Request.URL.Query()
+		if len(query) != 1 || (len(query["alumno_id"]) != 1 && len(query["profesional_id"]) != 1) {
+			peopleError(c, model.ErrInvalid)
+			return
+		}
+		out, err := s.ActiveAssignments(c.Request.Context(), query.Get("alumno_id"), query.Get("profesional_id"))
+		if err != nil {
+			peopleError(c, err)
+			return
+		}
+		items := make([]gin.H, 0, len(out))
+		for _, a := range out {
+			item := gin.H{"profesional_id": a.ProfessionalID, "alumno_id": a.StudentID}
+			if a.Professional != nil {
+				item["profesional_rol"] = a.Professional.Role
+				item["profesional_nombre"] = a.Professional.Name
+				item["profesional_apellido"] = a.Professional.LastName
+			}
+			if a.Student != nil {
+				item["alumno_nombre"] = a.Student.Name
+				item["alumno_apellido"] = a.Student.LastName
+			}
+			items = append(items, item)
+		}
+		c.JSON(200, gin.H{"items": items})
+	})
 }
 
 // RegisterCoverage expone la vigencia de membresías para booking (RN-12).

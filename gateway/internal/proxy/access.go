@@ -36,6 +36,30 @@ func bookingAllowed(method, path, role string) bool {
 	return false
 }
 
+// trainingAllowed es la autorización gruesa de training.v1 (etapa 10): cada rol
+// solo llega a sus rutas. training-service vuelve a verificar la asignación
+// vigente con members en cada operación (RN-30, D-33). El administrador no
+// opera planes: la regla por rol la aplica también el servicio.
+func trainingAllowed(method, path, role string) bool {
+	segments := strings.Split(strings.TrimPrefix(path, "/api/v1/"), "/")
+	get, post := method == http.MethodGet, method == http.MethodPost
+	switch {
+	case get && (path == "/api/v1/training/plans/me" || path == "/api/v1/nutrition/plans/me" || path == "/api/v1/nutrition/measurements/me" || path == "/api/v1/nutrition/questions/me"):
+		return role == access.Student
+	case post && path == "/api/v1/nutrition/questions":
+		return role == access.Student
+	case (get || post) && path == "/api/v1/training/plans":
+		return role == access.Teacher
+	case (get || post) && (path == "/api/v1/nutrition/plans" || path == "/api/v1/nutrition/measurements"):
+		return role == access.Nutritionist
+	case get && path == "/api/v1/nutrition/questions":
+		return role == access.Nutritionist
+	case post && len(segments) == 4 && segments[0] == "nutrition" && segments[1] == "questions" && segments[2] != "" && segments[3] == "answer":
+		return role == access.Nutritionist
+	}
+	return false
+}
+
 func (p *Proxy) authenticate(w http.ResponseWriter, r *http.Request, path string) bool {
 	w.Header().Set("Cache-Control", "no-store")
 	if len(r.Header.Values("Authorization")) != 1 || !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
@@ -54,7 +78,7 @@ func (p *Proxy) authenticate(w http.ResponseWriter, r *http.Request, path string
 	// Profesor y nutricionista ven sus alumnos asignados (users.v1, RN-30);
 	// members vuelve a verificar la asignación sobre el recurso.
 	professional := r.Method == http.MethodGet && path == "/api/v1/users/me/students" && (claims.Role == access.Teacher || claims.Role == access.Nutritionist)
-	if !self && !professional && !bookingAllowed(r.Method, path, claims.Role) && claims.Role != access.Admin {
+	if !self && !professional && !bookingAllowed(r.Method, path, claims.Role) && !trainingAllowed(r.Method, path, claims.Role) && claims.Role != access.Admin {
 		problem.WriteHTTP(w, r, problem.New(403, "SIN_PERMISO", "Sin permiso", "Tu rol no permite esta operación."))
 		return false
 	}

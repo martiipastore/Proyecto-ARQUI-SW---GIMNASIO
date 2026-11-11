@@ -14,6 +14,9 @@ import { ReceptionPage } from './pages/booking/ReceptionPage';
 import { AccessDeniedPage, NotFoundPage } from './pages/InfoPages';
 import { LoginPage } from './pages/LoginPage';
 import { MyStudentsPage } from './pages/MyStudentsPage';
+import { InboxPage } from './pages/training/InboxPage';
+import { MyPlanPage } from './pages/training/MyPlanPage';
+import { StudentPlansPage } from './pages/training/StudentPlansPage';
 import { StudentHomePage } from './pages/StudentHomePage';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 import { navigate, takeActivationToken, useRoute } from './router';
@@ -38,6 +41,9 @@ const ROUTES: Record<string, RouteDef> = {
   '/app': { roles: ['ALUMNO'], render: () => <StudentHomePage /> },
   '/app/clases': { roles: ['ALUMNO'], render: () => <ClassesPage /> },
   '/app/reservas': { roles: ['ALUMNO'], render: () => <MyBookingsPage /> },
+  // Etapa 10: entrenamiento, nutrición y consultas (training.v1).
+  '/app/plan': { roles: ['ALUMNO'], render: () => <MyPlanPage /> },
+  '/nutri/consultas': { roles: ['NUTRICIONISTA'], render: () => <InboxPage /> },
   '/admin': { roles: ['ADMINISTRADOR'], render: () => <Redirect to="/admin/personas" /> },
   '/admin/personas': { roles: ['ADMINISTRADOR'], render: () => <PeoplePage /> },
   '/admin/actividades': { roles: ['ADMINISTRADOR'], render: () => <ActivitiesPage /> },
@@ -51,16 +57,17 @@ const ROUTES: Record<string, RouteDef> = {
   // identidad esté apagada en local (valor por defecto del Compose).
   '/estado': { roles: [], render: () => <SystemStatusPage /> },
   // Los planes (etapa 10) se suman a estos inicios.
-  '/prof':{ roles: ['PROFESOR'], render: () => <MyStudentsPage title="Mis alumnos" /> },
-  '/nutri': { roles: ['NUTRICIONISTA'], render: () => <MyStudentsPage title="Mis pacientes" /> },
+  '/prof': { roles: ['PROFESOR'], render: () => <MyStudentsPage title="Mis alumnos" detailBase="#/prof/alumnos/" detailLabel="Plan de entrenamiento" /> },
+  '/nutri': { roles: ['NUTRICIONISTA'], render: () => <MyStudentsPage title="Mis pacientes" detailBase="#/nutri/pacientes/" detailLabel="Nutrición" /> },
 };
 
 // Rutas con parámetro: el detalle de una persona o una clase lleva su id.
 const PERSON_ROUTE = /^\/admin\/personas\/([0-9a-fA-F-]{36})$/;
 const CLASS_ROUTE = /^\/(admin|prof)\/clases\/([0-9a-fA-F-]{36})$/;
+const PLAN_ROUTE = /^\/(prof\/alumnos|nutri\/pacientes)\/([0-9a-fA-F-]{36})$/;
 
 const NAV: Record<Role, { path: string; label: string }[]> = {
-  ALUMNO: [{ path: '/app', label: 'Inicio' }, { path: '/app/clases', label: 'Clases' }, { path: '/app/reservas', label: 'Mis reservas' }],
+  ALUMNO: [{ path: '/app', label: 'Inicio' }, { path: '/app/clases', label: 'Clases' }, { path: '/app/reservas', label: 'Mis reservas' }, { path: '/app/plan', label: 'Mi plan' }],
   ADMINISTRADOR: [
     { path: '/admin/personas', label: 'Personas' },
     { path: '/admin/actividades', label: 'Actividades' },
@@ -70,7 +77,7 @@ const NAV: Record<Role, { path: string; label: string }[]> = {
     { path: '/estado', label: 'Estado del sistema' },
   ],
   PROFESOR: [{ path: '/prof/clases', label: 'Mis clases' }, { path: '/prof', label: 'Mis alumnos' }],
-  NUTRICIONISTA: [{ path: '/nutri', label: 'Mis pacientes' }],
+  NUTRICIONISTA: [{ path: '/nutri', label: 'Mis pacientes' }, { path: '/nutri/consultas', label: 'Consultas' }],
 };
 
 function Redirect({ to }: { to: string }) {
@@ -95,6 +102,13 @@ function Screen({ path }: { path: string }) {
     const allowed = clase[1] === 'admin' ? user.role === 'ADMINISTRADOR' : user.role === 'PROFESOR';
     if (!allowed) return <AccessDeniedPage />;
     return <ClassDetailPage key={clase[2]} id={clase[2]} />;
+  }
+  const plan = PLAN_ROUTE.exec(path);
+  if (plan) {
+    if (!user) return <Redirect to="/login" />;
+    const role = plan[1] === 'prof/alumnos' ? 'PROFESOR' : 'NUTRICIONISTA';
+    if (user.role !== role) return <AccessDeniedPage />;
+    return <StudentPlansPage key={plan[2]} id={plan[2]} role={role} />;
   }
   const route = ROUTES[path];
   if (!route) return <NotFoundPage />;

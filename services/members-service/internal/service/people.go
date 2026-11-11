@@ -25,6 +25,7 @@ type PeopleRepository interface {
 	Revoke(ctx context.Context, actor, professional, student string, now time.Time) (model.Assignment, error)
 	Assignments(ctx context.Context, person string) ([]model.Assignment, error)
 	StudentsOf(ctx context.Context, professional string) ([]model.Assignment, error)
+	ProfessionalsOf(ctx context.Context, student string) ([]model.Assignment, error)
 	SummariesByID(ctx context.Context, ids []string, role string) ([]model.StudentSummary, error)
 	StudentByDNI(ctx context.Context, dni string) (model.StudentSummary, error)
 	ActiveAssignment(ctx context.Context, professional, student string) (bool, error)
@@ -308,6 +309,20 @@ func (s *People) ActiveAssignment(ctx context.Context, professional, student str
 		return false, model.ErrInvalid
 	}
 	return s.repo.ActiveAssignment(ctx, professional, student)
+}
+
+// ActiveAssignments lista las asignaciones vigentes de un alumno (sus
+// profesionales) o de un profesional (sus alumnos) para training (etapa 10,
+// RN-30, RN-37). Se consulta en cada operación, sin caché (D-33).
+func (s *People) ActiveAssignments(ctx context.Context, student, professional string) ([]model.Assignment, error) {
+	switch {
+	case student != "" && professional == "" && uuidIdentity.MatchString(student):
+		return s.repo.ProfessionalsOf(ctx, student)
+	case professional != "" && student == "" && uuidIdentity.MatchString(professional):
+		return s.repo.StudentsOf(ctx, professional)
+	default:
+		return nil, model.ErrInvalid
+	}
 }
 
 // SeedAdmin crea el administrador inicial si todavía no existe ese email; nunca
