@@ -14,6 +14,7 @@ import { ReceptionPage } from './pages/booking/ReceptionPage';
 import { AccessDeniedPage, NotFoundPage } from './pages/InfoPages';
 import { LoginPage } from './pages/LoginPage';
 import { MyStudentsPage } from './pages/MyStudentsPage';
+import { PublicHomePage } from './pages/PublicHomePage';
 import { InboxPage } from './pages/training/InboxPage';
 import { MyPlanPage } from './pages/training/MyPlanPage';
 import { StudentPlansPage } from './pages/training/StudentPlansPage';
@@ -35,6 +36,7 @@ interface RouteDef {
 // Rutas de la etapa 1 (§2) implementadas en la etapa 2; el resto se agrega en la
 // etapa que implementa cada contrato. El backend vuelve a autorizar siempre.
 const ROUTES: Record<string, RouteDef> = {
+  '/': { roles: [], render: () => <PublicHomePage /> },
   '/login': { roles: [], render: () => <LoginPage /> },
   '/activar': { roles: [], render: () => <ActivationPage token={activationToken} /> },
   '/cuenta': { roles: ALL_ROLES, render: () => <AccountPage /> },
@@ -87,9 +89,6 @@ function Redirect({ to }: { to: string }) {
 
 function Screen({ path }: { path: string }) {
   const { user } = useSession();
-  if (path === '/') {
-    return <Redirect to={user ? homeFor(user.role) : '/login'} />;
-  }
   const person = PERSON_ROUTE.exec(path);
   if (person) {
     if (!user) return <Redirect to="/login" />;
@@ -128,7 +127,11 @@ function Shell() {
   return (
     <>
       <nav className="topbar" aria-label="Principal">
-        <span className="brand">METALFITNESS</span>
+        <a className="brand" href="#/" aria-label="Metal Fitness, inicio"><span>METAL</span><span>FITNESS</span></a>
+        {!user && path === '/' && <>
+          <a className="public-nav-link" href="#actividades">Actividades</a>
+          <a className="public-nav-link" href="#club-title">Club</a>
+        </>}
         {user && NAV[user.role].map((item) => (
           <a key={item.path} href={`#${item.path}`} aria-current={path === item.path ? 'page' : undefined}>{item.label}</a>
         ))}
