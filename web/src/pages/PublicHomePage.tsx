@@ -70,15 +70,16 @@ export function PublicHomePage() {
         <header className="section-heading">
           <p className="eyebrow">Entrená a tu manera</p>
           <h2 id="activities-title">Cinco formas de<br /><em>superarte.</em></h2>
-          <p>Elegí la actividad que acompañe tu objetivo. Desde el trabajo de fuerza hasta la energía de una clase grupal.</p>
         </header>
         <ol className="activity-list">
           {activities.map((activity) => (
             <li key={activity.code}>
-              <span className="activity-code">{activity.code}</span>
-              <h3>{activity.name}</h3>
-              <p>{activity.detail}</p>
-              <span className="activity-arrow" aria-hidden="true">↗</span>
+              <a className="activity-link" href="#/login" aria-label={`Ingresar para consultar ${activity.name}`}>
+                <span className="activity-code">{activity.code}</span>
+                <h3>{activity.name}</h3>
+                <p>{activity.detail}</p>
+                <span className="activity-arrow" aria-hidden="true">↗</span>
+              </a>
             </li>
           ))}
         </ol>

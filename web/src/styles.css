@@ -304,6 +304,11 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .public-nav-link strong { font-weight: 800; }
 .public-nav-link:hover { color: var(--text) !important; background: rgb(234 255 33 / 5%); transform: translateY(-2px); }
 .public-nav-link:hover::after { transform: scaleX(1); }
+.public-nav-club { border: 1px solid rgb(234 255 33 / 42%); color: var(--text) !important; background: linear-gradient(110deg, rgb(234 255 33 / 13%), rgb(234 255 33 / 3%)); clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); }
+.public-nav-club span { display: grid; width: 25px; aspect-ratio: 1; place-items: center; color: var(--accent-ink); background: var(--accent); font-size: 0.88rem; }
+.public-nav-club::after { right: 0.65rem; left: 2.95rem; }
+.public-nav-club:hover { background: var(--accent); color: var(--accent-ink) !important; }
+.public-nav-club:hover span { color: var(--accent); background: var(--accent-ink); }
 .topbar-end a { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .topbar-end a:last-child { padding: 0.65rem 1rem; color: var(--accent-ink); background: var(--accent); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 
@@ -475,11 +480,12 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .public-section h2 { font-size: clamp(3.5rem, 7vw, 7rem); }
 .section-heading > p:last-child, .progress-copy > p { max-width: 520px; color: var(--muted); }
 .activity-list { margin: 0; padding: 0; list-style: none; counter-reset: activities; }
-.activity-list li { position: relative; display: grid; grid-template-columns: 3rem minmax(0, 0.8fr) minmax(180px, 1fr) 2rem; gap: 1rem; align-items: center; padding: 1.65rem 0.5rem; border-top: 1px solid var(--border); transition: transform 240ms cubic-bezier(.2,.8,.2,1); }
+.activity-list li { position: relative; border-top: 1px solid var(--border); transition: transform 240ms cubic-bezier(.2,.8,.2,1); }
 .activity-list li::after { position: absolute; inset: -1px 0; z-index: -1; border: 1px solid var(--accent); opacity: 0; content: ''; transform: scaleX(.96) skewX(-1deg); transition: opacity 220ms ease, transform 240ms cubic-bezier(.2,.8,.2,1); }
 .activity-list li:last-child { border-bottom: 1px solid var(--border); }
 .activity-list li:hover { z-index: 1; background: linear-gradient(90deg, rgb(234 255 33 / 8%), transparent); transform: translateX(8px) skewX(-0.7deg); }
 .activity-list li:hover::after { opacity: 1; transform: scaleX(1) skewX(-1deg); }
+.activity-link { display: grid; grid-template-columns: 3rem minmax(0, 0.8fr) minmax(180px, 1fr) 2rem; gap: 1rem; align-items: center; padding: 1.65rem 0.5rem; color: inherit; text-decoration: none; }
 .activity-code { color: var(--accent); font-family: var(--display-font); }
 .activity-list h3 { margin: 0; font-family: var(--display-font); font-size: clamp(1.8rem, 3vw, 3rem); font-style: italic; text-transform: uppercase; }
 .activity-list p { margin: 0; color: var(--muted); font-size: 0.9rem; }
@@ -571,7 +577,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
   .barbell-spark { left: 18%; width: 64%; }
   .hero-stamp { right: 0.5rem; bottom: 1%; font-size: 0.85rem; }
   .public-section { padding-block: 4.5rem; }
-  .activity-list li { grid-template-columns: 2rem 1fr 1.5rem; }
+  .activity-link { grid-template-columns: 2rem 1fr 1.5rem; }
   .activity-list p { grid-column: 2 / -1; }
   .progress-graphic { min-height: 330px; }
   .progress-graphic::before { width: 245px; border-width: 3rem; }

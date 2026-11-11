@@ -132,7 +132,7 @@ function Shell() {
         </a>
         {!user && path === '/' && <>
           <a className="public-nav-link" href="#actividades"><span aria-hidden="true">01</span><strong>Actividades</strong></a>
-          <a className="public-nav-link" href="#club-title"><span aria-hidden="true">02</span><strong>Club</strong></a>
+          <a className="public-nav-link public-nav-club" href="#club-title"><span aria-hidden="true">02</span><strong>Club de beneficios</strong></a>
         </>}
         {user && NAV[user.role].map((item) => (
           <a key={item.path} href={`#${item.path}`} aria-current={path === item.path ? 'page' : undefined}>{item.label}</a>
