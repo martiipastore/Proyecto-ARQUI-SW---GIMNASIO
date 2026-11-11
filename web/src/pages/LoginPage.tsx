@@ -64,9 +64,9 @@ export function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-story" aria-labelledby="auth-story-title">
-        <p className="eyebrow"><span aria-hidden="true">●</span> Área de miembros</p>
+        <p className="eyebrow"><span aria-hidden="true">●</span> Acceso al sistema</p>
         <h1 id="auth-story-title">Volvé<br />al <em>ritmo.</em></h1>
-        <p className="auth-story-copy">Tu membresía, tus reservas y tu progreso siguen en el mismo lugar. Ingresá para continuar entrenando.</p>
+        <p className="auth-story-copy">Un único ingreso para alumnos, profesores, nutricionistas y administración. Tu cuenta te lleva automáticamente al espacio correspondiente.</p>
         <div className="auth-route" aria-hidden="true">
           <span><b>01</b> Ingresá</span>
           <i />
@@ -78,7 +78,7 @@ export function LoginPage() {
 
       <section className="auth-panel" aria-labelledby="login-title">
         <header className="auth-panel-header">
-          <span className="auth-index">ACCESO / 01</span>
+          <span className="auth-index">PORTAL ÚNICO</span>
           <h2 id="login-title">Ingresar</h2>
           <p>Usá el correo con el que activaste tu cuenta.</p>
         </header>

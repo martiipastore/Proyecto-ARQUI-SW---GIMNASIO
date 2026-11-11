@@ -37,7 +37,6 @@ export function PublicHomePage() {
     <main className="public-home">
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="eyebrow"><span aria-hidden="true">●</span> Entrenamiento · Constancia · Comunidad</p>
           <h1 id="hero-title">
             <span>Construí</span>
             <span>tu fuerza.</span>

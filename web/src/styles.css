@@ -260,7 +260,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
   position: sticky;
   z-index: 50;
   top: 0;
-  min-height: 72px;
+  min-height: 76px;
   align-items: center;
   padding: 0.7rem clamp(1rem, 4vw, 4.5rem);
   border-bottom: 1px solid rgb(255 255 255 / 12%);
@@ -271,8 +271,8 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .brand {
   display: grid;
   margin-right: clamp(0.5rem, 3vw, 2.5rem);
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   flex: none;
   place-items: center;
   color: var(--text) !important;
@@ -288,23 +288,29 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
   width: 100%;
   height: 100%;
   place-items: center;
-  color: var(--accent-ink);
+  color: #080a06;
   background: var(--accent);
-  font-size: 1.35rem;
-  letter-spacing: 0.01em;
+  font-size: 1.58rem;
+  font-style: normal;
+  letter-spacing: -0.045em;
   line-height: 1;
+  text-indent: -0.045em;
 }
 
 .brand:hover { box-shadow: 6px 6px 0 rgb(234 255 33 / 18%); transform: translate(-2px, -2px); }
-.public-nav-link { color: var(--muted) !important; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.public-nav-link:hover { color: var(--text) !important; }
+.public-nav-link { position: relative; display: grid; min-height: 44px; grid-template-columns: auto auto; align-items: center; gap: 0.55rem; padding: 0.3rem 0.8rem; border-left: 1px solid var(--border); color: var(--muted) !important; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 220ms ease, background 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
+.public-nav-link::after { position: absolute; right: 0.8rem; bottom: 4px; left: 0.8rem; height: 2px; background: var(--accent); content: ''; transform: scaleX(0); transform-origin: left; transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
+.public-nav-link span { color: var(--accent); font-family: var(--display-font); font-size: 1rem; font-style: italic; letter-spacing: 0; }
+.public-nav-link strong { font-weight: 800; }
+.public-nav-link:hover { color: var(--text) !important; background: rgb(234 255 33 / 5%); transform: translateY(-2px); }
+.public-nav-link:hover::after { transform: scaleX(1); }
 .topbar-end a { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .topbar-end a:last-child { padding: 0.65rem 1rem; color: var(--accent-ink); background: var(--accent); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 
 .auth-page {
   position: relative;
   display: grid;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 76px);
   overflow: hidden;
   grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
   background:
@@ -355,7 +361,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.02fr) minmax(340px, 0.98fr);
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 76px);
   padding: clamp(4.5rem, 9vw, 8rem) clamp(1rem, 6vw, 7rem) 4rem;
   isolation: isolate;
 }
@@ -539,9 +545,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 }
 
 @media (max-width: 620px) {
-  .topbar { min-height: 64px; gap: 0.35rem; }
-  .brand { width: 38px; height: 38px; }
-  .brand-monogram { font-size: 1.08rem; }
+  .topbar { min-height: 68px; gap: 0.35rem; }
+  .brand { width: 44px; height: 44px; }
+  .brand-monogram { font-size: 1.3rem; }
   .topbar-end { gap: 0.35rem; }
   .topbar-end a:first-child { display: none; }
   .auth-story { padding: 4rem 1.25rem 2rem; }
