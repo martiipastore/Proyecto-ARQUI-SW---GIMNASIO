@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/client';
 import { useSession } from '../auth/session';
+import { AnimatedCounter } from '../components/AnimatedCounter';
 
 interface Movement {
   id: string; fecha: string; aplicado_en: string; motivo: string; puntos: number;
@@ -41,27 +42,48 @@ export function PointsHistory() {
     void load();
     return () => { generation.current++; };
   }, [load]);
-  return <section className="club-card" aria-label="Saldo y movimientos" aria-busy={busy}>
-    <h2>Tus puntos</h2>
-    {error && <p role="alert">{error}</p>}
-    {pending ? <p>Tu cuenta de puntos todavía no está disponible. Volvé a consultar en unos minutos.</p>
-      : <p>Puntos disponibles: <strong>{balance ?? '…'}</strong></p>}
-    <p className="muted">Los puntos por asistencia y ausencia pueden demorar unos instantes. Actualizá para consultar los últimos movimientos.</p>
-    <button type="button" disabled={busy} onClick={() => void load()}>{busy ? 'Actualizando…' : 'Actualizar puntos'}</button>
-    {history && <>
-      <h3>Movimientos</h3>
-      {history.items.length === 0 ? <p>Todavía no tenés movimientos.</p> : <ol>
-        {history.items.map(m => <li key={m.id}>
-          <strong>{m.puntos > 0 ? '+' : ''}{m.puntos} puntos</strong> · {m.motivo}
-          {m.origen === 'INASISTENCIA' && m.puntos === 0 && ' (sin descuento por saldo cero)'}
-          {m.origen === 'REVERSION' && ' (corrección del administrador)'}
-          {m.estado === 'REVERTIDO' && ' · revertido'}
-          <br /><span className="muted">{new Date(m.fecha).toLocaleString('es-AR')} · Movimiento {m.secuencia}</span>
-        </li>)}
-      </ol>}
-      <p>Página {page} de {Math.max(1, Math.ceil(history.total / history.tamano))} · {history.total} movimientos</p>
-      <button type="button" disabled={busy || page === 1} onClick={() => setPage(p => p - 1)}>Anterior</button>{' '}
-      <button type="button" disabled={busy || page * history.tamano >= history.total} onClick={() => setPage(p => p + 1)}>Siguiente</button>
-    </>}
+  return <section className="points-dashboard" aria-label="Saldo y movimientos" aria-busy={busy}>
+    <header className="points-heading">
+      <div><span>03</span><p>Club de beneficios</p></div>
+      <button type="button" disabled={busy} onClick={() => void load()}>{busy ? 'Actualizando…' : 'Actualizar puntos'}</button>
+    </header>
+
+    <div className="points-layout">
+      <div className="points-balance">
+        <span>Saldo disponible</span>
+        {pending ? <strong className="points-pending">Pendiente</strong>
+          : balance === null ? <div className="points-loader" aria-label="Cargando puntos" />
+            : <strong><AnimatedCounter value={balance} /><small>pts</small></strong>}
+        <p>Tus puntos permanecen en tu cuenta aunque no tengas una membresía activa.</p>
+      </div>
+
+      <div className="points-movements">
+        <div className="points-movements-title"><h2>Últimos movimientos</h2>{history && <span>{history.total} en total</span>}</div>
+        {error && <div className="dashboard-error" role="alert"><strong>No pudimos cargar tus puntos.</strong><span>{error}</span></div>}
+        {pending ? <p className="dashboard-empty">Tu cuenta de puntos todavía no está disponible. Volvé a consultar en unos minutos.</p>
+          : history && history.items.length === 0 ? <p className="dashboard-empty">Todavía no tenés movimientos.</p>
+            : history ? <ol className="movement-list">
+              {history.items.map((movement) => <li key={movement.id}>
+                <span className={`movement-value${movement.puntos > 0 ? ' movement-positive' : movement.puntos < 0 ? ' movement-negative' : ''}`}>
+                  {movement.puntos > 0 ? '+' : ''}{movement.puntos}
+                </span>
+                <div>
+                  <strong>{movement.motivo}</strong>
+                  <span>{new Date(movement.fecha).toLocaleString('es-AR')} · Movimiento {movement.secuencia}</span>
+                  {movement.origen === 'INASISTENCIA' && movement.puntos === 0 && <small>Sin descuento por saldo cero</small>}
+                  {movement.origen === 'REVERSION' && <small>Corrección del administrador</small>}
+                  {movement.estado === 'REVERTIDO' && <small>Movimiento revertido</small>}
+                </div>
+                <span className="movement-origin">{movement.origen.toLocaleLowerCase('es-AR')}</span>
+              </li>)}
+            </ol> : <div className="dashboard-skeleton" aria-label="Cargando movimientos" />}
+
+        {history && history.total > history.tamano && <div className="points-pagination">
+          <button type="button" disabled={busy || page === 1} onClick={() => setPage((current) => current - 1)}>← Anterior</button>
+          <span>Página {page} de {Math.max(1, Math.ceil(history.total / history.tamano))}</span>
+          <button type="button" disabled={busy || page * history.tamano >= history.total} onClick={() => setPage((current) => current + 1)}>Siguiente →</button>
+        </div>}
+      </div>
+    </div>
   </section>;
 }

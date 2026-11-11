@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from '../auth/session';
+import { day, Pagina, range, Reserva } from './booking/types';
 import { PointsHistory } from './PointsHistory';
 
-// Inicio del alumno: membresía (memberships.v1) y saldo (benefits.v1). Las
-// próximas reservas se agregan en la etapa 4.
 interface MembershipSummary {
   activa: boolean;
   membresia_vigente: { tipo: { nombre: string }; fecha_vencimiento: string } | null;
@@ -14,20 +13,26 @@ interface MembershipSummary {
 export function StudentHomePage() {
   const { user, authRequest } = useSession();
   const [memberships, setMemberships] = useState<MembershipSummary | null>(null);
+  const [bookings, setBookings] = useState<Reserva[] | null>(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     setBusy(true);
     setMessage('');
-    try {
-      const page = await authRequest<MembershipSummary>('/api/v1/memberships/me');
-      setMemberships(page.data);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'No se pudieron cargar tus datos.');
-    } finally {
-      setBusy(false);
-    }
+    const [membershipResult, bookingResult] = await Promise.allSettled([
+      authRequest<MembershipSummary>('/api/v1/memberships/me'),
+      authRequest<Pagina<Reserva>>('/api/v1/bookings/me?estado=CONFIRMADA&pagina=1&tamano=3'),
+    ]);
+
+    const errors: string[] = [];
+    if (membershipResult.status === 'fulfilled') setMemberships(membershipResult.value.data);
+    else errors.push(membershipResult.reason instanceof Error ? membershipResult.reason.message : 'No se pudo cargar tu membresía.');
+    if (bookingResult.status === 'fulfilled') setBookings(bookingResult.value.data.items);
+    else errors.push(bookingResult.reason instanceof Error ? bookingResult.reason.message : 'No se pudieron cargar tus próximas clases.');
+
+    setMessage(errors.join(' '));
+    setBusy(false);
   }, [authRequest]);
 
   useEffect(() => {
@@ -35,31 +40,76 @@ export function StudentHomePage() {
   }, [refresh]);
 
   const current = memberships?.membresia_vigente;
+  const today = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+
   return (
-    <main className="page">
-      <h1>{user ? `Hola, ${user.name}` : 'Inicio'}</h1>
-      {message && <p role="alert">{message}</p>}
-      <section className="club-card" aria-label="Membresía">
-        <h2>Tu membresía</h2>
-        {memberships === null ? (
-          <p className="muted">Cargando…</p>
-        ) : memberships.activa && current ? (
-          <p>{current.tipo.nombre} vigente hasta el {current.fecha_vencimiento}.</p>
-        ) : (
-          <p>No tenés una membresía vigente, así que todavía no podés reservar clases. Tus puntos se conservan.</p>
-        )}
-        {memberships && memberships.items.length > 0 && (
-          <ul>
-            {memberships.items.map((m) => (
-              <li key={m.id}>
-                {m.tipo.nombre}: {m.fecha_inicio} al {m.fecha_vencimiento} — {m.condicion.toLocaleLowerCase('es-AR')}
-                {m.tipo.clases !== null && ` · Cupo contratado: ${m.tipo.clases} clases`}
-              </li>
-            ))}
-          </ul>
-        )}
+    <main className="page student-dashboard">
+      <header className="student-welcome">
+        <div>
+          <p className="dashboard-kicker">{today}</p>
+          <h1>{user ? `Hola, ${user.name}` : 'Inicio'}</h1>
+          <p>Todo lo que necesitás para organizar tu próxima sesión.</p>
+        </div>
+        <div className="dashboard-actions">
+          <a className="button button-primary" href="#/app/clases">Buscar una clase <span aria-hidden="true">→</span></a>
+          <button type="button" disabled={busy} onClick={() => void refresh()}>{busy ? 'Actualizando…' : 'Actualizar resumen'}</button>
+        </div>
+      </header>
+
+      {message && <div className="dashboard-error" role="alert"><strong>No pudimos actualizar todo el resumen.</strong><span>{message}</span></div>}
+
+      <section className="student-summary-grid" aria-label="Resumen de tu cuenta">
+        <article className="summary-card membership-summary">
+          <header><span>01</span><p>Membresía</p><i aria-hidden="true">◆</i></header>
+          {memberships === null ? (
+            <div className="dashboard-skeleton" aria-label="Cargando membresía" />
+          ) : memberships.activa && current ? (
+            <div className="membership-current">
+              <span className="status-label status-active">Activa</span>
+              <h2>{current.tipo.nombre}</h2>
+              <p>Vigente hasta <strong>{current.fecha_vencimiento}</strong></p>
+            </div>
+          ) : (
+            <div className="membership-current">
+              <span className="status-label status-inactive">Sin vigencia</span>
+              <h2>Sin membresía activa</h2>
+              <p>Todavía no podés reservar clases. Tus puntos se conservan.</p>
+            </div>
+          )}
+          {memberships && memberships.items.length > 0 && (
+            <details className="membership-history">
+              <summary>Ver historial ({memberships.total})</summary>
+              <ul>{memberships.items.map((membership) => (
+                <li key={membership.id}>
+                  <strong>{membership.tipo.nombre}</strong>
+                  <span>{membership.fecha_inicio} — {membership.fecha_vencimiento}</span>
+                  <small>{membership.condicion.toLocaleLowerCase('es-AR')}{membership.tipo.clases !== null && ` · ${membership.tipo.clases} clases`}</small>
+                </li>
+              ))}</ul>
+            </details>
+          )}
+        </article>
+
+        <article className="summary-card bookings-summary">
+          <header><span>02</span><p>Próximas clases</p><a href="#/app/reservas">Ver todas</a></header>
+          {bookings === null ? (
+            <div className="dashboard-skeleton" aria-label="Cargando próximas clases" />
+          ) : bookings.length === 0 ? (
+            <div className="dashboard-empty"><strong>Tu agenda está libre.</strong><p>Buscá una clase y reservá tu próximo entrenamiento.</p><a href="#/app/clases">Explorar clases →</a></div>
+          ) : (
+            <ol className="upcoming-bookings">
+              {bookings.map((booking) => (
+                <li key={booking.id}>
+                  <time dateTime={booking.clase.inicio}><strong>{day(booking.clase.inicio)}</strong><span>{range(booking.clase)}</span></time>
+                  <div><strong>{booking.clase.actividad}</strong><span>Reserva confirmada</span></div>
+                  <i aria-hidden="true">→</i>
+                </li>
+              ))}
+            </ol>
+          )}
+        </article>
       </section>
-      <button type="button" disabled={busy} onClick={() => void refresh()}>{busy ? 'Actualizando…' : 'Actualizar membresía'}</button>
+
       <PointsHistory />
     </main>
   );

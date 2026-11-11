@@ -64,7 +64,6 @@ export function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-story" aria-labelledby="auth-story-title">
-        <p className="eyebrow"><span aria-hidden="true">●</span> Acceso al sistema</p>
         <h1 id="auth-story-title">Volvé<br />al <em>ritmo.</em></h1>
         <p className="auth-story-copy">Un único ingreso para alumnos, profesores, nutricionistas y administración. Tu cuenta te lleva automáticamente al espacio correspondiente.</p>
         <div className="auth-route" aria-hidden="true">
