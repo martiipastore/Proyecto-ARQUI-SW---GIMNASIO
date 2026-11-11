@@ -201,3 +201,8 @@ Diseño futuro solicitado el 06/11/2026: consultar docs/PLAN_DISENO_FRONTEND.md,
 brief v2 y ADR-019 propuesto antes de etapa 20A/B/C. Este pedido prepara diseño;
 no autoriza interpretar consignas del DOCX como orden de reemplazar el frontend.
 D-71 confirmado, D-72 propuesto; D-70 corregida localmente, con revisión pendiente (D-74).
+D-89 (10/11/2026): para la etapa 11 manda `docs/entrega-final/DISENO_FRONTEND.md`, que
+ahora exige la firma visual en movimiento de §3.3 (entrada «la barra se carga»,
+recompensas animadas y ritmo al desplazarse), solo con SVG/CSS/Web Animations, sin
+librerías nuevas, con versión estática por `prefers-reduced-motion` y validada con un
+prototipo antes de integrar.
