@@ -512,6 +512,54 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .public-footer p { color: var(--muted); }
 .public-footer a { color: var(--text); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 
+/* Etapa 11 — carcasa de la aplicación autenticada. */
+.app-shell { display: grid; min-height: 100vh; grid-template-columns: 282px minmax(0, 1fr); background: #0b0c0b; }
+.app-sidebar { position: sticky; top: 0; display: flex; height: 100vh; overflow: hidden auto; flex-direction: column; padding: 1.6rem 1.25rem 1.25rem; border-right: 1px solid rgb(255 255 255 / 10%); background: linear-gradient(180deg, #151813, #0d0f0c 62%, #090a09); }
+.app-sidebar::after { position: absolute; right: -5rem; bottom: 12%; width: 12rem; aspect-ratio: 1; border: 1px solid rgb(234 255 33 / 12%); border-radius: 50%; box-shadow: 0 0 0 2.5rem rgb(234 255 33 / 2%), 0 0 0 5rem rgb(234 255 33 / 2%); content: ''; pointer-events: none; }
+.app-sidebar-brand { position: relative; z-index: 1; display: flex; align-items: center; gap: 0.8rem; color: var(--text); text-decoration: none; }
+.app-sidebar-brand > span { display: grid; width: 50px; aspect-ratio: 1; flex: none; place-items: center; color: var(--accent-ink); background: var(--accent); font-family: var(--display-font); font-size: 1.48rem; font-weight: 900; letter-spacing: -0.04em; }
+.app-sidebar-brand > strong { font-family: var(--display-font); font-size: 1.25rem; font-style: italic; font-weight: 900; letter-spacing: 0.06em; line-height: 0.78; text-transform: uppercase; }
+.app-sidebar-brand em { color: var(--accent); font-style: inherit; }
+.app-role-label { position: relative; z-index: 1; display: grid; gap: 0.15rem; margin: 2.7rem 0 1.25rem; padding: 0 0.8rem 1rem; border-bottom: 1px solid var(--border); }
+.app-role-label span { color: #71766d; font-size: 0.63rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.app-role-label strong { font-size: 0.84rem; letter-spacing: 0.04em; }
+.app-navigation { position: relative; z-index: 1; display: grid; gap: 0.3rem; }
+.app-navigation a { display: grid; min-height: 46px; grid-template-columns: 2rem minmax(0, 1fr) 1rem; align-items: center; gap: 0.55rem; padding: 0.55rem 0.75rem; border: 1px solid transparent; color: #a9aea5; text-decoration: none; transition: color 200ms ease, background 200ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
+.app-navigation a > span { color: #646960; font-family: var(--display-font); font-size: 0.85rem; font-style: italic; }
+.app-navigation a > strong { overflow: hidden; font-size: 0.78rem; letter-spacing: 0.055em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.app-navigation a > i { color: var(--accent); font-style: normal; opacity: 0; transform: translateX(-7px); transition: opacity 200ms ease, transform 200ms ease; }
+.app-navigation a:hover { color: var(--text); background: rgb(255 255 255 / 3%); transform: translateX(4px); }
+.app-navigation a[aria-current='page'] { border-color: rgb(234 255 33 / 28%); color: var(--text); background: linear-gradient(90deg, rgb(234 255 33 / 13%), transparent); }
+.app-navigation a[aria-current='page'] > span { color: var(--accent); }
+.app-navigation a[aria-current='page'] > i { opacity: 1; transform: translateX(0); }
+.app-sidebar-footer { position: relative; z-index: 1; display: grid; gap: 0.8rem; margin-top: auto; padding-top: 1.5rem; }
+.app-system-link { display: flex; align-items: center; gap: 0.55rem; padding-left: 0.25rem; color: #81867d; font-size: 0.69rem; font-weight: 700; letter-spacing: 0.07em; text-decoration: none; text-transform: uppercase; }
+.app-system-link > span { width: 7px; aspect-ratio: 1; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px rgb(234 255 33 / 70%); }
+.app-user-card { display: grid; grid-template-columns: 2.35rem minmax(0, 1fr) 2rem; align-items: center; gap: 0.7rem; padding: 0.75rem; border: 1px solid var(--border); background: rgb(255 255 255 / 3%); }
+.app-user-avatar { display: grid; width: 2.35rem; aspect-ratio: 1; place-items: center; color: var(--accent-ink); background: var(--accent); font-family: var(--display-font); font-size: 1.2rem; }
+.app-user-card a { display: grid; min-width: 0; color: var(--text); text-decoration: none; }
+.app-user-card a strong { overflow: hidden; font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
+.app-user-card a small { color: #777c73; font-size: 0.63rem; }
+.app-user-card button { display: grid; width: 2rem; aspect-ratio: 1; padding: 0; place-items: center; border: 0; border-radius: 0; color: var(--muted); background: transparent; }
+.app-user-card button:hover { color: var(--accent); }
+
+.app-workspace { min-width: 0; }
+.app-toolbar { position: sticky; z-index: 30; top: 0; display: flex; min-height: 76px; align-items: center; gap: 1rem; padding: 0.8rem clamp(1.25rem, 3vw, 3rem); border-bottom: 1px solid rgb(255 255 255 / 9%); background: rgb(11 12 11 / 88%); backdrop-filter: blur(18px); }
+.app-toolbar > div { display: grid; min-width: max-content; }
+.app-toolbar > div span { color: #71766d; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.app-toolbar > div strong { font-family: var(--display-font); font-size: 1.35rem; font-style: italic; letter-spacing: 0.055em; text-transform: uppercase; }
+.app-toolbar-line { width: 100%; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+.app-toolbar p { display: flex; min-width: max-content; align-items: center; gap: 0.45rem; margin: 0; color: #858a81; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.app-toolbar p span { color: var(--accent); font-size: 0.55rem; }
+.app-toolbar > a { min-width: max-content; color: var(--text); font-size: 0.76rem; font-weight: 750; text-decoration: none; }
+.app-toolbar > button { min-width: max-content; padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: 0; color: var(--muted); background: transparent; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.app-toolbar > button:hover { border-color: var(--accent); color: var(--text); }
+.app-content { min-height: calc(100vh - 76px); overflow: hidden; background: radial-gradient(circle at 88% 5%, rgb(234 255 33 / 5%), transparent 25rem), repeating-linear-gradient(118deg, transparent 0 58px, rgb(255 255 255 / 1.5%) 59px 60px); }
+.app-content > .page { max-width: 1240px; padding: clamp(2rem, 4vw, 4rem) clamp(1rem, 3vw, 3rem) 5rem; }
+.app-content .page > h1, .app-content .page-header h1 { font-family: var(--display-font); font-size: clamp(2.8rem, 5vw, 5rem); font-style: italic; font-weight: 900; letter-spacing: 0.025em; line-height: 0.9; text-transform: uppercase; }
+.app-content .page-header { margin-bottom: 1.75rem; }
+.app-mobile-bar { display: none; }
+
 .motion-ready .reveal-section { opacity: 0; transform: translate3d(-34px, 38px, 0) skewY(0.8deg); transition: opacity 620ms ease, transform 760ms cubic-bezier(.2,.78,.18,1); }
 .motion-ready .reveal-section-reverse { transform: translate3d(34px, 38px, 0) skewY(-0.8deg); }
 .motion-ready .reveal-section.is-visible { opacity: 1; transform: translate3d(0, 0, 0) skewY(0); }
@@ -536,8 +584,30 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
   }
 }
 
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 246px minmax(0, 1fr); }
+  .app-sidebar { padding-inline: 0.8rem; }
+  .app-toolbar p { display: none; }
+}
+
 @media (max-width: 900px) {
   .public-nav-link { display: none; }
+  .app-shell { display: block; }
+  .app-sidebar, .app-toolbar { display: none; }
+  .app-mobile-bar { position: sticky; z-index: 50; top: 0; display: flex; min-height: 68px; align-items: center; gap: 0.8rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); background: rgb(10 11 10 / 94%); backdrop-filter: blur(18px); }
+  .app-mobile-brand { display: grid; width: 44px; aspect-ratio: 1; flex: none; place-items: center; color: var(--accent-ink); background: var(--accent); font-family: var(--display-font); font-size: 1.3rem; font-weight: 900; letter-spacing: -0.04em; text-decoration: none; }
+  .app-mobile-bar > div { display: grid; min-width: 0; margin-right: auto; }
+  .app-mobile-bar > div span { color: #777c73; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  .app-mobile-bar > div strong { overflow: hidden; font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+  .app-mobile-menu { position: relative; }
+  .app-mobile-menu summary { min-width: 72px; padding: 0.55rem 0.65rem; border: 1px solid var(--border); color: var(--text); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; list-style: none; text-align: center; text-transform: uppercase; cursor: pointer; }
+  .app-mobile-menu summary::-webkit-details-marker { display: none; }
+  .app-mobile-menu[open] summary { border-color: var(--accent); color: var(--accent); }
+  .app-mobile-menu > div { position: absolute; top: calc(100% + 0.7rem); right: 0; display: grid; width: min(86vw, 340px); gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--border); background: #11130f; box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 60%); }
+  .app-mobile-menu .app-navigation { gap: 0.2rem; }
+  .app-mobile-account { padding: 0.75rem; border-top: 1px solid var(--border); color: var(--text); font-size: 0.75rem; font-weight: 800; text-decoration: none; text-transform: uppercase; }
+  .app-mobile-menu button { min-height: 42px; border-radius: 0; color: var(--accent-ink); background: var(--accent); font-size: 0.75rem; font-weight: 850; text-transform: uppercase; }
+  .app-content { min-height: calc(100vh - 68px); }
   .auth-page { grid-template-columns: 1fr; }
   .auth-story { padding-bottom: 2rem; }
   .auth-story h1 { font-size: clamp(5rem, 17vw, 8.5rem); }

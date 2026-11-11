@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { homeFor, Role, SessionProvider, useSession } from './auth/session';
+import { AppShell } from './components/AppShell';
 import { AccountPage } from './pages/AccountPage';
 import { ActivationPage } from './pages/ActivationPage';
 import { ClubAdminPage } from './pages/admin/ClubAdmin';
@@ -124,6 +125,20 @@ function Screen({ path }: { path: string }) {
 function Shell() {
   const path = useRoute();
   const { user, logout } = useSession();
+
+  if (user) {
+    return (
+      <AppShell
+        items={NAV[user.role]}
+        path={path}
+        user={user}
+        onLogout={async () => { await logout(); navigate('/login'); }}
+      >
+        <Screen path={path} />
+      </AppShell>
+    );
+  }
+
   return (
     <>
       <nav className="topbar" aria-label="Principal">
@@ -134,21 +149,9 @@ function Shell() {
           <a className="public-nav-link" href="#actividades"><span aria-hidden="true">01</span><strong>Actividades</strong></a>
           <a className="public-nav-link public-nav-club" href="#club-title"><span aria-hidden="true">02</span><strong>Club de beneficios</strong></a>
         </>}
-        {user && NAV[user.role].map((item) => (
-          <a key={item.path} href={`#${item.path}`} aria-current={path === item.path ? 'page' : undefined}>{item.label}</a>
-        ))}
         <span className="topbar-end">
-          {user ? (
-            <>
-              <a href="#/cuenta" aria-current={path === '/cuenta' ? 'page' : undefined}>{user.name}</a>
-              <button type="button" onClick={async () => { await logout(); navigate('/login'); }}>Salir</button>
-            </>
-          ) : (
-            <>
-              <a href="#/estado">Estado del sistema</a>
-              <a href="#/login">Ingresar</a>
-            </>
-          )}
+          <a href="#/estado">Estado del sistema</a>
+          <a href="#/login">Ingresar</a>
         </span>
       </nav>
       <Screen path={path} />
