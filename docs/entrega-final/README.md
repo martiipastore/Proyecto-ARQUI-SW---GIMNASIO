@@ -19,6 +19,7 @@ Esta carpeta reúne la planificación y las referencias propias de la presentaci
 | [ETAPA_8_BUSQUEDA.md](ETAPA_8_BUSQUEDA.md) | Búsqueda de clases en OpenSearch: indexer por eventos, reindexado con alias, retraso medido y degradación; 44 escenarios E2E aprobados |
 | [ETAPA_9_CACHE.md](ETAPA_9_CACHE.md) | Caché del catálogo de actividades en Redis elegida y medida con la misma carga; corrección del pool del gateway; 24 escenarios E2E |
 | [ETAPA_10_TRAINING.md](ETAPA_10_TRAINING.md) | Planes de entrenamiento y alimenticios, mediciones inmutables y consultas nutricionales con MongoDB; autorización por asignación; 27 escenarios E2E |
+| [ETAPA_11_FRONTEND.md](ETAPA_11_FRONTEND.md) | Identidad visual en todas las pantallas, firma en movimiento, móvil y validación de los cuatro roles desde la interfaz |
 | [ETAPA_13_MELT.md](ETAPA_13_MELT.md) | Manual recibido de MELT, APIs, reglas del referido, pendientes y pruebas previstas; implementación reservada para la etapa 13 |
 
 ## Fuentes de verdad

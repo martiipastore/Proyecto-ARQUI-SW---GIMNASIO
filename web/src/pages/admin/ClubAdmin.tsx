@@ -1,3 +1,4 @@
+import { DATE_TIME } from '../../format';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useSession } from '../../auth/session';
@@ -276,7 +277,7 @@ export function ClubAccountSection({ userId }: { userId: string }) {
                   <strong>{m.puntos > 0 ? '+' : ''}{m.puntos} puntos</strong> · {m.motivo} · {ORIGIN_LABELS[m.origen]}
                   {m.estado === 'REVERTIDO' && <strong> · REVERTIDO</strong>}
                   <br />
-                  <span className="muted">{new Date(m.fecha).toLocaleString('es-AR')} · Movimiento {m.secuencia}{m.revierte_id ? ' · compensa otro movimiento' : ''}</span>
+                  <span className="muted">{new Date(m.fecha).toLocaleString('es-AR', DATE_TIME)} · Movimiento {m.secuencia}{m.revierte_id ? ' · compensa otro movimiento' : ''}</span>
                   {m.estado === 'CONFIRMADO' && m.origen !== 'REVERSION' && m.puntos !== 0 && (
                     <RevertAction busy={busy} onConfirm={(motivo) => void revert(m, motivo)} />
                   )}

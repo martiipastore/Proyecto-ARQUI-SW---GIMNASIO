@@ -1,3 +1,4 @@
+import { DATE_TIME } from '../format';
 import { useCallback, useEffect, useState } from 'react';
 import { API_URL, ApiError } from '../api/client';
 import { getSystemStatus, type ServiceState, type SystemState, type SystemStatus } from '../api/status';
@@ -76,7 +77,7 @@ export function SystemStatusPage() {
             <span className="summary-dot" aria-hidden="true" />
             <div>
               <strong>{summary.text}</strong>
-              <div className="muted">Última verificación: {new Date(data.checked_at).toLocaleString('es-AR')}</div>
+              <div className="muted">Última verificación: {new Date(data.checked_at).toLocaleString('es-AR', DATE_TIME)}</div>
             </div>
           </section>
 

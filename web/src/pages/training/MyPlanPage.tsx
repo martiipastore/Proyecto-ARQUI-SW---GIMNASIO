@@ -1,3 +1,4 @@
+import { DATE_TIME } from '../../format';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useSession } from '../../auth/session';
 import { EmptyState, Notice, NoticeState, PageHeading, SectionHeading } from '../../components/PageParts';
@@ -75,9 +76,9 @@ export function MyPlanPage() {
               {questions.map((q) => (
                 <li key={`${q.id}-${q.estado}`} className={q.estado === 'RESPONDIDA' ? 'question-answered cut-in' : 'question-pending'}>
                   <p className="question-text">{q.pregunta}</p>
-                  <small>Enviada el {new Date(q.enviada_en).toLocaleString('es-AR')}</small>
+                  <small>Enviada el {new Date(q.enviada_en).toLocaleString('es-AR', DATE_TIME)}</small>
                   {q.estado === 'RESPONDIDA'
-                    ? <div className="question-answer"><span>✓ Respuesta</span><p>{q.respuesta}</p><small>{new Date(q.respondida_en ?? '').toLocaleString('es-AR')}</small></div>
+                    ? <div className="question-answer"><span>✓ Respuesta</span><p>{q.respuesta}</p><small>{new Date(q.respondida_en ?? '').toLocaleString('es-AR', DATE_TIME)}</small></div>
                     : <span className="status-label status-inactive">Pendiente de respuesta</span>}
                 </li>
               ))}

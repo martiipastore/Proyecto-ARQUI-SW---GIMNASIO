@@ -1,3 +1,4 @@
+import { DATE_TIME } from '../format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/client';
 import { useSession } from '../auth/session';
@@ -69,7 +70,7 @@ export function PointsHistory() {
                 </span>
                 <div>
                   <strong>{movement.motivo}</strong>
-                  <span>{new Date(movement.fecha).toLocaleString('es-AR')} · Movimiento {movement.secuencia}</span>
+                  <span>{new Date(movement.fecha).toLocaleString('es-AR', DATE_TIME)} · Movimiento {movement.secuencia}</span>
                   {movement.origen === 'INASISTENCIA' && movement.puntos === 0 && <small>Sin descuento por saldo cero</small>}
                   {movement.origen === 'REVERSION' && <small>Corrección del administrador</small>}
                   {movement.estado === 'REVERTIDO' && <small>Movimiento revertido</small>}

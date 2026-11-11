@@ -255,7 +255,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 11 — Frontend completo y coherencia visual
 
-**Estado:** Pendiente.
+**Estado:** Validación funcional local cerrada el 11/11/2026: todas las pantallas de los cuatro roles con la identidad visual, firma en movimiento de DISENO §3.3, diálogo de confirmación, móvil sin desbordes, y recorrido principal hecho desde la interfaz. Revisión de otro integrante pendiente. Ver [ETAPA_11_FRONTEND.md](ETAPA_11_FRONTEND.md).
 
 **Objetivo:** cerrar la experiencia pública y autenticada con la identidad aprobada.
 
@@ -418,7 +418,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 8. Búsqueda | Verificación técnica local cerrada el 10/11: OpenSearch con indexer por eventos, reindexado con alias, retraso ~1 s; 44 escenarios E2E aprobados | Revisión de otro integrante para integrar |
 | 9. Caché | Verificación técnica local cerrada el 10/11: catálogo de actividades en Redis medido A/B con control; pool del gateway corregido; 24 escenarios E2E | Revisión de otro integrante para integrar |
 | 10. Training y nutrición | Verificación técnica local cerrada el 10/11: planes, mediciones y consultas con MongoDB; autorización por asignación sin caché; 27 escenarios E2E | Revisión de otro integrante para integrar |
-| 11. Frontend completo | Pendiente (hoy: cuenta del Club y estado del sistema) | Contratos y servicios |
+| 11. Frontend completo | Validación funcional local cerrada el 11/11: cuatro roles y recorrido principal desde la interfaz, firma visual, móvil a 375 px | Revisión de otro integrante; logo y fotos oficiales |
 | 12. Borde y balanceo | Pendiente | Booking operativo |
 | 13. Capacidad externa | MELT: manual recibido y documentado el 10/11; implementación pendiente | Flujo/servicio consumidor, código de referido y contrato incompleto de algunas respuestas; ver ETAPA_13_MELT.md |
 | 14. Observabilidad final | Pendiente | Flujos integrados |

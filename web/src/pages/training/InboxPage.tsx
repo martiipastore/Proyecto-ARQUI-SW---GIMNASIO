@@ -1,3 +1,4 @@
+import { DATE_TIME } from '../../format';
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from '../../auth/session';
 import { EmptyState, Notice, NoticeState, PageHeading, SectionHeading } from '../../components/PageParts';
@@ -45,7 +46,7 @@ export function InboxPage() {
                 {pending.map((q) => (
                   <li key={q.id} className="question-pending">
                     <p className="question-text">{q.pregunta}</p>
-                    <small>Enviada el {new Date(q.enviada_en).toLocaleString('es-AR')} · <a href={`#/nutri/pacientes/${q.alumno_id}`}>Ver paciente</a></small>
+                    <small>Enviada el {new Date(q.enviada_en).toLocaleString('es-AR', DATE_TIME)} · <a href={`#/nutri/pacientes/${q.alumno_id}`}>Ver paciente</a></small>
                     <label>Respuesta<textarea maxLength={2000} rows={3} value={drafts[q.id] ?? ''} onChange={(e) => setDrafts({ ...drafts, [q.id]: e.target.value })} /></label>
                     <button type="button" disabled={busy || !(drafts[q.id] ?? '').trim()} onClick={() => void answer(q.id)}>Responder</button>
                   </li>
