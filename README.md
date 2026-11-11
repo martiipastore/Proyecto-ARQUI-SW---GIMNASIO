@@ -114,7 +114,7 @@ make demo
 3. reconstruye el índice de búsqueda.
 
 Después: aplicación en **http://localhost:5173**, correos en **http://localhost:8025**
-(Mailpit) y administrador `admin@gym.local` con la contraseña `MEMBERS_ADMIN_PASSWORD`
+(Mailpit), tablero en **http://localhost:3000** (Grafana) y administrador `admin@gym.local` con la contraseña `MEMBERS_ADMIN_PASSWORD`
 de `.env`. La integración con MELT queda apagada hasta cargar en `.env` la clave
 `BENEFITS_MELT_PARTNER_KEY` (la entrega MELT por privado) y
 `BENEFITS_MELT_ENABLED=true`.
@@ -148,6 +148,8 @@ Sin `make`: `docker compose --env-file .env -f deploy/docker-compose.yml up -d -
 | http://localhost:8080 | api-gateway — único punto de entrada |
 | http://localhost:8080/api/v1/status | Estado agregado de todos los servicios |
 | http://localhost:4010 | Mock de la API de partners (Prism) |
+| http://localhost:3000 | Grafana: tablero «Metal Fitness — recorrido y salud», sin login ([etapa 14](docs/entrega-final/ETAPA_14_OBSERVABILIDAD.md)) |
+| http://localhost:9090/alerts | Prometheus: alertas `ServicioCaido`, `MensajesEnDLQ` y `MetricasNoDisponibles` |
 | http://localhost:16686 | Jaeger local; historial volátil en memoria |
 | http://localhost:8025 | Mailpit (correos de activación); solo con el perfil `identity` |
 | https://metalfitness-club.vercel.app | Despliegue público (frontend, `/api/v1` y `/partner-api/v2`) |

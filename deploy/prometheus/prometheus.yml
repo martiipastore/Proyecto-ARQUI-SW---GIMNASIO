@@ -1,0 +1,45 @@
+# Etapa 14 — Prometheus lee los /metrics que ya exponen los procesos del stack.
+# Solo local (loopback 127.0.0.1:9090). Ver docs/entrega-final/ETAPA_14_OBSERVABILIDAD.md.
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+rule_files:
+  - /etc/prometheus/alertas.yml
+
+scrape_configs:
+  # Requests por clase, estado de cada servicio (mismo chequeo que /api/v1/status)
+  # y contadores del control de tráfico.
+  - job_name: api-gateway
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["api-gateway:8080"]
+
+  # Eventos de Booking consumidos (reintentos y DLQ) y envíos a MELT.
+  - job_name: benefits-service
+    static_configs:
+      - targets: ["benefits-service:8083"]
+
+  # Caché del catálogo de actividades (aciertos, fallos, invalidaciones).
+  - job_name: booking-service
+    static_configs:
+      - targets: ["booking-service:8082"]
+
+  # Indexado de clases en OpenSearch y retraso del índice.
+  - job_name: booking-indexer
+    static_configs:
+      - targets: ["booking-indexer:8086"]
+
+  # Notificaciones por correo (procesadas, reintentos, DLQ).
+  - job_name: notification-worker
+    static_configs:
+      - targets: ["notification-worker:8085"]
+
+  # Plugin rabbitmq_prometheus (incluido en la imagen): mensajes por cola,
+  # incluidas las colas de reintento y las DLQ.
+  - job_name: rabbitmq
+    metrics_path: /metrics/detailed
+    params:
+      family: [queue_coarse_metrics]
+    static_configs:
+      - targets: ["rabbitmq:15692"]

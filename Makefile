@@ -26,14 +26,15 @@ env-check:
 up: env-check ## Construye y levanta todo el stack; espera a que esté healthy
 	$(COMPOSE) up -d --build --wait
 	@echo ""
-	@echo "Listo:  web http://localhost:5173  ·  gateway http://localhost:8080/api/v1/status"
+	@echo "Listo:  web http://localhost:5173  ·  gateway http://localhost:8080/api/v1/status  ·  tablero http://localhost:3000"
 
 demo: ## Procedimiento único: crea .env con secretos propios, levanta TODO (búsqueda incluida) y reindexa
 	go run scripts/preparar-entorno.go
-	$(COMPOSE) --profile search up -d --build --wait
-	$(COMPOSE) --profile search run --rm booking-indexer -reindex
+	$(COMPOSE) --profile search --profile identity up -d --build --wait
+	$(COMPOSE) --profile search --profile identity run --rm booking-indexer -reindex
 	@echo ""
 	@echo "Listo:  web http://localhost:5173  ·  correos http://localhost:8025  ·  estado http://localhost:8080/api/v1/status"
+	@echo "        tablero http://localhost:3000  ·  alertas http://localhost:9090/alerts  ·  trazas http://localhost:16686"
 	@echo "Administrador: admin@gym.local (contraseña MEMBERS_ADMIN_PASSWORD de .env)"
 
 down: env-check ## Baja el stack (conserva los datos)

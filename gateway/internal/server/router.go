@@ -21,17 +21,24 @@ import (
 
 // NewRouter crea el router: endpoints propios del gateway (/health/*, /api/v1/status)
 // y, para todo lo demás, el proxy por prefijo. Con rate limiting activo, Redis es
-// una dependencia parcial (ADR-007) y /metrics expone sus contadores.
+// una dependencia parcial (ADR-007). /metrics (etapa 14) expone las requests por
+// clase de respuesta, el estado de cada servicio y los contadores del limitador.
 func NewRouter(log *slog.Logger, corsOrigins []string, p *proxy.Proxy, checker *status.Checker, limiter *ratelimit.Limiter, checks ...health.Check) *gin.Engine {
 	r := httpx.NewRouter(log)
+	requests := &requestMetrics{}
+	r.Use(requests.middleware())
 	r.Use(middleware.CORS(corsOrigins))
 
 	health.Register(r, 2*time.Second, checks...)
-	if limiter != nil {
-		r.GET("/metrics", func(c *gin.Context) {
-			c.Data(http.StatusOK, "text/plain; version=0.0.4", []byte(metricsText(limiter.Metrics)))
-		})
-	}
+	r.GET("/metrics", func(c *gin.Context) {
+		var b strings.Builder
+		b.WriteString(requests.text())
+		b.WriteString(servicesText(checker.Check(c.Request.Context())))
+		if limiter != nil {
+			b.WriteString(metricsText(limiter.Metrics))
+		}
+		c.Data(http.StatusOK, "text/plain; version=0.0.4", []byte(b.String()))
+	})
 	r.GET("/api/v1/status", func(c *gin.Context) {
 		summary := checker.Check(c.Request.Context())
 		code := http.StatusOK

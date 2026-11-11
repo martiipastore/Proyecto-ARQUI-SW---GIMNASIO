@@ -57,6 +57,7 @@ func main() {
 		"MEMBERS_ACTIVATION_ENCRYPTION_KEY": activacion,
 		"MEMBERS_JWT_PRIVATE_KEY":           privada,
 		"GATEWAY_JWT_PUBLIC_KEY":            publica,
+		"GRAFANA_ADMIN_PASSWORD":            aleatorio()[:32],
 	}
 	for _, k := range prendidas {
 		valores[k] = "true"

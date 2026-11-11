@@ -1,0 +1,34 @@
+# Etapa 14 — alertas evaluadas por Prometheus (se ven en http://localhost:9090/alerts
+# y en el tablero de Grafana). Sin Alertmanager: el alcance local solo las muestra.
+groups:
+  - name: metalfitness
+    rules:
+      # Un servicio no responde /health/ready (o tiene caída una dependencia crítica).
+      - alert: ServicioCaido
+        expr: gateway_upstream_up == 0
+        for: 20s
+        labels:
+          severity: critica
+        annotations:
+          summary: "{{ $labels.service }} no está disponible"
+          description: "El gateway no obtiene ready de {{ $labels.service }} hace más de 20 s. Revisar make ps y make logs s={{ $labels.service }}."
+
+      # Un mensaje terminó en una cola de mensajes muertos: hay que revisarlo a mano.
+      - alert: MensajesEnDLQ
+        expr: rabbitmq_detailed_queue_messages_ready{queue=~".*\\.dlq"} > 0
+        for: 0s
+        labels:
+          severity: advertencia
+        annotations:
+          summary: "{{ $value }} mensaje(s) en {{ $labels.queue }}"
+          description: "Un evento agotó sus reintentos. Inspeccionarlo en http://localhost:15672 antes de reencolarlo."
+
+      # Prometheus no puede leer las métricas de un proceso.
+      - alert: MetricasNoDisponibles
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: advertencia
+        annotations:
+          summary: "Sin métricas de {{ $labels.job }}"
+          description: "Prometheus no puede leer {{ $labels.instance }}/metrics hace más de 1 minuto."

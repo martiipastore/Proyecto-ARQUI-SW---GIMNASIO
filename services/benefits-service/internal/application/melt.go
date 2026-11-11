@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/domain"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/benefits-service/internal/ports"
@@ -16,6 +17,9 @@ type EnviosMelt struct {
 	proveedor ports.ProveedorMelt
 	contactos ports.Contactos
 	clock     ports.Clock
+
+	// Resultados de cada intento, expuestos en /metrics (etapa 14).
+	Acreditados, Pendientes, Rechazados, Reintentos atomic.Int64
 }
 
 func NewEnviosMelt(r ports.EnviosMelt, p ports.ProveedorMelt, c ports.Contactos, clock ports.Clock) *EnviosMelt {
@@ -36,6 +40,7 @@ func (s *EnviosMelt) Procesar(ctx context.Context, limite int) (int, error) {
 			return n, ctx.Err()
 		}
 		r := s.intentar(ctx, e)
+		s.contar(r.Tipo)
 		if err := s.repo.GuardarEnvioMelt(ctx, e.Registrar(r, s.clock.Now())); err != nil {
 			return n, err
 		}
@@ -57,6 +62,19 @@ func (s *EnviosMelt) intentar(ctx context.Context, e domain.EnvioMelt) domain.Re
 		return domain.ResultadoMelt{Tipo: domain.ResultadoReintentar, Motivo: "MELT no respondió; se reintenta con la misma referencia."}
 	}
 	return r
+}
+
+func (s *EnviosMelt) contar(tipo string) {
+	switch tipo {
+	case domain.ResultadoAcreditado:
+		s.Acreditados.Add(1)
+	case domain.ResultadoPendiente:
+		s.Pendientes.Add(1)
+	case domain.ResultadoRechazado:
+		s.Rechazados.Add(1)
+	default:
+		s.Reintentos.Add(1)
+	}
 }
 
 // MisEnvios lista los envíos del alumno autenticado.

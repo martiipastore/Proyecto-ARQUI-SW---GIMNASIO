@@ -2,55 +2,34 @@
 
 > Documento de referencia de la arquitectura del proyecto. La funcionalidad está definida en [SPEC.md](../SPEC.md); las decisiones estructurales están en [docs/adr/](adr/).
 >
-> - Versión: 1.11 (validación local de Booking y mensajería de membresías)
-> - Fecha: 2026-11-10
+> - Versión: 1.12 (estado de la entrega final: etapas 0 a 14)
+> - Fecha: 2026-11-11
 > - Incluye tres decisiones agregadas y aprobadas por el equipo (2026-10-07) para cubrir huecos con el SPEC: eventos `membresia.cancelada` y `usuario.desactivado`, consulta de asignaciones training → members y consulta de datos de alumnos booking → members. Registro completo en [Registro_de_Decisiones_Gimnasio.docx](../Registro_de_Decisiones_Gimnasio.docx) (D-20 a D-23).
 
-**Actualización local del 10/11/2026:** Booking aprobó tests PostgreSQL, vet,
-build del frontend y 20 escenarios E2E (etapa 4). La etapa 5 incorpora un relay
-para `membresia.activada` y un consumidor con MongoDB, SMTP, reintentos y DLQ;
-aprobó 26 escenarios E2E y una prueba de retención TTL sin destino con RabbitMQ real. Ambos flags de mensajería siguen apagados
-por defecto. No se publicaron estos cambios en Vercel. Ver
-[etapa 4](entrega-final/ETAPA_4_BOOKING.md) y
-[etapa 5](entrega-final/ETAPA_5_MENSAJERIA.md). Las afirmaciones siguientes del
-09/11 se conservan como inventario anterior y no describen esos cambios locales.
+## Estado de implementación al 11/11/2026
 
-**Capacidad externa (etapa 13, 11/11/2026):** cada asistencia acredita 100 puntos
-en **MELT**, la capacidad del grupo proveedor, mediante su API «Acreditación externa
-de puntos» v1.1.0.
-- **Consumidor:** benefits-service. Registra el envío en la misma transacción que la
-  asistencia (`envios_melt`) y lo entrega en segundo plano, con la referencia estable,
-  timeout de 40 s y reintentos.
-- **Email:** se consulta a Members por una ruta interna.
-- **Usuario:** el alumno ve el estado y el enlace de registro en su inicio.
-- **Fallas:** si MELT cae, la asistencia y los puntos locales no se afectan.
+Todo lo siguiente corre en el stack local (`make demo`). Cada fila se validó con
+tests y con el recorrido desde el frontend; el detalle y la evidencia están en el
+documento de cada etapa.
 
-Ver [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md), D-92 y
-[ETAPA_13_MELT.md](entrega-final/ETAPA_13_MELT.md).
-
-**Etapa 6 local, 10/11/2026:** Booking publica asistencia/ausencia desde su outbox
-y Benefits las consume en el mismo ledger de cuenta que los créditos HTTP.
-Migración 006: movimientos internos tipados, origen único y recibos inmutables;
-500 por asistencia o hasta −100 por ausencia, sin saldo negativo. El ACK sigue al
-commit. `GET /api/v1/benefits/me/movements` permite consultar la cuenta propia;
-historial web y E2E de 32 escenarios aprobados, incluida caída y recuperación de
-Benefits. Ver [ETAPA_6_BOOKING_BENEFITS.md](entrega-final/ETAPA_6_BOOKING_BENEFITS.md).
-No se agregan débitos a partners ni se publica este flujo en Vercel. Los flags de
-mensajería permanecen apagados por defecto y la revisión para integrar está pendiente.
-
-**Inventario anterior al 09/11/2026:**
-
-- **Benefits** (Hexagonal): API de partners v2 con registro externo, créditos con
-  identidad de evento, saldo y movimientos; permisos, límites y cuota por
-  integración en PostgreSQL; idempotencia durable.
-- **Members** (Capas): identidad, activación por correo, login con JWT RS256 de 15
-  minutos, roles y membresías con historial inmutable y outbox.
-- **Gateway**: verifica el JWT, inyecta `X-User-Id`/`X-User-Role` y restringe por rol.
-- **Publicación**: Gateway, Benefits, Members y web en Vercel con PostgreSQL
-  gestionado (D-75, [ADR-021](adr/ADR-021-despliegue-vercel.md)).
-- **Pendiente**: mensajería RabbitMQ con DLQ (los outbox existen, pero nadie los
-  publica), booking (clases, reservas, kiosco), training, búsqueda, caché,
-  balanceo, métricas y tableros, y el proveedor externo D9.
+| Pieza | Estado | Evidencia |
+|---|---|---|
+| **Gateway**: JWT RS256, roles, routing por prefijo, borrado de cabeceras de identidad, `/api/v1/status` | Implementado | [Etapa 2](entrega-final/ETAPA_2_IDENTIDAD.md) |
+| **Control de tráfico**: token bucket en Redis, `429` con `Retry-After`; el login falla cerrado y el resto abierto | Implementado | [Etapa 12A](entrega-final/ETAPA_12_BORDE.md), D-91 |
+| **Members** (Capas): identidad, activación por correo, roles, membresías con historial, asignaciones | Implementado | [Etapa 3](entrega-final/ETAPA_3_MEMBERS.md) |
+| **Booking** (Hexagonal + CQRS de lectura): actividades, clases con cupo, reservas, cancelación, ingreso, asistencia y ausencias automáticas | Implementado | [Etapa 4](entrega-final/ETAPA_4_BOOKING.md) |
+| **Mensajería**: outbox con relay, `gym.events`, consumidores idempotentes, reintentos 10 s/1 min/10 min y DLQ | Implementado para `membresia.activada`, `asistencia.registrada`, `inasistencia.registrada` y `clase.actualizada` | [Etapa 5](entrega-final/ETAPA_5_MENSAJERIA.md), [etapa 6](entrega-final/ETAPA_6_BOOKING_BENEFITS.md) |
+| **Benefits** (Hexagonal): ledger, +500 por asistencia y −100 por ausencia, API de partners v2, integraciones y reversiones | Implementado | [Etapa 6](entrega-final/ETAPA_6_BOOKING_BENEFITS.md), [etapa 7](entrega-final/ETAPA_7_CLUB.md) |
+| **Notificaciones**: notification-worker con MongoDB y SMTP (Mailpit) | Implementado | [Etapa 5](entrega-final/ETAPA_5_MENSAJERIA.md) |
+| **Búsqueda**: OpenSearch con alias `clases-read`, indexer versionado y `-reindex` sin pausa | Implementado (perfil `search`) | [Etapa 8](entrega-final/ETAPA_8_BUSQUEDA.md), D-87 |
+| **Caché**: catálogo de actividades en Redis (cache-aside, TTL 10 min, invalidación) | Implementado y medido | [Etapa 9](entrega-final/ETAPA_9_CACHE.md), D-88 |
+| **Training** (Capas, MongoDB): planes, mediciones y consultas, con autorización por asignación | Implementado | [Etapa 10](entrega-final/ETAPA_10_TRAINING.md) |
+| **Frontend**: pantallas de los cuatro roles con la identidad visual | Implementado | [Etapa 11](entrega-final/ETAPA_11_FRONTEND.md) |
+| **Capacidad externa (D9)**: 100 puntos en MELT por asistencia, entrega en segundo plano con referencia estable | Implementado y validado contra MELT real | [Etapa 13](entrega-final/ETAPA_13_MELT.md), [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md) |
+| **Observabilidad**: logs JSON con `correlation_id`, trazas del gateway y Benefits en Jaeger, Prometheus, tablero de Grafana y tres alertas | Implementado; trazas de Members y Booking pendientes | [Etapa 14](entrega-final/ETAPA_14_OBSERVABILIDAD.md), D-93 |
+| **Nube**: gateway, Members, Benefits y web en Vercel con PostgreSQL gestionado; la API de partners es pública | Publicado; Booking, training y mensajería solo locales (L-19) | [ADR-021](adr/ADR-021-despliegue-vercel.md), D-75 |
+| **Balanceo de Booking** (2 instancias detrás de Traefik) | Pendiente (etapa 12B) | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) |
+| Eventos `membresia.cancelada`, `usuario.desactivado` y `alumno.creado` | Diseño objetivo; no publicados | §7 |
 
 Los diagramas y las demás secciones describen el **diseño objetivo** salvo que digan
 lo contrario. Detalle de la ampliación en el [plan del Club](PLAN_CLUB_BENEFICIOS.md);
@@ -499,7 +478,9 @@ Esta separación evita confundir autenticación con autorización: un JWT o una 
 
 ## 11. Observabilidad
 
-**Implementado en etapa 4:** flujo mínimo Gateway → Benefits → PostgreSQL, middleware/transporte HTTP y spans manuales del repositorio; logs JSON con correlation_id/trace_id/span_id; OTLP → Collector → Jaeger local en memoria. Evidencia en [ETAPA_4_OBSERVABILIDAD.md](entrega-2/ETAPA_4_OBSERVABILIDAD.md). No se usan otelgin/otelhttp en esta primera versión: la instrumentación manual restringe los atributos exportados. La tabla siguiente conserva el diseño objetivo; métricas, centralización de logs, tableros y trazas asíncronas siguen pendientes.
+**Implementado en etapa 4:** flujo mínimo Gateway → Benefits → PostgreSQL, middleware/transporte HTTP y spans manuales del repositorio; logs JSON con correlation_id/trace_id/span_id; OTLP → Collector → Jaeger local en memoria. Evidencia en [ETAPA_4_OBSERVABILIDAD.md](entrega-2/ETAPA_4_OBSERVABILIDAD.md). No se usan otelgin/otelhttp en esta primera versión: la instrumentación manual restringe los atributos exportados. La tabla siguiente conserva el diseño objetivo.
+
+**Implementado en la etapa 14 (11/11/2026, D-93):** Prometheus lee los `/metrics` del gateway (requests por clase de respuesta, duración y estado de cada servicio), Benefits (eventos y envíos a MELT), Booking (caché), booking-indexer (retraso del índice), notification-worker y RabbitMQ (mensajes por cola y DLQ). Grafana aprovisiona el tablero «Metal Fitness — recorrido y salud» (`127.0.0.1:3000`). Tres alertas: `ServicioCaido`, `MensajesEnDLQ` y `MetricasNoDisponibles`. Siguen pendientes las trazas de Members y Booking, la traza a través del broker y Loki. Ver [ETAPA_14_OBSERVABILIDAD.md](entrega-final/ETAPA_14_OBSERVABILIDAD.md).
 
 | Señal | Instrumentación | Pipeline | Visualización |
 |---|---|---|---|
@@ -718,17 +699,18 @@ Estados por servicio: `ready`, `degraded`, `not_ready` (respondió 503) o `unrea
 | `booking-indexer` | misma imagen que booking, entrypoint `/app/booking-indexer` | 127.0.0.1:8086 (health, métricas) | 1 | Sí; consumidor con `BOOKING_INDEXER_ENABLED` (etapa 8) |
 | `benefits-service` | build | 127.0.0.1:8083 | 1 | Sí |
 | `training-service` | build | 127.0.0.1:8084 | 1 | Sí |
-| `notification-worker` | build | 127.0.0.1:8085 (health) | 1 | Sí (esqueleto) |
+| `notification-worker` | build | 127.0.0.1:8085 (health, métricas) | 1 | Sí, consume `membresia.activada` |
 | `postgres` | postgres:16-alpine | 127.0.0.1:5432 | 1 (3 bases, 3 usuarios) | Sí |
 | `mongo` | mongo:7 (standalone con usuarios por base) | 127.0.0.1:27017 | 1 | Sí |
-| `redis` | redis:7-alpine (con contraseña) | 127.0.0.1:6379 | 1 | Sí (lo usará el rate limiting) |
-| `rabbitmq` | rabbitmq:3-management | 127.0.0.1:5672 / 15672 | 1 | Sí (lo usarán los eventos) |
+| `redis` | redis:7-alpine (con contraseña) | 127.0.0.1:6379 | 1 | Sí: control de tráfico del gateway y caché de Booking |
+| `rabbitmq` | rabbitmq:3-management | 127.0.0.1:5672 / 15672 | 1 | Sí: eventos con reintentos y DLQ; métricas por cola en 15692 |
 | `benefits-mock` | stoplight/prism:5.15.10 (contrato de partners) | 4010 | 1 | Sí |
 | `traefik` | traefik v3 | — | 1 | No, etapa de balanceo |
 | `opensearch` | opensearch 2.17.1 (perfil `search`) | 127.0.0.1:9200 | 1 | Sí, etapa 8 (local) |
 | `mailpit` | axllent/mailpit:v1.20 | 127.0.0.1:8025 (UI) | 1 | Sí, con el perfil `identity` (correo de activación y bienvenida de Members) |
 | `otel-collector`, `jaeger` | versiones fijadas en Compose | Jaeger UI 16686 (loopback) | 1 c/u | Sí, primera traza del flujo mínimo; memoria local |
-| `prometheus`, `loki`, `grafana` | oficiales | — | 1 c/u | No; métricas, logs centralizados y tableros pendientes |
+| `prometheus`, `grafana` | prom/prometheus:v2.55.1, grafana/grafana:11.3.0 | 127.0.0.1:9090 / 127.0.0.1:3000 | 1 c/u | Sí, etapa 14: métricas, tablero aprovisionado y alertas |
+| `loki` | — | — | — | No; los logs se consultan con `make logs` |
 
 Requisitos: ~8 GB de RAM y **al menos 15 GB libres en disco** para imágenes y builds cuando el stack esté completo (hoy, con el esqueleto, alrededor de 6 GB).
 
@@ -794,10 +776,13 @@ flowchart LR
 | L-18 | **Acreditaciones y penalizaciones no son conmutativas.** Dos operaciones concurrentes pueden dejar saldo 400 o 500 según cuál se aplique primero. | El resultado no se deduce solo de la fecha del hecho. | Bloqueo de cuenta, secuencia creciente y fechas de hecho/aplicación diferenciadas; orden auditable según ADR-004. |
 | L-19 | **La nube no replica el entorno local** (ADR-021). Vercel no tiene RabbitMQ, Redis, OpenSearch ni Collector/Jaeger. | En producción no hay trazas ni rate limiting del gateway; la evidencia de observabilidad es local. | Límites y cuota por integración en PostgreSQL (ADR-016); evaluar observabilidad gestionada si se exige en la nube. |
 | L-20 | **Llamadas cruzadas Benefits ↔ Members** en el registro externo (ADR-022). | Acopla la disponibilidad de ambos servicios para registrar; en Vercel obliga a una segunda instancia de Members. | Recibo durable, reintento idempotente por `eventId`; reemplazar la vuelta por un evento cuando exista la mensajería. |
-| L-21 | **Outbox sin publicador.** Members guarda eventos de membresías y correo, pero nada los publica en RabbitMQ; Members envía su correo por SMTP directo en lugar de notification-worker. | No hay todavía un evento de dominio consumido con DLQ (requisito del TP). | Etapa de mensajería: relay del outbox, consumidor idempotente, reintentos y DLQ. |
+| L-21 | **(Resuelta en las etapas 5 y 6.) Outbox sin publicador.** Members guarda eventos de membresías y correo, pero nada los publica en RabbitMQ; Members envía su correo por SMTP directo en lugar de notification-worker. | No hay todavía un evento de dominio consumido con DLQ (requisito del TP). | Etapa de mensajería: relay del outbox, consumidor idempotente, reintentos y DLQ. |
 | L-22 | **Validación del ledger recorre el historial** de la cuenta en cada escritura (trigger `verificar_ledger`). | El costo de acreditar crece con la cantidad de movimientos; fue el límite observado en la etapa 7 (ADR-013 v2). | Medir y, si hace falta, validar de forma incremental conservando las invariantes. |
 | L-23 | **Integración continua bloqueada.** GitHub Actions no inicia por un problema de facturación de la cuenta desde el 06/11/2026. | Los PR se integran sin checks automáticos. | Verificación local documentada ([VALIDACION_LOCAL_GITHUB.md](VALIDACION_LOCAL_GITHUB.md)) hasta resolver la cuenta. |
 | L-24 | **Producción desplegada desde la CLI**, sin integración con Git. | La versión publicada puede diferir de `main`. | Publicar desde la rama aprobada y registrar el commit desplegado antes de cada demostración. |
+| L-25 | **Dependencia de un proveedor externo con arranque en frío** (MELT en Render, ~25 s). | Los puntos MELT llegan con demora; si la persona no tiene cuenta queda pendiente de registro. | Entrega en segundo plano, timeout de 40 s, reintentos con la misma referencia y reconsulta cada 2 min (ADR-009 v2). La asistencia y el ledger local nunca dependen de MELT. |
+| L-26 | **Observabilidad parcial.** Trazas solo en gateway y Benefits; sin Loki ni Alertmanager; Members y training sin `/metrics` propios. | Una operación de Booking se reconstruye con logs por `correlation_id` y métricas, no con una traza completa. | Su disponibilidad se mide desde el gateway (`gateway_upstream_up`). Extender OTel a Members y Booking y propagar `traceparent` por el outbox (etapa 14, parte individual). |
+| L-27 | **Clave del proveedor compartida por privado.** `BENEFITS_MELT_PARTNER_KEY` vive solo en `.env`. | Si se filtra, un tercero podría acreditar puntos a nombre del gimnasio. | No se versiona ni se registra en logs; pedir a MELT que la rote después de la evaluación. |
 
 ---
 
@@ -820,16 +805,16 @@ flowchart LR
 | [ADR-008 v2](adr/ADR-008-v2-errores-gateway-partners.md) | D8 — Contrato 1.1.0 con errores del gateway | Reemplazado por ADR-008 v3 |
 | [ADR-008 v3](adr/ADR-008-v3-fecha-cuenta-sin-movimientos.md) | D8 — Contrato 1.1.1, fecha de cuenta sin movimientos | Aceptado; flujo mínimo implementado |
 | [ADR-009](adr/ADR-009-consumo-proveedor.md) | D9 — Adaptación de la capacidad externa | Reemplazado por ADR-009 v2 |
-| [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md) | D9 — Acreditación en MELT por asistencia desde Benefits | Aceptado; validado localmente, prueba con la clave real pendiente |
+| [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md) | D9 — Acreditación en MELT por asistencia desde Benefits | Aceptado; validado contra MELT real con la clave (202 con enlace de registro) |
 | [ADR-010](adr/ADR-010-resiliencia-benefits.md) | D10 — Diseño inicial de resiliencia | Reemplazado por v2 |
 | [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | D10 — Presupuestos y recuperación idempotente | Aceptado; ejercicio de etapa 6 validado |
 | [ADR-011](adr/ADR-011-observabilidad-v1.md) | D11 — Diseño inicial de observabilidad | Reemplazado por v2 |
-| [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | D11 — Primera traza y memoria local | Aceptado; primera traza implementada, métricas y alertas pendientes |
+| [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | D11 — Primera traza y memoria local | Aceptado; primera traza implementada; métricas, tablero y alertas agregados por D-93 |
 | [ADR-012](adr/ADR-012-balanceo-booking.md) | D12 — Balanceo inicial | Reemplazado por ADR-012 v2 |
-| [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | D12 — Balanceo con verificaciones consecutivas (3 fallos / 2 éxitos) | Aceptado como diseño inicial; soporte de herramienta, implementación y evidencia pendientes |
+| [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | D12 — Balanceo con verificaciones consecutivas (3 fallos / 2 éxitos) | Aceptado como diseño inicial; implementación pendiente (etapa 12B) |
 | [ADR-013](adr/ADR-013-capacidad-costos.md) | D13 — Plan inicial de capacidad/costos | Reemplazado por v2 |
 | [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md) | D13 — Mediciones y costos fechados | Aceptado; evidencia local y límites en etapa 7 |
-| [ADR-014](adr/ADR-014-busqueda-clases.md) | D6 — Búsqueda de clases | Aceptado como diseño inicial; implementación y mediciones pendientes |
+| [ADR-014](adr/ADR-014-busqueda-clases.md) | D6 — Búsqueda de clases | Aceptado; implementado en la etapa 8 y precisado por D-87 |
 | [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md) | D4/D8 — Bloqueo por clave y operación en curso | Aceptado; implementado |
 | [ADR-016](adr/ADR-016-politicas-eventos-integraciones.md) | Club — Permisos, presupuesto y evento | Propuesto en detalles técnicos; CB-02 validada localmente, revisión pendiente |
 | [ADR-017](adr/ADR-017-registro-identidad-activacion.md) | Club — Identidad, activación y correo | Propuesto; CB-03 validada localmente con JWT según ADR-006; revisión pendiente |
@@ -842,21 +827,21 @@ flowchart LR
 
 ### Decisión del TP → ADR
 
-| Decisión del enunciado | ADR vigente | Estado |
-|---|---|---|
-| D1 — Límites de los servicios | [ADR-001](adr/ADR-001-limites-de-servicios.md), precisado por [ADR-022](adr/ADR-022-registro-externo-members-benefits.md) | Aceptado |
-| D2 — Arquitectura interna | [ADR-002 v2](adr/ADR-002-v2-patrones-internos.md) | Aceptado; Hexagonal en Benefits y Capas en Members implementados |
-| D3 — Persistencia | [ADR-003](adr/ADR-003-persistencia.md) | Aceptado; PostgreSQL en uso, MongoDB solo con health check |
-| D4 — Consistencia y concurrencia | [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md), [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md), [ADR-016](adr/ADR-016-politicas-eventos-integraciones.md) | Ledger implementado; reservas pendientes |
-| D5 — Comunicación | [ADR-005 v2](adr/ADR-005-v2-comunicacion.md), precisado por [ADR-022](adr/ADR-022-registro-externo-members-benefits.md) | Síncrona implementada; mensajería pendiente |
-| D6 — Búsqueda | [ADR-014](adr/ADR-014-busqueda-clases.md) | Diseño; implementación pendiente |
-| D7 — Caché | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md) | Diseño; implementación y medición pendientes |
-| D8 — Contrato propio | [ADR-008 v4](adr/ADR-008-v4-capacidad-operativa-club.md) | Aceptado; v2.0.0 publicado |
-| D9 — Consumo del proveedor | [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md) | Aceptado; validado localmente |
-| D10 — Resiliencia | [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | Aceptado; caída controlada validada |
-| D11 — Observabilidad | [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md) | Primera versión; métricas, tableros y alertas pendientes |
-| D12 — Balanceo | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | Diseño; implementación pendiente |
-| D13 — Capacidad y costos | [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md) | Mediciones locales; costos de Oracle desactualizados por ADR-021 |
+| Decisión del enunciado | Qué se decidió | ADR vigente | Estado al 11/11/2026 | Evidencia |
+|---|---|---|---|---|
+| D1 — Límites de los servicios | Gateway + 5 servicios por capacidad de negocio; cada uno dueño de su base | [ADR-001](adr/ADR-001-limites-de-servicios.md), [ADR-022](adr/ADR-022-registro-externo-members-benefits.md) | Implementado | Sección 4; ningún servicio consulta la base de otro |
+| D2 — Arquitectura interna | Capas en Members y Training; Hexagonal en Booking y Benefits | [ADR-002 v2](adr/ADR-002-v2-patrones-internos.md) | Implementado | `internal/domain/architecture_test.go` en Booking y Benefits |
+| D3 — Persistencia | PostgreSQL por servicio; MongoDB en Training y notificaciones; Redis; OpenSearch | [ADR-003](adr/ADR-003-persistencia.md) | Implementado | Tests de integración con testcontainers; [etapa 10](entrega-final/ETAPA_10_TRAINING.md) |
+| D4 — Consistencia y concurrencia | Cupo, unicidad y saldo garantizados por la base; ledger ordenado; `Idempotency-Key` | [ADR-004 v2](adr/ADR-004-v2-saldo-ledger.md), [ADR-015](adr/ADR-015-bloqueo-idempotencia-en-curso.md) | Implementado | Tests concurrentes de reservas ([etapa 4](entrega-final/ETAPA_4_BOOKING.md)) y del ledger |
+| D5 — Comunicación | HTTP síncrono con timeout; eventos con outbox, consumo idempotente, reintentos y DLQ | [ADR-005 v2](adr/ADR-005-v2-comunicacion.md) | Implementado | E2E `-messaging` y `-attendance` ([etapa 5](entrega-final/ETAPA_5_MENSAJERIA.md), [etapa 6](entrega-final/ETAPA_6_BOOKING_BENEFITS.md)) |
+| D6 — Búsqueda | OpenSearch con alias, indexer versionado y reindexado sin pausa | [ADR-014](adr/ADR-014-busqueda-clases.md), D-87 | Implementado | E2E `-search`; retraso medido ~1 s ([etapa 8](entrega-final/ETAPA_8_BUSQUEDA.md)) |
+| D7 — Caché | Catálogo de actividades en Redis; nunca permisos ni vigencias | [ADR-007](adr/ADR-007-cache-autorizacion-disponibilidad.md), D-88 | Implementado y medido | Medición A/B/A/B con control ([etapa 9](entrega-final/ETAPA_9_CACHE.md)) |
+| D8 — Contrato propio | API de partners v2.0.0 en Vercel | [ADR-008 v4](adr/ADR-008-v4-capacidad-operativa-club.md) | Publicado | `make contract-lint`; smoke `scripts/smoke-club-vercel.ps1` |
+| D9 — Consumo del proveedor | 100 puntos en MELT por asistencia, en segundo plano con anticorrupción | [ADR-009 v2](adr/ADR-009-v2-acreditacion-melt.md), D-92 | Implementado y validado contra MELT real | Test de contrato; [etapa 13](entrega-final/ETAPA_13_MELT.md) |
+| D10 — Resiliencia | Timeouts, reintentos idempotentes, fallas parciales sin retirar el proceso | [ADR-010 v2](adr/ADR-010-v2-resiliencia-validada.md) | Implementado | [POSTMORTEM.md](POSTMORTEM.md); caídas en los E2E; Redis caído en la etapa 12 |
+| D11 — Observabilidad | Logs JSON correlacionados, trazas OTel, métricas, tablero y alertas | [ADR-011 v2](adr/ADR-011-v2-observabilidad-local.md), D-93 | Implementado en parte: trazas solo en gateway y Benefits (L-26) | [Etapa 14](entrega-final/ETAPA_14_OBSERVABILIDAD.md): caída controlada visible en el tablero |
+| D12 — Balanceo | Dos instancias de Booking detrás de Traefik con health checks | [ADR-012 v2](adr/ADR-012-v2-estabilidad-health-checks.md) | Pendiente (etapa 12B) | — |
+| D13 — Capacidad y costos | Mediciones de carga con k6 y costos fechados | [ADR-013 v2](adr/ADR-013-v2-capacidad-costos-medidos.md) | Mediciones locales; costos de Oracle desactualizados por ADR-021 | `tests/load/`; [etapa 9](entrega-final/ETAPA_9_CACHE.md) (pool del gateway) |
 
 La revisión de la Entrega 2 se registra en [REVISION_ETAPA_1.md](REVISION_ETAPA_1.md), incluyendo patrones de acceso de Benefits y la traducción de los errores 502/504 del gateway ya implementada con el formato público. Las propuestas no cambian las decisiones aceptadas ni acreditan implementación.
 

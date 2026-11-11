@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -135,15 +136,28 @@ func run(cfg config.Config, log *slog.Logger) error {
 		}()
 	}
 	router := benefitshttp.NewRouter(log, cfg.HealthTimeout, checks...)
-	if cfg.MessagingEnabled {
+	// Etapa 14: Prometheus lee los eventos consumidos y los envíos a MELT.
+	if cfg.MessagingEnabled || enviosMelt != nil {
 		router.GET("/metrics", func(c *gin.Context) {
-			var processed, retried, dead int64
-			for _, w := range workers {
-				processed += w.Processed.Load()
-				retried += w.Retried.Load()
-				dead += w.Dead.Load()
+			var b strings.Builder
+			if cfg.MessagingEnabled {
+				var processed, retried, dead int64
+				for _, w := range workers {
+					processed += w.Processed.Load()
+					retried += w.Retried.Load()
+					dead += w.Dead.Load()
+				}
+				fmt.Fprintf(&b, "booking_events_processed_total %d\nbooking_events_retries_total %d\nbooking_events_dlq_total %d\n", processed, retried, dead)
 			}
-			c.Data(200, "text/plain; version=0.0.4", []byte(fmt.Sprintf("booking_events_processed_total %d\nbooking_events_retries_total %d\nbooking_events_dlq_total %d\n", processed, retried, dead)))
+			if enviosMelt != nil {
+				for _, r := range []struct {
+					nombre string
+					n      int64
+				}{{"acreditado", enviosMelt.Acreditados.Load()}, {"pendiente_registro", enviosMelt.Pendientes.Load()}, {"rechazado", enviosMelt.Rechazados.Load()}, {"reintento", enviosMelt.Reintentos.Load()}} {
+					fmt.Fprintf(&b, "melt_envios_intentos_total{resultado=%q} %d\n", r.nombre, r.n)
+				}
+			}
+			c.Data(200, "text/plain; version=0.0.4", []byte(b.String()))
 		})
 	}
 	benefits := application.New(db, system.Clock{}, system.IDs{}, benefitshttp.ResultadoEncoder{})

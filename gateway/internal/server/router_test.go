@@ -324,3 +324,18 @@ func TestHealth_DelGateway(t *testing.T) {
 	assert.Equal(t, http.StatusOK, f.do(http.MethodGet, "/health/live", nil).Code)
 	assert.Equal(t, http.StatusOK, f.do(http.MethodGet, "/health/ready", nil).Code)
 }
+
+// Etapa 14: /metrics del gateway expone requests por clase y estado de servicios.
+func TestMetrics_RequestsYEstadoDeServicios(t *testing.T) {
+	f := newFixture(t, nil)
+	f.do(http.MethodGet, "/api/v1/status", nil)
+	f.do(http.MethodGet, "/ruta-inexistente", nil)
+	f.do(http.MethodGet, "/health/live", nil)
+	rec := f.do(http.MethodGet, "/metrics", nil)
+	require.Equal(t, http.StatusOK, rec.Code)
+	body := rec.Body.String()
+	require.Contains(t, body, `gateway_http_requests_total{code="2xx"} 1`, "health y metrics no se cuentan")
+	require.Contains(t, body, `gateway_http_requests_total{code="4xx"} 1`)
+	require.Contains(t, body, `gateway_upstream_up{service="members-service"} 1`)
+	require.NotContains(t, body, "gateway_ratelimit", "sin limitador no hay contadores de límite")
+}

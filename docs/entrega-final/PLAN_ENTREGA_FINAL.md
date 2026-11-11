@@ -309,7 +309,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 14 — Observabilidad y resiliencia finales
 
-**Estado:** Pendiente.
+**Estado:** Alcance grupal implementado y validado el 11/11/2026 (D-93): Prometheus, tablero de Grafana con el recorrido, tres alertas y una caída controlada visible en el tablero. Quedan para la defensa individual las trazas de Members, Booking y RabbitMQ, Loki y el postmortem final. Ver [ETAPA_14_OBSERVABILIDAD.md](ETAPA_14_OBSERVABILIDAD.md).
 
 **Objetivo:** comprender el recorrido completo sin inspeccionar manualmente cada componente.
 
@@ -343,7 +343,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 16 — Verificación y presentación
 
-**Estado:** Pendiente.
+**Estado:** En curso el 11/11/2026: ARCHITECTURE actualizado (estado de implementación, limitaciones L-25 a L-27 y matriz D1–D13 con evidencia). Faltan los ensayos cronometrados.
 
 **Objetivo:** cerrar código, evidencia y relato técnico.
 
