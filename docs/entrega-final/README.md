@@ -20,6 +20,7 @@ Esta carpeta reúne la planificación y las referencias propias de la presentaci
 | [ETAPA_9_CACHE.md](ETAPA_9_CACHE.md) | Caché del catálogo de actividades en Redis elegida y medida con la misma carga; corrección del pool del gateway; 24 escenarios E2E |
 | [ETAPA_10_TRAINING.md](ETAPA_10_TRAINING.md) | Planes de entrenamiento y alimenticios, mediciones inmutables y consultas nutricionales con MongoDB; autorización por asignación; 27 escenarios E2E |
 | [ETAPA_11_FRONTEND.md](ETAPA_11_FRONTEND.md) | Identidad visual en todas las pantallas, firma en movimiento, móvil y validación de los cuatro roles desde la interfaz |
+| [ETAPA_12_BORDE.md](ETAPA_12_BORDE.md) | Control de tráfico en el gateway (token bucket en Redis) validado; plan del balanceo de Booking |
 | [ETAPA_13_MELT.md](ETAPA_13_MELT.md) | Manual recibido de MELT, APIs, reglas del referido, pendientes y pruebas previstas; implementación reservada para la etapa 13 |
 
 ## Fuentes de verdad

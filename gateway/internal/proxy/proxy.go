@@ -35,6 +35,7 @@ type Proxy struct {
 	verifier   *access.Verifier
 	routes     []route
 	log        *slog.Logger
+	limits     *Limits
 }
 
 // Pool hacia los servicios (etapa 9 de la entrega final, D-88). El transporte
@@ -151,6 +152,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !p.authenticate(w, r, cleaned) {
 			return
 		}
+	}
+	// Control de tráfico después de autenticar (§5.1 paso 7): el usuario se
+	// identifica por su sub verificado, nunca por datos que mande el cliente.
+	if !p.allow(w, r, cleaned, partner) {
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), rt.timeout)

@@ -14,11 +14,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	goredis "github.com/redis/go-redis/v9"
+
 	gwconfig "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config"
 	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/proxy"
+	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/ratelimit"
 	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/server"
 	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/status"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation"
+	"github.com/GuadiViti/Arquitectura-de-Software/pkg/health"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/httpserver"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/telemetry"
@@ -61,13 +65,34 @@ func run(cfg gwconfig.Config, log *slog.Logger) error {
 		return err
 	}
 
+	// Control de tráfico (etapa 12): token bucket en Redis con los límites de
+	// ARCHITECTURE §5.2. Login falla cerrado; el resto, abierto (§5.3).
+	var limiter *ratelimit.Limiter
+	var checks []health.Check
+	if rl := cfg.RateLimit; rl.Enabled {
+		client := goredis.NewClient(&goredis.Options{Addr: rl.RedisAddr, Password: rl.RedisPassword,
+			DialTimeout: rl.Timeout, ReadTimeout: rl.Timeout, WriteTimeout: rl.Timeout, MaxRetries: -1})
+		defer client.Close()
+		store := &ratelimit.Redis{Client: client, Timeout: rl.Timeout}
+		limits := proxy.Limits{
+			Login:   ratelimit.Policy{Name: "login", Rate: float64(rl.LoginPerMinute) / 60, Burst: rl.LoginPerMinute, FailClosed: true},
+			User:    ratelimit.Policy{Name: "user", Rate: float64(rl.UserRate), Burst: rl.UserBurst},
+			Partner: ratelimit.Policy{Name: "partner", Rate: float64(rl.PartnerRate), Burst: rl.PartnerBurst},
+		}
+		limiter = ratelimit.New(store, log, limits.Login, limits.User, limits.Partner)
+		limits.Limiter = limiter
+		p.WithRateLimit(limits)
+		checks = append(checks, health.Check{Name: "redis", Fn: store.Ping, Partial: true})
+		log.Info("rate limiting activo", slog.Int("login_por_minuto", rl.LoginPerMinute), slog.Int("usuario_por_segundo", rl.UserRate), slog.Int("partner_por_segundo", rl.PartnerRate))
+	}
+
 	targets := make([]status.Target, 0, len(cfg.Services))
 	for _, s := range cfg.Services {
 		targets = append(targets, status.Target{Name: s.Name, BaseURL: s.URL.String()})
 	}
 	checker := status.NewChecker(&http.Client{Transport: transport}, cfg.StatusTimeout, targets...)
 
-	router := server.NewRouter(log, cfg.CORSOrigins, p, checker)
+	router := server.NewRouter(log, cfg.CORSOrigins, p, checker, limiter, checks...)
 	return httpserver.Run(ctx, log, httpserver.Options{
 		Addr:            cfg.HTTPAddr,
 		Handler:         router,

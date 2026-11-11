@@ -274,7 +274,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 12 — Entrada única, control de tráfico y balanceo
 
-**Estado:** Pendiente.
+**Estado:** Parte A (control de tráfico) implementada y validada localmente el 11/11/2026: token bucket atómico en Redis, políticas de login, usuario y partner, `429` con `Retry-After`, falla cerrada del login y abierta del resto, métricas, tests unitarios e integración con Redis real (D-91). Parte B (balanceo de Booking) pendiente para después de la presentación grupal. Ver [ETAPA_12_BORDE.md](ETAPA_12_BORDE.md).
 
 **Objetivo:** completar las responsabilidades operativas del borde.
 
@@ -419,7 +419,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 9. Caché | Verificación técnica local cerrada el 10/11: catálogo de actividades en Redis medido A/B con control; pool del gateway corregido; 24 escenarios E2E | Revisión de otro integrante para integrar |
 | 10. Training y nutrición | Verificación técnica local cerrada el 10/11: planes, mediciones y consultas con MongoDB; autorización por asignación sin caché; 27 escenarios E2E | Revisión de otro integrante para integrar |
 | 11. Frontend completo | Validación funcional local cerrada el 11/11: cuatro roles y recorrido principal desde la interfaz, firma visual, móvil a 375 px | Revisión de otro integrante; logo y fotos oficiales |
-| 12. Borde y balanceo | Pendiente | Booking operativo |
+| 12. Borde y balanceo | Control de tráfico validado el 11/11 (tests con Redis real y stack local); balanceo pendiente | Confirmar soporte de Traefik para D-51 antes del balanceo |
 | 13. Capacidad externa | MELT: manual recibido y documentado el 10/11; implementación pendiente | Flujo/servicio consumidor, código de referido y contrato incompleto de algunas respuestas; ver ETAPA_13_MELT.md |
 | 14. Observabilidad final | Pendiente | Flujos integrados |
 | 15. Nube | Resuelta con Vercel (D-75); falta publicar el PR #14 | Acceso a la cuenta de Vercel |

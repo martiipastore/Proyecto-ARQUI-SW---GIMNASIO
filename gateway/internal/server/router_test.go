@@ -17,6 +17,7 @@ import (
 
 	gwconfig "github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/config"
 	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/proxy"
+	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/ratelimit"
 	"github.com/GuadiViti/Arquitectura-de-Software/gateway/internal/status"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/correlation"
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/logger"
@@ -73,7 +74,7 @@ type fixture struct {
 	upstreams map[string]*upstream
 }
 
-func newFixture(t *testing.T, env map[string]string) *fixture {
+func newFixture(t *testing.T, env map[string]string, limits ...proxy.Limits) *fixture {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	f := &fixture{upstreams: map[string]*upstream{}}
@@ -112,7 +113,12 @@ func newFixture(t *testing.T, env map[string]string) *fixture {
 		targets = append(targets, status.Target{Name: s.Name, BaseURL: s.URL.String()})
 	}
 	checker := status.NewChecker(&http.Client{Transport: transport}, 500*time.Millisecond, targets...)
-	f.router = NewRouter(log, []string{"http://localhost:5173"}, p, checker)
+	var limiter *ratelimit.Limiter
+	if len(limits) > 0 {
+		p.WithRateLimit(limits[0])
+		limiter = limits[0].Limiter
+	}
+	f.router = NewRouter(log, []string{"http://localhost:5173"}, p, checker, limiter)
 	return f
 }
 

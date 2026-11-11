@@ -88,7 +88,7 @@ Este documento describe la **arquitectura objetivo** del sistema. Las tablas de 
 | **Publicado en la nube** | Gateway, Benefits, Members (con su worker) y web en Vercel, con PostgreSQL gestionado y SMTP externo: `https://metalfitness-club.vercel.app`. Sin RabbitMQ, Redis ni observabilidad en la nube. [ADR-021](adr/ADR-021-despliegue-vercel.md). |
 | **Validado en resiliencia** | Caída controlada 502/503/504 antes/después de commit, recuperación por misma clave y rollback previo al commit; proxy exclusivo de pruebas retirado al terminar. [Etapa 6](entrega-2/ETAPA_6_RESILIENCIA.md) y [postmortem](POSTMORTEM.md). |
 | **Implementado en observabilidad** | Primera traza Gateway → Benefits → PostgreSQL y logs correlacionados; Collector y Jaeger en memoria. [Evidencia](entrega-2/ETAPA_4_OBSERVABILIDAD.md). |
-| **Desplegado, todavía sin integración funcional** | Redis está en Docker Compose; desde la etapa 9 Booking cachea el catálogo de actividades (`BOOKING_CACHE_ENABLED`, D-88, [etapa 9](entrega-final/ETAPA_9_CACHE.md)). El rate limiting del gateway con Redis sigue pendiente (etapa 12). La mensajería se integró en las etapas 5 y 6. El gateway reutiliza hasta 64 conexiones ociosas por servicio (D-88). |
+| **Desplegado, todavía sin integración funcional** | Redis está en Docker Compose; desde la etapa 9 Booking cachea el catálogo de actividades (`BOOKING_CACHE_ENABLED`, D-88, [etapa 9](entrega-final/ETAPA_9_CACHE.md)). Desde la etapa 12 el gateway aplica el rate limiting de §5.2 con token bucket atómico en Redis (D-91, [etapa 12](entrega-final/ETAPA_12_BORDE.md)); el balanceo de Booking sigue pendiente. La mensajería se integró en las etapas 5 y 6. El gateway reutiliza hasta 64 conexiones ociosas por servicio (D-88). |
 | **Pendiente de implementación** | Publicación de los outbox en RabbitMQ, consumidores idempotentes y DLQ; notification-worker; booking (actividades, clases, reservas, kiosco, asistencia); training; recompensas y panel administrativo (CB-05 y CB-07); alumnos con DNI, profesionales y asignaciones; caché y rate limiting en Redis; OpenSearch/CQRS; balanceo de Booking; métricas y tableros. |
 | **Pendiente de definición externa** | Capacidad que METALFITNESS consumirá de otro grupo, su proveedor y el flujo relevante donde se integrará, según SPEC §1.5 y la futura decisión D9. |
 
@@ -324,7 +324,7 @@ Los sub-recursos de cada prefijo (ej. `/api/v1/users/{id}/assignments`, `/api/v1
 
 ### 5.3 Comportamiento ante fallas de Redis
 
-El rate limiting **falla abierto** (deja pasar y registra métrica `ratelimit_redis_errors_total`): preferimos disponibilidad del gimnasio a protección estricta ante una caída de Redis. Login es la excepción: **falla cerrado** (protección contra fuerza bruta).
+El rate limiting **falla abierto** (deja pasar y registra métrica `ratelimit_redis_errors_total`): preferimos disponibilidad del gimnasio a protección estricta ante una caída de Redis. Login es la excepción: **falla cerrado** (protección contra fuerza bruta) y responde `503 DEPENDENCIA_NO_DISPONIBLE` con `Retry-After`. Redis es una dependencia parcial del `/health/ready` del gateway. Implementado y validado en la etapa 12 (D-91); la política de login cubre también `activate` y `resend-activation`.
 
 ---
 

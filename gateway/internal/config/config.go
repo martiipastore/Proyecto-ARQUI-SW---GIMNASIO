@@ -48,6 +48,22 @@ type Config struct {
 	Services []Service
 	// Routes ordenadas del prefijo más largo al más corto.
 	Routes []Route
+	// RateLimit configura el control de tráfico (etapa 12, ARCHITECTURE §5.2).
+	RateLimit RateLimit
+}
+
+// RateLimit: token bucket en Redis. Apagado por defecto; en la nube no hay
+// Redis y queda desactivado (D-79).
+type RateLimit struct {
+	Enabled        bool
+	RedisAddr      string
+	RedisPassword  string
+	Timeout        time.Duration
+	LoginPerMinute int
+	UserRate       int
+	UserBurst      int
+	PartnerRate    int
+	PartnerBurst   int
 }
 
 // serviceDefs: nombre, variable de entorno con la URL base y valor por defecto (red de Docker Compose).
@@ -99,9 +115,23 @@ func load(l *config.Loader) (Config, error) {
 		ShutdownTimeout:    l.Duration("SHUTDOWN_TIMEOUT", 10*time.Second),
 		StatusTimeout:      l.Duration("GATEWAY_STATUS_TIMEOUT", 2*time.Second),
 		CORSOrigins:        l.List("GATEWAY_CORS_ORIGINS", []string{"http://localhost:5173"}),
+		RateLimit: RateLimit{
+			Enabled:        l.String("GATEWAY_RATE_LIMIT_ENABLED", "false") == "true",
+			RedisAddr:      l.String("GATEWAY_REDIS_ADDR", "redis:6379"),
+			RedisPassword:  l.String("GATEWAY_REDIS_PASSWORD", ""),
+			Timeout:        l.Duration("GATEWAY_RATE_LIMIT_TIMEOUT", 200*time.Millisecond),
+			LoginPerMinute: l.Int("GATEWAY_RATE_LIMIT_LOGIN_PER_MINUTE", 5),
+			UserRate:       l.Int("GATEWAY_RATE_LIMIT_USER_RATE", 10),
+			UserBurst:      l.Int("GATEWAY_RATE_LIMIT_USER_BURST", 20),
+			PartnerRate:    l.Int("GATEWAY_RATE_LIMIT_PARTNER_RATE", 20),
+			PartnerBurst:   l.Int("GATEWAY_RATE_LIMIT_PARTNER_BURST", 40),
+		},
 	}
 
 	var errs []error
+	if rl := cfg.RateLimit; rl.Enabled && (rl.LoginPerMinute < 1 || rl.UserRate < 1 || rl.UserBurst < 1 || rl.PartnerRate < 1 || rl.PartnerBurst < 1) {
+		errs = append(errs, fmt.Errorf("los límites GATEWAY_RATE_LIMIT_* deben ser mayores que cero"))
+	}
 	known := map[string]bool{}
 	for _, s := range serviceDefs {
 		raw := l.String(s.env, s.def)
