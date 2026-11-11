@@ -281,7 +281,7 @@ func (d *DB) CerrarClases(ctx context.Context, now time.Time) (int, int, error) 
 			if err != nil {
 				return err
 			}
-			if _, err = tx.Exec(ctx, `INSERT INTO outbox(event_type, occurred_at, agregado_id, data) VALUES('inasistencia.registrada',$1,$2,$3) ON CONFLICT ON CONSTRAINT un_evento_por_reserva DO NOTHING`, now, a.reserva, data); err != nil {
+			if _, err = tx.Exec(ctx, `INSERT INTO outbox(event_type, occurred_at, agregado_id, data) VALUES('inasistencia.registrada',$1,$2,$3) ON CONFLICT (event_type, agregado_id) WHERE event_type IN ('asistencia.registrada', 'inasistencia.registrada') DO NOTHING`, now, a.reserva, data); err != nil {
 				return err
 			}
 		}

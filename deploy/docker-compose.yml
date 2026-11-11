@@ -85,6 +85,28 @@ services:
       start_period: 20s
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
 
+  # Búsqueda de clases (etapa 8, ADR-014). Solo local, en loopback y sin el
+  # plugin de seguridad: el acceso pasa siempre por booking-service/indexer.
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    profiles: [search]
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      # Nunca crear índices con tipos adivinados: el indexer crea el mapping estricto.
+      action.auto_create_index: "false"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+    healthcheck:
+      <<: *healthcheck
+      start_period: 60s
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:9200/_cluster/health >/dev/null"]
+
   # Mock del contrato público de partners (docs/contracts/benefits-api.v1.yaml).
   benefits-mock:
     extends:
@@ -165,6 +187,8 @@ services:
       BOOKING_ENABLED: ${BOOKING_ENABLED:-false}
       BOOKING_MEMBERS_URL: http://members-service:8081
       BOOKING_CLOSE_INTERVAL: ${BOOKING_CLOSE_INTERVAL:-30s}
+      BOOKING_SEARCH_ENABLED: ${BOOKING_SEARCH_ENABLED:-false}
+      BOOKING_OPENSEARCH_URL: http://opensearch:9200
       GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
     ports:
       - "127.0.0.1:8082:8082"
@@ -184,6 +208,9 @@ services:
     environment:
       <<: *go-env
       BOOKING_INDEXER_HTTP_ADDR: ":8086"
+      BOOKING_INDEXER_ENABLED: ${BOOKING_INDEXER_ENABLED:-false}
+      BOOKING_AMQP_URL: amqp://${RABBITMQ_USER:-gym}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      BOOKING_OPENSEARCH_URL: http://opensearch:9200
       BOOKING_DB_DSN: postgres://booking_user:${BOOKING_DB_PASSWORD}@postgres:5432/booking_db?sslmode=disable
     ports:
       - "127.0.0.1:8086:8086"
@@ -330,3 +357,4 @@ volumes:
   postgres-data:
   mongo-data:
   rabbitmq-data:
+  opensearch-data:

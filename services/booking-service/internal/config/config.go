@@ -24,6 +24,12 @@ type Config struct {
 	InternalServiceKey string
 	MembersTimeout     time.Duration
 	CloseInterval      time.Duration
+	// Etapa 8: SearchEnabled pasa GET /classes a OpenSearch; IndexerEnabled
+	// activa el consumidor de clase.actualizada del booking-indexer.
+	SearchEnabled  bool
+	IndexerEnabled bool
+	OpenSearchURL  string
+	SearchTimeout  time.Duration
 }
 
 // Load lee la configuración del entorno.
@@ -43,6 +49,10 @@ func Load() (Config, error) {
 		InternalServiceKey: l.String("GYM_INTERNAL_SERVICE_KEY", ""),
 		MembersTimeout:     l.Duration("BOOKING_MEMBERS_TIMEOUT", 2*time.Second),
 		CloseInterval:      l.Duration("BOOKING_CLOSE_INTERVAL", 30*time.Second),
+		SearchEnabled:      l.String("BOOKING_SEARCH_ENABLED", "false") == "true",
+		IndexerEnabled:     l.String("BOOKING_INDEXER_ENABLED", "false") == "true",
+		OpenSearchURL:      l.String("BOOKING_OPENSEARCH_URL", "http://opensearch:9200"),
+		SearchTimeout:      l.Duration("BOOKING_SEARCH_TIMEOUT", 2*time.Second),
 	}
 	return cfg, l.Err()
 }

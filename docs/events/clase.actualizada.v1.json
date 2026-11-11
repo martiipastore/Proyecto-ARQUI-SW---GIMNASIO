@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:metalfitness:events:clase.actualizada:v1",
+  "title": "Estado completo de una clase después de cada escritura (etapa 8, ADR-014)",
+  "description": "Lo publica booking-service por outbox en la misma transacción del cambio. Lo consume booking-indexer. version crece con cada escritura de la clase; el consumidor descarta versiones menores o iguales a la indexada.",
+  "type": "object",
+  "required": ["event_id", "event_type", "event_version", "occurred_at", "producer", "data"],
+  "properties": {
+    "event_id": {"type": "string", "format": "uuid"},
+    "event_type": {"const": "clase.actualizada"},
+    "event_version": {"const": 1},
+    "occurred_at": {"type": "string", "format": "date-time", "description": "Reloj real de PostgreSQL al escribir; base para medir el retraso hasta la búsqueda."},
+    "producer": {"const": "booking-service"},
+    "correlation_id": {"type": "string"},
+    "traceparent": {"type": "string"},
+    "data": {
+      "type": "object",
+      "required": ["clase_id", "version", "actividad_id", "actividad_nombre", "musculacion", "inicio", "fin", "profesor_id", "profesor_nombre", "capacidad", "ocupacion", "estado"],
+      "properties": {
+        "clase_id": {"type": "string", "format": "uuid"},
+        "version": {"type": "integer", "minimum": 1},
+        "actividad_id": {"type": "string", "format": "uuid"},
+        "actividad_nombre": {"type": "string"},
+        "musculacion": {"type": "boolean"},
+        "inicio": {"type": "string", "format": "date-time"},
+        "fin": {"type": "string", "format": "date-time"},
+        "profesor_id": {"type": "string", "format": "uuid"},
+        "profesor_nombre": {"type": "string"},
+        "capacidad": {"type": "integer", "minimum": 1, "maximum": 50},
+        "ocupacion": {"type": "integer", "minimum": 0},
+        "estado": {"enum": ["PROGRAMADA", "CANCELADA", "FINALIZADA"]}
+      }
+    }
+  }
+}

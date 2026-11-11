@@ -5,8 +5,19 @@ Historias: HU-06 a HU-08, HU-13 a HU-16, HU-21, HU-22 y HU-35. Reglas: RN-07 a R
 RN-32, RN-38 a RN-40 y D-35 a D-39. Convenciones comunes en [README.md](README.md).
 Implementado en la etapa 4 de la entrega final
 ([ETAPA_4_BOOKING.md](../entrega-final/ETAPA_4_BOOKING.md)); se activa con
-`BOOKING_ENABLED=true`. La búsqueda pasa a OpenSearch en la etapa 8 sin cambiar este
-contrato.
+`BOOKING_ENABLED=true`.
+
+**Búsqueda en OpenSearch (etapa 8, ADR-014, D-87).** Con `BOOKING_SEARCH_ENABLED=true`,
+`GET /classes` lee el índice `clases-read` con los mismos parámetros, filtros, orden y
+formato de respuesta. Cambian tres cosas:
+
+- `pagina × tamano` no puede superar 10.000: si lo supera responde `400 VALIDACION`.
+- Si OpenSearch no responde, la búsqueda devuelve `503 DEPENDENCIA_NO_DISPONIBLE`, sin
+  respaldo en PostgreSQL. El detalle de clase, las reservas y los ingresos siguen.
+- El listado puede mostrar un cambio con un atraso de alrededor de 1 s. Reservar valida
+  siempre contra PostgreSQL. `reservada_por_mi` también sale de PostgreSQL.
+
+Ver [ETAPA_8_BUSQUEDA.md](../entrega-final/ETAPA_8_BUSQUEDA.md).
 
 ## Actividades y horarios
 

@@ -205,7 +205,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 8 — Búsqueda indexada
 
-**Estado:** Pendiente.
+**Estado:** Verificación técnica local cerrada el 10/11/2026: Booking publica `clase.actualizada` versionado por outbox; `booking-indexer` mantiene el alias `clases-read` en OpenSearch con versionado externo y reindexado sin pausa (D-87); `GET /classes` lee el índice, con 503 explícito si se cae. Retraso medido ~1 s (< 2 s). E2E de 44 escenarios, OpenSearch y PostgreSQL reales aprobados. Revisión de otro integrante pendiente. Ver [ETAPA_8_BUSQUEDA.md](ETAPA_8_BUSQUEDA.md).
 
 **Objetivo:** buscar clases mediante OpenSearch sin usar el índice para decisiones transaccionales.
 
@@ -403,7 +403,7 @@ El calendario se recalibra al conocer la fecha del grupo y la capacidad externa.
 
 ## 9. Seguimiento
 
-Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4, 5, 6 y 7 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
+Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4 a 8 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
 
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
@@ -415,7 +415,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 5. Mensajería | Verificación técnica local cerrada el 10/11: 26 escenarios E2E y retención TTL sin destino aprobados | Revisión de otro integrante para integrar |
 | 6. Booking → Benefits | Verificación técnica local cerrada el 10/11: 32 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
 | 7. Benefits completo | Reducida por D-76. Verificación técnica local cerrada el 10/11: integraciones, vinculación, cuenta para el administrador y reversiones; 38 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
-| 8. Búsqueda | Pendiente | Booking y OpenSearch |
+| 8. Búsqueda | Verificación técnica local cerrada el 10/11: OpenSearch con indexer por eventos, reindexado con alias, retraso ~1 s; 44 escenarios E2E aprobados | Revisión de otro integrante para integrar |
 | 9. Caché | Pendiente | Flujo de lectura medido |
 | 10. Training y nutrición | Pendiente | Identidad y asignaciones |
 | 11. Frontend completo | Pendiente (hoy: cuenta del Club y estado del sistema) | Contratos y servicios |

@@ -21,6 +21,7 @@ import (
 	"github.com/GuadiViti/Arquitectura-de-Software/pkg/messaging"
 	bookinghttp "github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/http"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/members"
+	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/opensearch"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/adapters/postgres"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/application"
 	"github.com/GuadiViti/Arquitectura-de-Software/services/booking-service/internal/config"
@@ -61,8 +62,19 @@ func run(cfg config.Config, log *slog.Logger) error {
 		if !cfg.Enabled || cfg.AMQPURL == "" {
 			return errors.New("mensajería requiere BOOKING_ENABLED=true y BOOKING_AMQP_URL")
 		}
-		relay = &messaging.Relay{URL: cfg.AMQPURL, Log: log, Publish: db.PublicarOutbox, Routes: []messaging.Route{{Queue: "benefits.asistencia-registrada", Key: "asistencia.registrada"}, {Queue: "benefits.inasistencia-registrada", Key: "inasistencia.registrada"}}}
+		// La cola del indexer se declara aunque el indexer esté apagado: los
+		// clase.actualizada esperan durables y no se pierden (etapa 8).
+		relay = &messaging.Relay{URL: cfg.AMQPURL, Log: log, Publish: db.PublicarOutbox, Routes: []messaging.Route{{Queue: "benefits.asistencia-registrada", Key: "asistencia.registrada"}, {Queue: "benefits.inasistencia-registrada", Key: "inasistencia.registrada"}, {Queue: "booking-indexer.clase-actualizada", Key: "clase.actualizada"}}}
 		checks = append(checks, health.Check{Name: "rabbitmq", Fn: relay.Ready, Partial: true})
+	}
+	var indice *opensearch.Client
+	if cfg.SearchEnabled {
+		if !cfg.Enabled || !cfg.MessagingEnabled {
+			return errors.New("la búsqueda indexada requiere BOOKING_ENABLED=true y BOOKING_MESSAGING_ENABLED=true")
+		}
+		indice = &opensearch.Client{URL: cfg.OpenSearchURL, HTTP: &http.Client{Timeout: cfg.SearchTimeout}}
+		// ADR-014/D-45: sin OpenSearch solo falla la búsqueda; reservar sigue.
+		checks = append(checks, health.Check{Name: "opensearch", Fn: indice.Ping, Partial: true})
 	}
 	router := bookinghttp.NewRouter(log, cfg.HealthTimeout, checks...)
 	if cfg.Enabled {
@@ -85,6 +97,10 @@ func run(cfg config.Config, log *slog.Logger) error {
 			HTTP:   &http.Client{Timeout: cfg.MembersTimeout, Transport: correlation.Transport{}},
 		}
 		servicio := application.New(db, db, membersClient, reloj)
+		if indice != nil {
+			servicio.ConBusqueda(indice, db)
+			log.Info("búsqueda de clases en OpenSearch habilitada")
+		}
 		bookinghttp.Register(router, servicio, cfg.InternalServiceKey, reloj.Ahora)
 		go cerrarClases(ctx, log, servicio, cfg.CloseInterval)
 		log.Info("reservas habilitadas")

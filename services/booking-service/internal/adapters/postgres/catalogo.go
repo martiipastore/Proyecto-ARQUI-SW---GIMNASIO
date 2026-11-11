@@ -148,7 +148,7 @@ func (d *DB) GuardarClases(ctx context.Context, actor string, clases []domain.Cl
 	return creadas, traducir(err)
 }
 
-const claseCols = `c.id::text, c.actividad_id::text, a.nombre, a.musculacion, coalesce(c.horario_id::text,''), c.inicio, c.fin, c.profesor_id::text, c.profesor_nombre, c.capacidad, c.ocupacion, c.estado`
+const claseCols = `c.id::text, c.actividad_id::text, a.nombre, a.musculacion, coalesce(c.horario_id::text,''), c.inicio, c.fin, c.profesor_id::text, c.profesor_nombre, c.capacidad, c.ocupacion, c.estado, c.version`
 const claseFrom = ` FROM clases c JOIN actividades a ON a.id=c.actividad_id`
 
 // reservadaPorMi marca "ya reservada" para el alumno del parámetro indicado (CA-13.4).
@@ -158,7 +158,7 @@ func reservadaPorMi(param int) string {
 }
 
 func claseDestinos(c *domain.Clase) []any {
-	return []any{&c.ID, &c.ActividadID, &c.ActividadNombre, &c.Musculacion, &c.HorarioID, &c.Inicio, &c.Fin, &c.ProfesorID, &c.ProfesorNombre, &c.Capacidad, &c.Ocupacion, &c.Estado}
+	return []any{&c.ID, &c.ActividadID, &c.ActividadNombre, &c.Musculacion, &c.HorarioID, &c.Inicio, &c.Fin, &c.ProfesorID, &c.ProfesorNombre, &c.Capacidad, &c.Ocupacion, &c.Estado, &c.Version}
 }
 
 // BuscarClases filtra y pagina por inicio e id (HU-13, ADR-014).

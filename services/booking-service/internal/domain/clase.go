@@ -32,6 +32,9 @@ type Clase struct {
 	Ocupacion       int
 	Estado          string
 	ReservadaPorMi  bool
+	// Version crece con cada escritura de la clase (etapa 8); el índice de
+	// búsqueda la usa para descartar eventos viejos (ADR-014).
+	Version int64
 }
 
 // EstadoEn devuelve el estado efectivo en el instante now: una clase con inicio

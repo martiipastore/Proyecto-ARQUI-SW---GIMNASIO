@@ -59,6 +59,39 @@ type Catalogo interface {
 	CancelarClase(ctx context.Context, actor, id, motivo string, validar func(domain.Clase) error) (domain.Clase, error)
 }
 
+// IndiceClases es el modelo de lectura de búsqueda (etapa 8, ADR-014). Devuelve
+// las clases sin ReservadaPorMi: ese dato del alumno sale de PostgreSQL.
+type IndiceClases interface {
+	Buscar(ctx context.Context, f domain.FiltroClases, now time.Time) (domain.PaginaClases, error)
+}
+
+// ReservasDelAlumno marca qué clases de una página reservó el alumno (CA-13.4).
+type ReservasDelAlumno interface {
+	ReservadasPor(ctx context.Context, alumnoID string, claseIDs []string) (map[string]bool, error)
+}
+
+// IndiceEscritura aplica una versión de la clase. aplicado es false cuando el
+// índice ya tenía esa versión o una más nueva (reentrega o evento fuera de orden).
+type IndiceEscritura interface {
+	Indexar(ctx context.Context, c domain.Clase) (aplicado bool, err error)
+}
+
+// Reindexado es el lado OpenSearch de la reconstrucción con alias (ADR-014).
+type Reindexado interface {
+	CrearIndice(ctx context.Context, nombre string) error
+	Cargar(ctx context.Context, indice string, clases []domain.Clase) error
+	// Apuntar mueve el alias de lectura/escritura al índice nuevo y devuelve el anterior.
+	Apuntar(ctx context.Context, nuevo string) (anterior string, err error)
+	Resumen(ctx context.Context, indice string) (cantidad, sumaVersiones int64, err error)
+	Eliminar(ctx context.Context, indice string) error
+}
+
+// FuenteClases lee booking_db para reconstruir el índice.
+type FuenteClases interface {
+	RecorrerClases(ctx context.Context, lote int, fn func([]domain.Clase) error) error
+	ResumenClases(ctx context.Context) (cantidad, sumaVersiones int64, err error)
+}
+
 // Reservas persiste reservas, ingresos y cierres con sus invariantes (RN-13,
 // RN-14, RN-39, RN-40, RN-21), las claves de idempotencia y el outbox.
 type Reservas interface {
