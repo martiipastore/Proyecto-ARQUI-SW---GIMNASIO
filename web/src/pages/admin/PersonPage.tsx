@@ -123,7 +123,7 @@ export function PersonPage({ id }: { id: string }) {
                 <li key={a.id}>
                   {other ? `${fullName(other)} (${ROLE_LABELS[other.rol] ?? other.rol})` : '—'} · desde {a.desde.slice(0, 10)}
                   {a.hasta ? ` · revocada el ${a.hasta.slice(0, 10)}` : (
-                    <button type="button" disabled={busy} onClick={() => run(() => post(`/api/v1/users/${a.profesional_id}/assignments/${a.alumno_id}/revoke`, {}), 'Asignación revocada.')}>Revocar</button>
+                    <button type="button" className="button-secondary" disabled={busy} onClick={() => run(() => post(`/api/v1/users/${a.profesional_id}/assignments/${a.alumno_id}/revoke`, {}), 'Asignación revocada.')}>Revocar</button>
                   )}
                 </li>
               );
@@ -153,8 +153,10 @@ function PersonData({ person, busy, onSave }: { person: Person; busy: boolean; o
         <label>Teléfono<input maxLength={30} value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>
         <label>Fecha de nacimiento<input type="date" min="1900-01-01" required={person.rol === 'ALUMNO'} value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} /></label>
         {person.rol === 'NUTRICIONISTA' && <label>Matrícula<input maxLength={40} value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} /></label>}
-        <button type="submit" disabled={busy}>Guardar</button>
-        <button type="button" onClick={() => setEditing(false)}>Cancelar</button>
+        <div className="form-actions">
+          <button type="submit" disabled={busy}>Guardar</button>
+          <button type="button" className="button-secondary" onClick={() => setEditing(false)}>Cancelar</button>
+        </div>
       </form>
     );
   }
@@ -177,13 +179,13 @@ function ReasonAction({ label, busy, onConfirm }: { label: string; busy: boolean
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   if (!open) {
-    return <p><button type="button" disabled={busy} onClick={() => setOpen(true)}>{label}</button></p>;
+    return <p className="reason-action"><button type="button" className="button-danger" disabled={busy} onClick={() => setOpen(true)}>{label}</button></p>;
   }
   return (
-    <form className="inline-form" onSubmit={(e) => { e.preventDefault(); setOpen(false); onConfirm(reason.trim()); setReason(''); }}>
-      <label>Motivo<input required minLength={3} maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
-      <button type="submit" disabled={busy}>Confirmar</button>
-      <button type="button" onClick={() => setOpen(false)}>Cancelar</button>
+    <form className="inline-form reason-form" onSubmit={(e) => { e.preventDefault(); setOpen(false); onConfirm(reason.trim()); setReason(''); }}>
+      <label>Motivo<input required minLength={3} maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus /></label>
+      <button type="submit" className="button-danger" disabled={busy}>Confirmar: {label.toLowerCase()}</button>
+      <button type="button" className="button-secondary" onClick={() => setOpen(false)}>Volver</button>
     </form>
   );
 }
@@ -248,7 +250,7 @@ function Memberships({ page, types, busy, onAssign, onRenew, onCancel }: Members
         {needsEnd && <label>Vencimiento<input type="date" required min={start} value={end} onChange={(e) => setEnd(e.target.value)} /></label>}
         <label>Motivo<input required minLength={3} maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
         <button type="submit" disabled={busy}>Asignar</button>
-        {hasHistory && <button type="button" disabled={busy || reason.trim().length < 3} onClick={() => submit(true)}>Renovar</button>}
+        {hasHistory && <button type="button" className="button-secondary" disabled={busy || reason.trim().length < 3} onClick={() => submit(true)}>Renovar</button>}
       </form>
       <p className="muted">El vencimiento se calcula según el tipo (D-77). Renovar empieza al día siguiente de la última membresía activa.</p>
     </section>

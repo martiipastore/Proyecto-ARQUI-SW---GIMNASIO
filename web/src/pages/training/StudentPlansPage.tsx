@@ -58,7 +58,7 @@ function TrainingSection({ id }: { id: string }) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const ok = await run(() => authRequest('/api/v1/training/plans', post({ alumno_id: id, ...form, dias: days })), 'Plan creado. El anterior quedó finalizado en el historial.');
+    const ok = await run(() => authRequest('/api/v1/training/plans', post({ alumno_id: id, ...form, dias: days })), plans?.vigente ? 'Plan creado. El anterior quedó finalizado en el historial.' : 'Plan creado. El alumno ya lo ve en “Mi plan”.');
     if (ok) { setDays([NEW_DAY(1)]); setForm({ objetivo: '', vigencia_desde: today(), vigencia_hasta: '', observaciones: '' }); }
   }
 
@@ -127,7 +127,7 @@ function NutritionSection({ id }: { id: string }) {
         <SectionHeading index="01" kicker="Lo que ve el paciente" title="Plan alimenticio" />
         {plans === null ? <div className="dashboard-skeleton" aria-label="Cargando plan" /> : plans.vigente ? <NutritionPlanView key={plans.vigente.id} plan={plans.vigente} /> : <EmptyState title="Sin plan vigente" />}
         {plans && plans.historial.length > 0 && <details className="membership-history"><summary>Historial ({plans.historial.length})</summary>{plans.historial.map((p) => <NutritionPlanView key={p.id} plan={p} />)}</details>}
-        <form className="club-card plan-form" onSubmit={(e) => { e.preventDefault(); void run(() => authRequest('/api/v1/nutrition/plans', post({ alumno_id: id, ...form })), 'Plan cargado.').then((ok) => ok && setForm(empty)); }}>
+        <form className="club-card plan-form nutrition-form" onSubmit={(e) => { e.preventDefault(); void run(() => authRequest('/api/v1/nutrition/plans', post({ alumno_id: id, ...form })), 'Plan cargado.').then((ok) => ok && setForm(empty)); }}>
           <h3>Nuevo plan (al menos una comida)</h3>
           {MEALS.map(([key, label]) => (
             <label key={key}>{label}<textarea maxLength={1000} rows={2} value={form[key as keyof typeof form]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></label>

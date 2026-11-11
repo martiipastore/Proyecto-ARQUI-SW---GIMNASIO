@@ -50,7 +50,7 @@ export function NutritionPlanView({ plan }: { plan: NutritionPlan }) {
 }
 
 export function MeasurementsTable({ items }: { items: Measurement[] }) {
-  if (items.length === 0) return <p className="dashboard-empty">Todavía no hay mediciones.</p>;
+  if (items.length === 0) return <p className="muted">Todavía no hay mediciones.</p>;
   return (
     <div className="cut-in" key={items.length}>
       <table className="data-table responsive-table">

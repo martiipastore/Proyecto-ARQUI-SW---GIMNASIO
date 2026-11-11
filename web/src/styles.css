@@ -939,7 +939,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 
 /* Mis reservas. */
 .booking-list { margin: 0; padding: 0; border: 1px solid var(--border); background: rgb(20 22 19 / 88%); list-style: none; }
-.booking-item { display: grid; grid-template-columns: minmax(120px, 0.6fr) minmax(0, 1.4fr) auto; align-items: center; gap: 1rem; min-height: 86px; padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border); border-left: 4px solid transparent; transition: background 200ms ease; }
+.booking-item { display: grid; grid-template-columns: minmax(120px, 0.6fr) minmax(0, 1.4fr) 140px; align-items: center; gap: 1rem; min-height: 86px; padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border); border-left: 4px solid transparent; transition: background 200ms ease; }
 .booking-item:last-child { border-bottom: 0; }
 .booking-item:hover { background: rgb(234 255 33 / 4%); }
 .booking-item time, .booking-item > div { display: grid; min-width: 0; }
@@ -999,6 +999,18 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .admin-page .club-card li button { min-height: 34px; margin-left: 0.6rem; padding: 0.3rem 0.7rem; }
 .admin-page .club-card .inline-form { margin: 0.4rem 0 0; }
 
+.student-welcome h1 { font-family: var(--display-font); font-size: clamp(2.8rem, 5vw, 5rem); font-style: italic; font-weight: 900; letter-spacing: 0.025em; line-height: 0.9; text-transform: uppercase; }
+.nutrition-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nutrition-form > h3, .nutrition-form > button { grid-column: 1 / -1; }
+.reason-action { margin: 0; }
+.admin-page .plain-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); margin: 0; }
+.admin-page .plain-list > .club-card { max-width: none; align-content: start; padding: 1.2rem; background: rgb(20 22 19 / 88%); }
+.admin-page .plain-list > .club-card > h2 { font-size: 1.7rem; }
+.admin-page .plain-list > .club-card p { margin: 0; font-size: 0.8rem; }
+.admin-page .plain-list > .club-card p:last-child { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.admin-page .club-card .pagination button { width: auto; }
+.reason-form { margin: 0 !important; padding: 1rem; border: 1px solid rgb(255 107 95 / 35%); background: rgb(255 107 95 / 5%); }
+.admin-page .club-card dd .form-actions, .admin-page form .form-actions { grid-column: 1 / -1; }
 .empty-panel { min-height: 160px; border: 1px dashed var(--border); background: rgb(255 255 255 / 1.5%); }
 .empty-panel > div { max-width: 40ch; margin: 0.5rem auto 0; }
 .account-logout { justify-self: start; }
@@ -1023,7 +1035,7 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); fon
 .activity-link { transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 180ms ease-out; }
 
 @media (max-width: 900px) {
-  .plan-columns { grid-template-columns: 1fr; }
+  .plan-columns, .nutrition-form { grid-template-columns: 1fr; }
   .admin-page .data-table:not(.responsive-table) { display: block; overflow-x: auto; }
 }
 

@@ -88,7 +88,7 @@ export function MyBookingsPage() {
                 <time dateTime={r.clase.inicio}><strong>{day(r.clase.inicio)}</strong><span>{range(r.clase)}</span></time>
                 <div>
                   <strong>{r.clase.actividad}</strong>
-                  <span className="booking-state"><i aria-hidden="true">{STATE_ICON[r.estado]}</i> {BOOKING_STATES[r.estado]}{r.motivo_cancelacion ? ` · ${r.motivo_cancelacion}` : ''}</span>
+                  <span className="booking-state"><i aria-hidden="true">{STATE_ICON[r.estado]}</i> {r.estado === 'CANCELADA' && r.motivo_cancelacion ? r.motivo_cancelacion : BOOKING_STATES[r.estado]}</span>
                   {r.ingreso_en && <small>Ingreso registrado a las {time(r.ingreso_en)}</small>}
                 </div>
                 {cancelable ? (

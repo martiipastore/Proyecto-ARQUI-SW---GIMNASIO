@@ -284,9 +284,13 @@ export function ClubAccountSection({ userId }: { userId: string }) {
               ))}
             </ol>
           )}
-          <p>Página {page} de {Math.max(1, Math.ceil(account.total / account.tamano))} · {account.total} movimientos</p>
-          <button type="button" disabled={busy || page === 1} onClick={() => setPage((p) => p - 1)}>Anterior</button>{' '}
-          <button type="button" disabled={busy || page * account.tamano >= account.total} onClick={() => setPage((p) => p + 1)}>Siguiente</button>
+          {account.total > account.tamano ? (
+            <nav className="pagination" aria-label="Páginas de movimientos">
+              <button type="button" disabled={busy || page === 1} onClick={() => setPage((p) => p - 1)}>Anterior</button>
+              <span>Página {page} de {Math.max(1, Math.ceil(account.total / account.tamano))} · {account.total} movimientos</span>
+              <button type="button" disabled={busy || page * account.tamano >= account.total} onClick={() => setPage((p) => p + 1)}>Siguiente</button>
+            </nav>
+          ) : <p className="muted">{account.total} {account.total === 1 ? 'movimiento' : 'movimientos'}</p>}
           <p className="muted">Revertir crea un movimiento compensatorio; el original y la asistencia no se modifican (RN-22, RN-25).</p>
         </>
       )}
@@ -297,12 +301,12 @@ export function ClubAccountSection({ userId }: { userId: string }) {
 function RevertAction({ busy, onConfirm }: { busy: boolean; onConfirm: (reason: string) => void }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
-  if (!open) return <> <button type="button" disabled={busy} onClick={() => setOpen(true)}>Revertir</button></>;
+  if (!open) return <> <button type="button" className="button-secondary" disabled={busy} onClick={() => setOpen(true)}>Revertir</button></>;
   return (
     <form className="inline-form" onSubmit={(e) => { e.preventDefault(); setOpen(false); onConfirm(reason.trim()); setReason(''); }}>
-      <label>Motivo<input required minLength={3} maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
-      <button type="submit" disabled={busy}>Confirmar reversión</button>
-      <button type="button" onClick={() => setOpen(false)}>Cancelar</button>
+      <label>Motivo<input required minLength={3} maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus /></label>
+      <button type="submit" className="button-danger" disabled={busy}>Confirmar reversión</button>
+      <button type="button" className="button-secondary" onClick={() => setOpen(false)}>Volver</button>
     </form>
   );
 }
