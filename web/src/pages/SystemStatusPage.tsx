@@ -49,11 +49,12 @@ export function SystemStatusPage() {
   const summary = data ? (SUMMARY[data.status] ?? SUMMARY.not_ready) : null;
 
   return (
-    <main className="page">
-      <header className="page-header">
+    <main className="page admin-page status-page">
+      <header className="admin-page-heading">
         <div>
+          <p className="admin-eyebrow">Vista operativa</p>
           <h1>Estado del sistema</h1>
-          <p className="muted">
+          <p>
             Consulta <code>GET {API_URL}/api/v1/status</code> cada {REFRESH_MS / 1000} s.
           </p>
         </div>

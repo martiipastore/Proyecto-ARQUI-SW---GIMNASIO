@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useSession } from '../../auth/session';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { fullName, Person } from '../admin/types';
 import { Actividad, DAYS, errorText, Horario, todayPlus } from './types';
 
@@ -11,6 +12,7 @@ const EMPTY_SCHEDULE = { dia: '1', inicio: '09:00', duracion: '60', profesor: ''
 
 export function ActivitiesPage() {
   const { authRequest } = useSession();
+  const [dialog, confirm] = useConfirm();
   const [activities, setActivities] = useState<Actividad[]>([]);
   const [selected, setSelected] = useState('');
   const [schedules, setSchedules] = useState<Horario[]>([]);
@@ -88,8 +90,13 @@ export function ActivitiesPage() {
     void run(() => send(`/api/v1/activities/${a.id}`, 'PUT', { activa: !a.activa }), a.activa ? 'Actividad inactivada.' : 'Actividad activada.');
   }
 
-  function changeMax(a: Actividad) {
-    const value = window.prompt(`Capacidad máxima de ${a.nombre} (tope ${a.musculacion ? 50 : 30})`, String(a.capacidad_maxima));
+  async function changeMax(a: Actividad) {
+    const value = await confirm({
+      title: `Capacidad de ${a.nombre}`,
+      message: `Nueva capacidad máxima de la actividad. Tope: ${a.musculacion ? 50 : 30} personas.`,
+      confirmLabel: 'Guardar capacidad',
+      input: { label: 'Capacidad máxima', type: 'number', initial: String(a.capacidad_maxima), min: 1, max: a.musculacion ? 50 : 30 },
+    });
     if (value === null) return;
     void run(() => send(`/api/v1/activities/${a.id}`, 'PUT', { capacidad_maxima: Number(value) }), 'Capacidad máxima actualizada.');
   }
@@ -125,6 +132,7 @@ export function ActivitiesPage() {
 
   return (
     <main className="page admin-page">
+      {dialog}
       <header className="admin-page-heading">
         <div>
           <p className="admin-eyebrow">Programación del gimnasio</p>
@@ -147,7 +155,7 @@ export function ActivitiesPage() {
               <td>{a.puntos_asistencia}</td>
               <td>{a.activa ? 'Activa' : 'Inactiva'}</td>
               <td>
-                <button type="button" disabled={busy} onClick={() => changeMax(a)}>Capacidad</button>{' '}
+                <button type="button" disabled={busy} onClick={() => void changeMax(a)}>Capacidad</button>{' '}
                 <button type="button" disabled={busy} onClick={() => toggle(a)}>{a.activa ? 'Inactivar' : 'Activar'}</button>
               </td>
             </tr>

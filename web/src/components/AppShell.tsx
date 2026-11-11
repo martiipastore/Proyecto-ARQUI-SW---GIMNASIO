@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { KeyboardEvent, ReactNode, useEffect, useRef } from 'react';
 import { Role, SessionUser } from '../auth/session';
 
 export interface AppNavigationItem {
@@ -45,6 +45,19 @@ function Navigation({ items, path }: { items: AppNavigationItem[]; path: string 
 export function AppShell({ children, items, path, user, onLogout }: AppShellProps) {
   const active = items.find((item) => item.path === activePath(items, path));
   const initial = user.name.trim().charAt(0).toUpperCase() || 'M';
+  const menu = useRef<HTMLDetailsElement>(null);
+
+  // El menú móvil se cierra al navegar y con Escape, devolviendo el foco al botón (DISENO §5).
+  useEffect(() => {
+    if (menu.current) menu.current.open = false;
+    document.querySelector<HTMLElement>('.app-content')?.focus({ preventScroll: true });
+  }, [path]);
+
+  function closeMenu(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !menu.current?.open) return;
+    menu.current.open = false;
+    menu.current.querySelector('summary')?.focus();
+  }
 
   return (
     <div className="app-shell">
@@ -77,8 +90,8 @@ export function AppShell({ children, items, path, user, onLogout }: AppShellProp
       <div className="app-workspace">
         <header className="app-mobile-bar">
           <a className="app-mobile-brand" href={`#${items[0]?.path ?? '/'}`} aria-label="Ir al inicio de mi espacio">MF</a>
-          <div><span>{ROLE_LABELS[user.role]}</span><strong>{active?.label ?? 'Mi cuenta'}</strong></div>
-          <details className="app-mobile-menu">
+          <div><span>{ROLE_LABELS[user.role]}</span><strong>{active?.label ?? (path === '/cuenta' ? 'Mi cuenta' : 'Detalle')}</strong></div>
+          <details className="app-mobile-menu" ref={menu} onKeyDown={closeMenu}>
             <summary>Menú</summary>
             <div>
               <Navigation items={items} path={path} />
@@ -99,7 +112,7 @@ export function AppShell({ children, items, path, user, onLogout }: AppShellProp
           <button type="button" onClick={onLogout}>Salir</button>
         </header>
 
-        <div className="app-content">{children}</div>
+        <div className="app-content" tabIndex={-1}>{children}</div>
       </div>
     </div>
   );

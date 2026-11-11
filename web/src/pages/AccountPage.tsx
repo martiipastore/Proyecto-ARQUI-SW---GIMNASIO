@@ -1,4 +1,5 @@
 import { useSession } from '../auth/session';
+import { PageHeading } from '../components/PageParts';
 import { navigate } from '../router';
 import { PointsHistory } from './PointsHistory';
 
@@ -14,8 +15,8 @@ export function AccountPage() {
   const { user, logout } = useSession();
   if (!user) return null;
   return (
-    <main className="page narrow">
-      <h1>Mi cuenta</h1>
+    <main className="page admin-page">
+      <PageHeading eyebrow="Tu sesión" title="Mi cuenta" description="Datos verificados de tu sesión. La sesión vence a los 15 minutos; después volvés a ingresar." />
       <dl className="club-card">
         <dt>Nombre</dt>
         <dd>{user.name}</dd>
@@ -25,7 +26,7 @@ export function AccountPage() {
         <dd>{ROLE_NAMES[user.role] ?? user.role}</dd>
       </dl>
       <PointsHistory />
-      <button type="button" onClick={async () => { await logout(); navigate('/login'); }}>Cerrar sesión</button>
+      <button type="button" className="button-secondary account-logout" onClick={async () => { await logout(); navigate('/login'); }}>Cerrar sesión</button>
     </main>
   );
 }

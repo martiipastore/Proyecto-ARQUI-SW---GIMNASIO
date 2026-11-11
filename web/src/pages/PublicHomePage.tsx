@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { PointerEvent, useEffect } from 'react';
 import { HeroBarbell } from '../components/HeroBarbell';
 
 const activities = [
@@ -8,6 +8,23 @@ const activities = [
   { code: '04', name: 'Strong Nation', detail: 'Música, potencia y movimientos sincronizados.' },
   { code: '05', name: 'Zumba', detail: 'Energía grupal para entrenar disfrutando.' },
 ];
+
+// Firma visual §3.3, momento 3: la tarjeta se inclina levemente hacia el cursor.
+// Solo actualiza dos variables CSS que alimentan un transform; sin efecto con
+// movimiento reducido o con entrada táctil.
+function tilt(event: PointerEvent<HTMLAnchorElement>) {
+  if (event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = event.currentTarget.getBoundingClientRect();
+  const x = (event.clientX - box.left) / box.width - 0.5;
+  const y = (event.clientY - box.top) / box.height - 0.5;
+  event.currentTarget.style.setProperty('--tilt-x', `${(-y * 6).toFixed(2)}deg`);
+  event.currentTarget.style.setProperty('--tilt-y', `${(x * 5).toFixed(2)}deg`);
+}
+
+function resetTilt(event: PointerEvent<HTMLAnchorElement>) {
+  event.currentTarget.style.removeProperty('--tilt-x');
+  event.currentTarget.style.removeProperty('--tilt-y');
+}
 
 export function PublicHomePage() {
   useEffect(() => {
@@ -74,7 +91,7 @@ export function PublicHomePage() {
         <ol className="activity-list">
           {activities.map((activity) => (
             <li key={activity.code}>
-              <a className="activity-link" href="#/login" aria-label={`Ingresar para consultar ${activity.name}`}>
+              <a className="activity-link" href="#/login" aria-label={`Ingresar para consultar ${activity.name}`} onPointerMove={tilt} onPointerLeave={resetTilt}>
                 <span className="activity-code">{activity.code}</span>
                 <h3>{activity.name}</h3>
                 <p>{activity.detail}</p>

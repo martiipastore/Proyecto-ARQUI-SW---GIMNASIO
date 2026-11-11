@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useSession } from '../../auth/session';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { newIdempotencyKey } from './types';
 
 // Administración del Club (etapa 7, benefits.v1): integraciones (HU-10),
@@ -65,6 +66,7 @@ const NEW_CONFIG: ConfigForm = {
 /** Pantalla /admin/club: alta, configuración y rotación de credenciales. */
 export function ClubAdminPage() {
   const { authRequest } = useSession();
+  const [dialog, confirm] = useConfirm();
   const [items, setItems] = useState<Integration[] | null>(null);
   const [message, setMessage] = useState('');
   const [issued, setIssued] = useState<{ nombre: string; key: string } | null>(null);
@@ -104,8 +106,9 @@ export function ClubAdminPage() {
     setEditing(null);
   }, 'Configuración guardada.');
 
-  const rotate = (item: Integration) => {
-    if (!window.confirm(`¿Rotar la API key de ${item.nombre}? La actual deja de funcionar en el momento.`)) return;
+  const rotate = async (item: Integration) => {
+    const ok = await confirm({ title: `Rotar API key de ${item.nombre}`, message: 'La key actual deja de funcionar en el momento. La nueva se muestra una sola vez.', confirmLabel: 'Rotar key', danger: true });
+    if (ok === null) return;
     void run(async () => {
       const res = await authRequest<{ id: string; api_key: string }>(`/api/v1/benefits/partners/${item.id}/rotate-key`, { method: 'POST' });
       setIssued({ nombre: item.nombre, key: res.data.api_key });
@@ -114,6 +117,7 @@ export function ClubAdminPage() {
 
   return (
     <main className="page admin-page">
+      {dialog}
       <header className="admin-page-heading">
         <div>
           <p className="admin-eyebrow">Capacidad compartida</p>
@@ -154,7 +158,7 @@ export function ClubAdminPage() {
                   <button type="button" disabled={busy} onClick={() => void run(async () => { await authRequest(`/api/v1/benefits/partners/${item.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...configOf(item), activo: !item.activo }) }); }, item.activo ? 'Integración desactivada.' : 'Integración activada.')}>
                     {item.activo ? 'Desactivar' : 'Activar'}
                   </button>{' '}
-                  <button type="button" disabled={busy} onClick={() => rotate(item)}>Rotar API key</button>
+                  <button type="button" disabled={busy} onClick={() => void rotate(item)}>Rotar API key</button>
                 </p>
               )}
             </li>

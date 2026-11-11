@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSession } from '../../auth/session';
+import { EmptyState, Notice, PageHeading } from '../../components/PageParts';
 import { Clase, CLASS_STATES, day, errorText, occupancy, range } from './types';
 
 // Mis clases del profesor con su ocupación (booking.v1, HU-21, CA-21.1). El
@@ -16,27 +17,27 @@ export function MyClassesPage() {
   }, [authRequest]);
 
   return (
-    <main className="page">
-      <h1>Mis clases</h1>
-      {message && <p role="alert">{message}</p>}
+    <main className="page admin-page">
+      <PageHeading eyebrow="Equipo docente" title="Mis clases" description="Las clases a tu cargo desde hoy, con su ocupación. Abrí cada una para ver quién reservó y quién ingresó." index="01" />
+      <Notice notice={message ? { tone: 'error', text: message } : null} />
       {items === null ? (
-        !message && <p className="muted">Cargando…</p>
+        !message && <div className="dashboard-skeleton" aria-label="Cargando clases" />
       ) : items.length === 0 ? (
-        <p>No tenés clases a cargo desde hoy.</p>
+        <EmptyState title="Sin clases a cargo">No tenés clases programadas desde hoy.</EmptyState>
       ) : (
-        <table className="data-table">
+        <table className="data-table responsive-table">
           <thead>
-            <tr><th>Día</th><th>Horario</th><th>Actividad</th><th>Ocupación</th><th>Estado</th><th /></tr>
+            <tr><th>Día</th><th>Horario</th><th>Actividad</th><th>Ocupación</th><th>Estado</th><th><span className="sr-only">Acciones</span></th></tr>
           </thead>
           <tbody>
             {items.map((c) => (
               <tr key={c.id}>
-                <td>{day(c.inicio)}</td>
-                <td>{range(c)}</td>
-                <td>{c.actividad.nombre}</td>
-                <td>{occupancy(c)}</td>
-                <td>{CLASS_STATES[c.estado]}</td>
-                <td><a href={`#/prof/clases/${c.id}`}>Alumnos</a></td>
+                <td data-label="Día">{day(c.inicio)}</td>
+                <td data-label="Horario">{range(c)}</td>
+                <td data-label="Actividad">{c.actividad.nombre}</td>
+                <td data-label="Ocupación">{occupancy(c)}</td>
+                <td data-label="Estado">{CLASS_STATES[c.estado]}</td>
+                <td><a href={`#/prof/clases/${c.id}`}>Ver alumnos</a></td>
               </tr>
             ))}
           </tbody>
