@@ -78,10 +78,17 @@ export function PeoplePage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
   return (
-    <main className="page">
-      <h1>Personas</h1>
+    <main className="page admin-page">
+      <header className="admin-page-heading">
+        <div>
+          <p className="admin-eyebrow">Gestión de comunidad</p>
+          <h1>Personas</h1>
+          <p>Buscá, registrá y administrá alumnos y profesionales desde un solo lugar.</p>
+        </div>
+        <span className="admin-page-index" aria-hidden="true">01</span>
+      </header>
       {message && <p role="alert">{message}</p>}
-      <form className="filters" onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(query.trim()); }}>
+      <form className="filters admin-toolbar-panel" onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(query.trim()); }}>
         <label>
           Buscar
           <input type="search" placeholder="DNI, nombre, apellido o email" maxLength={80} value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -109,8 +116,11 @@ export function PeoplePage() {
       </form>
 
       {showForm && (
-        <form className="club-card" onSubmit={create} aria-label="Alta de persona">
-          <h2>Nueva persona</h2>
+        <form className="club-card admin-form-card" onSubmit={create} aria-label="Alta de persona">
+          <div className="admin-section-heading">
+            <span aria-hidden="true">+</span>
+            <div><h2>Nueva persona</h2><p>Completá sus datos y le enviaremos el acceso por correo.</p></div>
+          </div>
           <label>
             Rol
             <select {...field('rol')}>

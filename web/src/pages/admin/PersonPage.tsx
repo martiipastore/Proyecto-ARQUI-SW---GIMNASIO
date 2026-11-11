@@ -82,13 +82,20 @@ export function PersonPage({ id }: { id: string }) {
     });
 
   if (!person) {
-    return <main className="page">{message ? <p role="alert">{message}</p> : <p className="muted">Cargando…</p>}</main>;
+    return <main className="page admin-page">{message ? <p role="alert">{message}</p> : <p className="muted">Cargando…</p>}</main>;
   }
   const active = person.estado === 'ACTIVO';
   return (
-    <main className="page">
-      <p><a href="#/admin/personas">← Personas</a></p>
-      <h1>{fullName(person)}</h1>
+    <main className="page admin-page">
+      <a className="admin-back-link" href="#/admin/personas">← Volver a personas</a>
+      <header className="admin-page-heading">
+        <div>
+          <p className="admin-eyebrow">Ficha de {ROLE_LABELS[person.rol] ?? person.rol}</p>
+          <h1>{fullName(person)}</h1>
+          <p>{person.email} · DNI {person.dni ?? 'pendiente'} · {person.estado === 'ACTIVO' ? 'Persona activa' : 'Persona dada de baja'}</p>
+        </div>
+        <span className="admin-page-index" aria-hidden="true">01</span>
+      </header>
       {message && <p role="status" aria-live="polite">{message}</p>}
       <PersonData person={person} busy={busy} onSave={(body) => run(() => authRequest(`/api/v1/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), 'Datos actualizados.')} />
       {active && person.dni && person.rol !== 'ADMINISTRADOR' && (

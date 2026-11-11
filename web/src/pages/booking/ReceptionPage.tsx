@@ -54,9 +54,16 @@ export function ReceptionPage() {
   }
 
   return (
-    <main className="page reception">
-      <h1>Recepción</h1>
-      <form className="inline-form" onSubmit={submit}>
+    <main className="page reception admin-page">
+      <header className="admin-page-heading">
+        <div>
+          <p className="admin-eyebrow">Control de acceso</p>
+          <h1>Recepción</h1>
+          <p>Ingresá el DNI para validar membresía, clase y asistencia en una sola operación.</p>
+        </div>
+        <span className="admin-page-index" aria-hidden="true">04</span>
+      </header>
+      <form className="inline-form admin-toolbar-panel reception-panel" onSubmit={submit}>
         <label>DNI
           <input inputMode="numeric" pattern="[0-9]{7,8}" autoFocus autoComplete="off" value={dni} onChange={(e) => setDni(e.target.value.replace(/\D/g, '').slice(0, 8))} required />
         </label>

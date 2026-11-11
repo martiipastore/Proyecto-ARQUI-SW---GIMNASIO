@@ -113,8 +113,16 @@ export function ClubAdminPage() {
   };
 
   return (
-    <main className="page">
-      <h1>Club de Beneficios: integraciones</h1>
+    <main className="page admin-page">
+      <header className="admin-page-heading">
+        <div>
+          <p className="admin-eyebrow">Capacidad compartida</p>
+          <h1>Club de Beneficios</h1>
+          <p>Administrá las integraciones y credenciales que conectan sistemas externos con el club.</p>
+        </div>
+        <span className="admin-page-index" aria-hidden="true">05</span>
+      </header>
+      <h2 className="admin-content-title">Integraciones</h2>
       <p className="muted">Sistemas de otros grupos que acreditan puntos por la API de partners v2. Para ver la cuenta de una persona, revertir movimientos o vincularla, abrí su ficha en <a href="#/admin/personas">Personas</a>.</p>
       {message && <p role="status" aria-live="polite">{message}</p>}
       {issued && (

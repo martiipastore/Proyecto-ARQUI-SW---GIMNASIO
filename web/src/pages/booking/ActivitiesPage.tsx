@@ -124,8 +124,15 @@ export function ActivitiesPage() {
   }
 
   return (
-    <main className="page">
-      <h1>Actividades y horarios</h1>
+    <main className="page admin-page">
+      <header className="admin-page-heading">
+        <div>
+          <p className="admin-eyebrow">Programación del gimnasio</p>
+          <h1>Actividades y horarios</h1>
+          <p>Configurá capacidades, profesores y franjas horarias antes de generar las clases.</p>
+        </div>
+        <span className="admin-page-index" aria-hidden="true">02</span>
+      </header>
       {message && <p role="status">{message}</p>}
 
       <table className="data-table">
@@ -148,15 +155,18 @@ export function ActivitiesPage() {
         </tbody>
       </table>
 
-      <form className="inline-form" onSubmit={createActivity}>
+      <form className="inline-form admin-toolbar-panel" onSubmit={createActivity}>
         <label>Nueva actividad <input value={newActivity.nombre} onChange={(e) => setNewActivity({ ...newActivity, nombre: e.target.value })} maxLength={60} required /></label>
         <label>Capacidad máxima <input type="number" min={1} max={30} value={newActivity.capacidad} onChange={(e) => setNewActivity({ ...newActivity, capacidad: e.target.value })} required /></label>
         <button type="submit" disabled={busy}>Crear</button>
       </form>
 
       {current && (
-        <section>
-          <h2>Horarios de {current.nombre}</h2>
+        <section className="admin-section">
+          <div className="admin-section-heading">
+            <span aria-hidden="true">03</span>
+            <div><p>Actividad seleccionada</p><h2>Horarios de {current.nombre}</h2></div>
+          </div>
           {schedules.length === 0 ? (
             <p>Sin horarios.</p>
           ) : (
@@ -199,8 +209,11 @@ export function ActivitiesPage() {
         </section>
       )}
 
-      <section>
-        <h2>Generar clases</h2>
+      <section className="admin-section">
+        <div className="admin-section-heading">
+          <span aria-hidden="true">04</span>
+          <div><p>Último paso</p><h2>Generar clases</h2></div>
+        </div>
         <form className="inline-form" onSubmit={generate}>
           <label>Desde <input type="date" value={period.desde} onChange={(e) => setPeriod({ ...period, desde: e.target.value })} required /></label>
           <label>Hasta <input type="date" value={period.hasta} onChange={(e) => setPeriod({ ...period, hasta: e.target.value })} required /></label>

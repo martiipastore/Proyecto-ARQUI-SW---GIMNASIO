@@ -68,9 +68,18 @@ export function ClassesPage() {
   const pages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
   return (
-    <main className="page">
-      <h1>Clases</h1>
-      <form className="filters" onSubmit={search}>
+    <main className={`page${student ? '' : ' admin-page'}`}>
+      {student ? <h1>Clases</h1> : (
+        <header className="admin-page-heading">
+          <div>
+            <p className="admin-eyebrow">Agenda operativa</p>
+            <h1>Clases</h1>
+            <p>Consultá la programación, revisá la ocupación y abrí el detalle de cada clase.</p>
+          </div>
+          <span className="admin-page-index" aria-hidden="true">03</span>
+        </header>
+      )}
+      <form className={`filters${student ? '' : ' admin-toolbar-panel'}`} onSubmit={search}>
         <label>Desde <input type="date" value={filters.desde} onChange={(e) => setFilters({ ...filters, desde: e.target.value })} required /></label>
         <label>Hasta <input type="date" value={filters.hasta} onChange={(e) => setFilters({ ...filters, hasta: e.target.value })} required /></label>
         <label>Actividad
