@@ -37,6 +37,25 @@ type Proxy struct {
 	log        *slog.Logger
 }
 
+// Pool hacia los servicios (etapa 9 de la entrega final, D-88). El transporte
+// por defecto de Go conserva 2 conexiones ociosas por destino: con más de 2
+// solicitudes simultáneas cierra y abre conexiones sin parar, agota los puertos
+// efímeros y el destino queda inaccesible (502). 64 cubre la concurrencia medida.
+const (
+	MaxConexionesOciosasPorServicio = 64
+	MaxConexionesOciosas            = 256
+	VidaConexionOciosa              = 90 * time.Second
+)
+
+// NewTransport devuelve el transporte del gateway hacia los servicios internos.
+func NewTransport() *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = MaxConexionesOciosas
+	t.MaxIdleConnsPerHost = MaxConexionesOciosasPorServicio
+	t.IdleConnTimeout = VidaConexionOciosa
+	return t
+}
+
 // New crea el proxy a partir de la configuración. transport puede ser nil (usa http.DefaultTransport).
 func New(cfg gwconfig.Config, transport http.RoundTripper, log *slog.Logger) (*Proxy, error) {
 	if transport == nil {

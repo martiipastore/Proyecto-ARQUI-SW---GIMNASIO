@@ -42,6 +42,8 @@ Se usa cache-aside para:
 
 Si Redis no está disponible, el servicio consulta la fuente de verdad y registra la falla. Los TTL son valores iniciales que se ajustarán con métricas de aciertos, latencia y carga.
 
+**Implementación (etapa 9 de la entrega final, D-88, 10/11/2026):** se implementó el catálogo de actividades en Booking, detrás de `BOOKING_CACHE_ENABLED`, con TTL de 10 min, invalidación después del commit y `/metrics` con aciertos, fallos, errores, invalidaciones y tiempo en Redis. El catálogo de beneficios no existe (D-76). Los tipos de membresía quedan sin caché porque las mediciones no mostraron una ventaja que justifique una segunda copia. En la medición local la caché eliminó las lecturas a la base sin cambio medible de latencia; ver docs/entrega-final/ETAPA_9_CACHE.md.
+
 ### Datos que no pueden cachearse
 
 No se cachean los datos que deciden autorización:

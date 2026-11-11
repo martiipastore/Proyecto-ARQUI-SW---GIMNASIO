@@ -222,7 +222,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 9 — Caché relevante
 
-**Estado:** Pendiente.
+**Estado:** Verificación técnica local cerrada el 10/11/2026 (D-88): cache-aside del catálogo de actividades en Redis, elegido con mediciones; con caché deja de leer booking_db (1 → 0 lecturas por solicitud) sin cambio medible de latencia. La medición encontró que el gateway agotaba los puertos: el pool de 64 conexiones subió el throughput de 1.018 a 1.753 req/s. E2E de 24 escenarios con Redis real. Ver [ETAPA_9_CACHE.md](ETAPA_9_CACHE.md).
 
 **Objetivo:** usar Redis en una lectura que se beneficie de forma observable.
 
@@ -403,7 +403,7 @@ El calendario se recalibra al conocer la fecha del grupo y la capacidad externa.
 
 ## 9. Seguimiento
 
-Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4 a 8 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
+Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4 a 9 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
 
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
@@ -416,7 +416,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 6. Booking → Benefits | Verificación técnica local cerrada el 10/11: 32 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
 | 7. Benefits completo | Reducida por D-76. Verificación técnica local cerrada el 10/11: integraciones, vinculación, cuenta para el administrador y reversiones; 38 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
 | 8. Búsqueda | Verificación técnica local cerrada el 10/11: OpenSearch con indexer por eventos, reindexado con alias, retraso ~1 s; 44 escenarios E2E aprobados | Revisión de otro integrante para integrar |
-| 9. Caché | Pendiente | Flujo de lectura medido |
+| 9. Caché | Verificación técnica local cerrada el 10/11: catálogo de actividades en Redis medido A/B con control; pool del gateway corregido; 24 escenarios E2E | Revisión de otro integrante para integrar |
 | 10. Training y nutrición | Pendiente | Identidad y asignaciones |
 | 11. Frontend completo | Pendiente (hoy: cuenta del Club y estado del sistema) | Contratos y servicios |
 | 12. Borde y balanceo | Pendiente | Booking operativo |
