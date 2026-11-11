@@ -13,7 +13,7 @@ GO_MODULES := pkg gateway \
 RESILIENCE_GO_FILES := tests/resilience/fault-proxy/main.go tests/resilience/fault-proxy/main_test.go
 
 .DEFAULT_GOAL := help
-.PHONY: help up down clean logs ps test lint fmt tidy env-check mock-up mock-down mock-logs contract-lint
+.PHONY: help up demo down clean logs ps test lint fmt tidy env-check mock-up mock-down mock-logs contract-lint
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-15s %s\n", $$1, $$2}'
@@ -27,6 +27,14 @@ up: env-check ## Construye y levanta todo el stack; espera a que esté healthy
 	$(COMPOSE) up -d --build --wait
 	@echo ""
 	@echo "Listo:  web http://localhost:5173  ·  gateway http://localhost:8080/api/v1/status"
+
+demo: ## Procedimiento único: crea .env con secretos propios, levanta TODO (búsqueda incluida) y reindexa
+	go run scripts/preparar-entorno.go
+	$(COMPOSE) --profile search up -d --build --wait
+	$(COMPOSE) --profile search run --rm booking-indexer -reindex
+	@echo ""
+	@echo "Listo:  web http://localhost:5173  ·  correos http://localhost:8025  ·  estado http://localhost:8080/api/v1/status"
+	@echo "Administrador: admin@gym.local (contraseña MEMBERS_ADMIN_PASSWORD de .env)"
 
 down: env-check ## Baja el stack (conserva los datos)
 	$(COMPOSE) down

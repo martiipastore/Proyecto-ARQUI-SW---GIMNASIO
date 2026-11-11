@@ -94,18 +94,33 @@ Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 |---|---|---|
 | Docker + Docker Compose v2 | Levantar el stack | Docker Desktop reciente (Compose ≥ 2.20) |
 | GNU Make | Atajos `make up`, `make test`… | 4.x — en Windows: `winget install ezwinports.make`, y ejecutá `make` desde **Git Bash** o WSL |
-| Go | Tests y lint fuera de contenedores | 1.22 o superior |
+| Go | Generar el `.env` (`make demo`), tests y lint | 1.22 o superior |
 | Node.js | Solo para desarrollar el frontend fuera de Docker | 20 |
 
 Recursos: ~4 GB de RAM y **unos 6 GB libres en disco** para imágenes y builds del stack actual (crecerá con OpenSearch y la observabilidad).
 
-### Levantar todo
+### Levantar todo (procedimiento único)
 
 ```bash
-cp .env.example .env && make up
+make demo
 ```
 
-`make up` construye las imágenes y levanta los contenedores; espera los health checks declarados. Collector y Jaeger se comprueban mediante la demostración de trazas. Después:
+`make demo` hace todo, sin configuración manual:
+1. crea `.env` desde `.env.example` con **secretos aleatorios propios de tu máquina**
+   (clave interna, claves JWT y clave de cifrado) y **todas las funcionalidades
+   prendidas** (`scripts/preparar-entorno.go`; no pisa un `.env` existente);
+2. construye y levanta el stack completo, incluido OpenSearch, y espera los health
+   checks;
+3. reconstruye el índice de búsqueda.
+
+Después: aplicación en **http://localhost:5173**, correos en **http://localhost:8025**
+(Mailpit) y administrador `admin@gym.local` con la contraseña `MEMBERS_ADMIN_PASSWORD`
+de `.env`. La integración con MELT queda apagada hasta cargar en `.env` la clave
+`BENEFITS_MELT_PARTNER_KEY` (la entrega MELT por privado) y
+`BENEFITS_MELT_ENABLED=true`.
+
+`make up` levanta el stack con el `.env` que tengas, sin generarlo ni reindexar.
+Collector y Jaeger se comprueban mediante la demostración de trazas. Para verificar:
 
 - Abrí **http://localhost:5173/#/estado**: la pantalla "Estado del sistema" debe mostrar todos los servicios en **Listo**. La portada (`http://localhost:5173`) lleva al ingreso.
 - O consultá el gateway: `curl http://localhost:8080/api/v1/status` → `"status": "ready"`.
