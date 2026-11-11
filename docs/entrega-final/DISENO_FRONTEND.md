@@ -80,8 +80,8 @@ abaratan el resultado.
 - Duración total de 1,6 a 2,2 s, con aceleraciones de peso real (entrada rápida, frenada
   seca y un rebote mínimo al encastrar).
 - El título, el texto y el botón **Ingresar** son visibles y utilizables desde el
-  primer instante: la animación decora, no bloquea. Se reproduce una vez por visita
-  y no vuelve al recargar dentro de la misma sesión.
+  primer instante: la animación decora, no bloquea. Por decisión del equipo, se
+  reproduce cada vez que se carga o actualiza el inicio.
 
 **Momento 2 — Recompensas dentro de la aplicación.**
 

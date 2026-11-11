@@ -127,7 +127,10 @@ function Shell() {
   return (
     <>
       <nav className="topbar" aria-label="Principal">
-        <a className="brand" href="#/" aria-label="Metal Fitness, inicio"><span>METAL</span><span>FITNESS</span></a>
+        <a className="brand" href="#/" aria-label="Metal Fitness, inicio">
+          <span className="brand-monogram" aria-hidden="true">M</span>
+          <span className="brand-words"><span>METAL</span><span>FITNESS</span></span>
+        </a>
         {!user && path === '/' && <>
           <a className="public-nav-link" href="#actividades">Actividades</a>
           <a className="public-nav-link" href="#club-title">Club</a>
