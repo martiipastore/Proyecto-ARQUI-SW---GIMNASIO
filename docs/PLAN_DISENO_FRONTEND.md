@@ -20,6 +20,13 @@ La propuesta principal de entrada dura aproximadamente 1,8 s: discos se alinean
 en una barra, con texto y CTA utilizables desde el inicio, silencio y versión
 estática. Estos parámetros no están aprobados como diseño final ni medidos.
 
+> **Actualización del 10/11/2026 (D-89):** la entrada en movimiento pasa a ser
+> obligatoria y se amplía a tres momentos de firma visual en
+> [DISENO_FRONTEND.md §3.3](entrega-final/DISENO_FRONTEND.md), con duración de 1,6 a
+> 2,2 s y reglas de rendimiento y accesibilidad. FD-03 se ejecuta como prototipo de la
+> etapa 11 de la entrega final. Las referencias de este plan a canjes (CB-06) quedaron
+> sin efecto por D-76.
+
 Fuentes: [brief completo](diseno/BRIEF_WEB_METAL_FITNESS_V2.md),
 [storyboard conceptual](diseno/storyboard-entrada-metal-fitness.svg),
 [ADR-019](adr/ADR-019-experiencia-web-movimiento-progresivo.md).
