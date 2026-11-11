@@ -1,4 +1,8 @@
-# API de entrenamiento y nutrición — v1 (diseño)
+# API de entrenamiento y nutrición — v1
+
+Implementado en la etapa 10 de la entrega final
+([ETAPA_10_TRAINING.md](../entrega-final/ETAPA_10_TRAINING.md)); se activa con
+`TRAINING_ENABLED=true`.
 
 Servicio: training-service (Capas, MongoDB). Base: `<gateway>/api/v1`, con los prefijos
 `/training` y `/nutrition` (ARCHITECTURE §5.2). Historias: HU-17, HU-18, HU-23 a HU-25,
@@ -31,6 +35,7 @@ ejercicio por día; series y repeticiones enteros > 0 (CA-23.3); peso y descanso
 | Método y ruta | Quién | Qué hace |
 |---|---|---|
 | GET /nutrition/plans/me | ALUMNO | Plan alimenticio vigente (CA-18.1) |
+| GET /nutrition/plans?alumno_id= | NUTRICIONISTA asignado | Plan vigente e historial del paciente (agregado en la etapa 10, simétrico a entrenamiento) |
 | POST /nutrition/plans | NUTRICIONISTA asignado | Plan con al menos una comida; el anterior pasa a FINALIZADO (CA-24.1) |
 | GET /nutrition/measurements/me | ALUMNO | Mediciones ordenadas por fecha (CA-18.2) |
 | GET /nutrition/measurements?alumno_id= | NUTRICIONISTA asignado | Historial del paciente |
@@ -40,8 +45,25 @@ ejercicio por día; series y repeticiones enteros > 0 (CA-23.3); peso y descanso
 | GET /nutrition/questions | NUTRICIONISTA | Consultas de mis pacientes, de la más antigua a la más reciente (CA-34.1) |
 | POST /nutrition/questions/{id}/answer | NUTRICIONISTA del paciente | Responde una sola vez (CA-34.2/4) |
 
-Medición: `fecha` ≤ hoy, `peso` > 0, `% grasa` y `% muscular` entre 0 y 100 con suma
-≤ 100, `masa_muscular` entre 0 y el peso (SPEC §9, CA-25.3/4).
+Medición: `fecha` ≤ hoy (hora de Argentina), `peso` > 0, `% grasa` y `% muscular` entre
+0 y 100 con suma ≤ 100, `masa_muscular` opcional, > 0 y < peso (RN-31, CA-25.3/4).
+
+### Detalles de la implementación (etapa 10)
+
+- Respuestas: un plan es `{id, alumno_id, profesor_id|nutricionista_id, …, estado, creado_en, finalizado_en}`.
+  Los listados de un alumno son `{"vigente": Plan|null, "historial": [Plan]}`, del más
+  reciente al más antiguo. Un plan de entrenamiento cuya `vigencia_hasta` ya pasó se
+  informa como FINALIZADO.
+- Mediciones y consultas: `{"items":[…]}`. Una consulta tiene `{id, alumno_id, pregunta,
+  enviada_en, estado, respuesta, respondida_en, nutricionista_id}`; `nutricionista_id` es
+  quien respondió.
+- Una consulta PENDIENTE no queda atada a un nutricionista: la ve y la responde el
+  nutricionista asignado al alumno en ese momento (RN-37). Si el alumno tuviera más de un
+  nutricionista asignado, cualquiera de ellos puede responder y la primera respuesta gana.
+- Entrada estricta: JSON sin campos desconocidos, hasta 64 KiB y sin query en las
+  escrituras. Los campos que asigna el servidor (`id`, autor, `estado`, fechas) se ignoran.
+- Límites de formato propios: hasta 14 días por plan y 50 ejercicios por día; textos de
+  100 a 2.000 caracteres según el campo.
 
 ## Errores propios
 

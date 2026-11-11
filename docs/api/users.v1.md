@@ -91,6 +91,7 @@ desde ese momento, sin período de gracia (RN-30); la historia se conserva.
 | GET /internal/v1/profesores?ids=a,b | booking (responsable de horarios, RN-08, CA-07.6) | Igual que alumnos, solo con personas de rol PROFESOR; un nutricionista no aparece. Agregado en la etapa 4 |
 | POST /internal/v1/alumnos/buscar-dni con `{"dni":"…"}` | booking (ingreso por DNI, HU-22) | `{id,nombre,apellido,estado}` o 404 |
 | GET /internal/v1/asignaciones?profesional_id=&alumno_id= | training (RN-30) | `{"vigente":true}`; sin caché (D-33) |
+| GET /internal/v1/asignaciones/vigentes?alumno_id= o ?profesional_id= | training (RN-37: nutricionista del alumno; bandeja de pacientes) | `{items:[{profesional_id, profesional_rol, profesional_nombre, profesional_apellido, alumno_id, alumno_nombre, alumno_apellido}]}`; exactamente un parámetro; sin caché. Agregado en la etapa 10 |
 | GET /internal/v1/alumnos/{id}/vigencia?fechas=AAAA-MM-DD,… | booking (reservar, RN-12; ingreso, D-36) | `{alumno_activo, vigente_hoy, vence_hoy, vigente_en:{fecha:{vigente, membresia_id, vence}}, evaluado_en}`; `vence` es la fecha de vencimiento de la membresía que cubre la fecha (agregado opcional de la etapa 4); hasta 31 fechas; un alumno dado de baja no tiene vigencia (ARCHITECTURE §4.2) |
 
 Ejemplo de vigencia:

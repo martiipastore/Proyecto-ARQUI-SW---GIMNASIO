@@ -238,7 +238,7 @@ Este flujo conecta frontend, gateway, Members, Booking, Benefits, Notification W
 
 ### Etapa 10 — Training, nutrición y funcionalidades restantes
 
-**Estado:** Pendiente.
+**Estado:** Verificación técnica local cerrada el 10/11/2026: planes de entrenamiento y alimenticios, mediciones inmutables y consultas nutricionales en training-service con MongoDB; autorización por rol y asignación vigente consultada a Members en cada operación, con falla cerrada; pantallas de alumno, profesor y nutricionista. E2E de 27 escenarios con MongoDB real. Ver [ETAPA_10_TRAINING.md](ETAPA_10_TRAINING.md).
 
 **Objetivo:** completar los recorridos definidos en `SPEC.md` que no forman parte del núcleo de reservas.
 
@@ -403,7 +403,7 @@ El calendario se recalibra al conocer la fecha del grupo y la capacidad externa.
 
 ## 9. Seguimiento
 
-Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4 a 9 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
+Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-inventario-implementado-diseñado-y-pendiente); etapas 4 a 10 actualizadas el 10/11/2026 con su validación local. Etapa 13 con el manual recibido de MELT.
 
 | Etapa | Estado | Dependencia crítica |
 |---|---|---|
@@ -417,7 +417,7 @@ Inventario inicial del 09/11/2026 según la [etapa 0](ETAPA_0_LINEA_BASE.md#3-in
 | 7. Benefits completo | Reducida por D-76. Verificación técnica local cerrada el 10/11: integraciones, vinculación, cuenta para el administrador y reversiones; 38 escenarios E2E, PostgreSQL real, vet y build aprobados | Revisión de otro integrante para integrar |
 | 8. Búsqueda | Verificación técnica local cerrada el 10/11: OpenSearch con indexer por eventos, reindexado con alias, retraso ~1 s; 44 escenarios E2E aprobados | Revisión de otro integrante para integrar |
 | 9. Caché | Verificación técnica local cerrada el 10/11: catálogo de actividades en Redis medido A/B con control; pool del gateway corregido; 24 escenarios E2E | Revisión de otro integrante para integrar |
-| 10. Training y nutrición | Pendiente | Identidad y asignaciones |
+| 10. Training y nutrición | Verificación técnica local cerrada el 10/11: planes, mediciones y consultas con MongoDB; autorización por asignación sin caché; 27 escenarios E2E | Revisión de otro integrante para integrar |
 | 11. Frontend completo | Pendiente (hoy: cuenta del Club y estado del sistema) | Contratos y servicios |
 | 12. Borde y balanceo | Pendiente | Booking operativo |
 | 13. Capacidad externa | MELT: manual recibido y documentado el 10/11; implementación pendiente | Flujo/servicio consumidor, código de referido y contrato incompleto de algunas respuestas; ver ETAPA_13_MELT.md |

@@ -258,6 +258,9 @@ services:
       TRAINING_HTTP_ADDR: ":8084"
       TRAINING_MONGO_URI: mongodb://training_user:${TRAINING_DB_PASSWORD}@mongo:27017/training_db?authSource=training_db
       TRAINING_MONGO_DB: training_db
+      TRAINING_ENABLED: ${TRAINING_ENABLED:-false}
+      TRAINING_MEMBERS_URL: http://members-service:8081
+      GYM_INTERNAL_SERVICE_KEY: ${GYM_INTERNAL_SERVICE_KEY:-}
     ports:
       - "127.0.0.1:8084:8084"
     depends_on:
