@@ -7,7 +7,8 @@ import { newIdempotencyKey } from './types';
 
 // Administración del Club (etapa 7, benefits.v1): integraciones (HU-10),
 // cuenta de una persona y reversión de movimientos (HU-11, HU-35, HU-CB-07).
-// Catálogo, canjes y débitos quedan fuera por D-76.
+// La cuponera interna (D-94) está en pages/club; débitos y canjes de partners
+// siguen fuera por D-76.
 
 export interface Integration {
   id: string;
@@ -28,7 +29,7 @@ export interface Integration {
 interface AdminMovement {
   id: string; fecha: string; motivo: string; puntos: number; secuencia: number;
   estado: 'CONFIRMADO' | 'REVERTIDO';
-  origen: 'ASISTENCIA' | 'INASISTENCIA' | 'PARTNER' | 'REVERSION';
+  origen: 'ASISTENCIA' | 'INASISTENCIA' | 'PARTNER' | 'REVERSION' | 'CANJE';
   partner_id: string; revierte_id?: string; revertido_por?: string;
 }
 
@@ -54,7 +55,7 @@ function errorText(error: unknown, fallback: string): string {
 }
 
 const ORIGIN_LABELS: Record<AdminMovement['origen'], string> = {
-  ASISTENCIA: 'Asistencia', INASISTENCIA: 'Ausencia', PARTNER: 'Integración', REVERSION: 'Reversión',
+  ASISTENCIA: 'Asistencia', INASISTENCIA: 'Ausencia', PARTNER: 'Integración', REVERSION: 'Reversión', CANJE: 'Canje',
 };
 
 type ConfigForm = Omit<Integration, 'id' | 'estado' | 'vinculaciones' | 'creada_en'>;
@@ -278,7 +279,8 @@ export function ClubAccountSection({ userId }: { userId: string }) {
                   {m.estado === 'REVERTIDO' && <strong> · REVERTIDO</strong>}
                   <br />
                   <span className="muted">{new Date(m.fecha).toLocaleString('es-AR', DATE_TIME)} · Movimiento {m.secuencia}{m.revierte_id ? ' · compensa otro movimiento' : ''}</span>
-                  {m.estado === 'CONFIRMADO' && m.origen !== 'REVERSION' && m.puntos !== 0 && (
+                  {m.origen === 'CANJE' && <span className="muted"> · para devolver estos puntos, anulá el cupón en <a href="#/admin/cuponera">Cuponera</a></span>}
+                  {m.estado === 'CONFIRMADO' && m.origen !== 'REVERSION' && m.origen !== 'CANJE' && m.puntos !== 0 && (
                     <RevertAction busy={busy} onConfirm={(motivo) => void revert(m, motivo)} />
                   )}
                 </li>

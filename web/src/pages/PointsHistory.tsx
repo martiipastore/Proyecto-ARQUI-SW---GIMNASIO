@@ -5,8 +5,8 @@ import { useSession } from '../auth/session';
 import { AnimatedCounter } from '../components/AnimatedCounter';
 
 interface Movement {
-  id: string; fecha: string; aplicado_en: string; motivo: string; puntos: number;
-  origen: 'ASISTENCIA' | 'INASISTENCIA' | 'PARTNER' | 'REVERSION'; secuencia: number;
+  id: string; fecha: string; aplicado_en: string; motivo: string; puntos: number; referencia: string;
+  origen: 'ASISTENCIA' | 'INASISTENCIA' | 'PARTNER' | 'REVERSION' | 'CANJE'; secuencia: number;
   estado: 'CONFIRMADO' | 'REVERTIDO';
 }
 interface History { items: Movement[]; total: number; pagina: number; tamano: number }
@@ -46,7 +46,7 @@ export function PointsHistory() {
   return <section className="points-dashboard" aria-label="Saldo y movimientos" aria-busy={busy}>
     <header className="points-heading">
       <div><span>03</span><p>Club de beneficios</p></div>
-      <button type="button" disabled={busy} onClick={() => void load()}>{busy ? 'Actualizando…' : 'Actualizar puntos'}</button>
+      <span className="points-actions"><a href="#/app/cuponera">Canjear puntos →</a><button type="button" disabled={busy} onClick={() => void load()}>{busy ? 'Actualizando…' : 'Actualizar puntos'}</button></span>
     </header>
 
     <div className="points-layout">
@@ -73,6 +73,7 @@ export function PointsHistory() {
                   <span>{new Date(movement.fecha).toLocaleString('es-AR', DATE_TIME)} · Movimiento {movement.secuencia}</span>
                   {movement.origen === 'INASISTENCIA' && movement.puntos === 0 && <small>Sin descuento por saldo cero</small>}
                   {movement.origen === 'REVERSION' && <small>Corrección del administrador</small>}
+                  {movement.origen === 'CANJE' && <small>Canje en la cuponera · código {movement.referencia}</small>}
                   {movement.estado === 'REVERTIDO' && <small>Movimiento revertido</small>}
                 </div>
                 <span className="movement-origin">{movement.origen.toLocaleLowerCase('es-AR')}</span>

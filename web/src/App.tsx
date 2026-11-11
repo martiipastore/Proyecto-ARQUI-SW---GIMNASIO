@@ -4,6 +4,8 @@ import { AppShell } from './components/AppShell';
 import { AccountPage } from './pages/AccountPage';
 import { ActivationPage } from './pages/ActivationPage';
 import { ClubAdminPage } from './pages/admin/ClubAdmin';
+import { CouponsAdminPage } from './pages/club/CouponsAdminPage';
+import { RewardsPage } from './pages/club/RewardsPage';
 import { PeoplePage } from './pages/admin/PeoplePage';
 import { PersonPage } from './pages/admin/PersonPage';
 import { ActivitiesPage } from './pages/booking/ActivitiesPage';
@@ -46,6 +48,9 @@ const ROUTES: Record<string, RouteDef> = {
   '/app/reservas': { roles: ['ALUMNO'], render: () => <MyBookingsPage /> },
   // Etapa 10: entrenamiento, nutrición y consultas (training.v1).
   '/app/plan': { roles: ['ALUMNO'], render: () => <MyPlanPage /> },
+  // Cuponera interna del Club (D-94).
+  '/app/cuponera': { roles: ['ALUMNO'], render: () => <RewardsPage /> },
+  '/admin/cuponera': { roles: ['ADMINISTRADOR'], render: () => <CouponsAdminPage /> },
   '/nutri/consultas': { roles: ['NUTRICIONISTA'], render: () => <InboxPage /> },
   '/admin': { roles: ['ADMINISTRADOR'], render: () => <Redirect to="/admin/personas" /> },
   '/admin/personas': { roles: ['ADMINISTRADOR'], render: () => <PeoplePage /> },
@@ -70,13 +75,14 @@ const CLASS_ROUTE = /^\/(admin|prof)\/clases\/([0-9a-fA-F-]{36})$/;
 const PLAN_ROUTE = /^\/(prof\/alumnos|nutri\/pacientes)\/([0-9a-fA-F-]{36})$/;
 
 const NAV: Record<Role, { path: string; label: string }[]> = {
-  ALUMNO: [{ path: '/app', label: 'Inicio' }, { path: '/app/clases', label: 'Clases' }, { path: '/app/reservas', label: 'Mis reservas' }, { path: '/app/plan', label: 'Mi plan' }],
+  ALUMNO: [{ path: '/app', label: 'Inicio' }, { path: '/app/clases', label: 'Clases' }, { path: '/app/reservas', label: 'Mis reservas' }, { path: '/app/plan', label: 'Mi plan' }, { path: '/app/cuponera', label: 'Cuponera' }],
   ADMINISTRADOR: [
     { path: '/admin/personas', label: 'Personas' },
     { path: '/admin/actividades', label: 'Actividades' },
     { path: '/admin/clases', label: 'Clases' },
     { path: '/recepcion', label: 'Recepción' },
     { path: '/admin/club', label: 'Club' },
+    { path: '/admin/cuponera', label: 'Cuponera' },
     { path: '/estado', label: 'Estado del sistema' },
   ],
   PROFESOR: [{ path: '/prof/clases', label: 'Mis clases' }, { path: '/prof', label: 'Mis alumnos' }],

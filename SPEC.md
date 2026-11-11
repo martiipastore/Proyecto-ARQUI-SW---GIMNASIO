@@ -6,6 +6,12 @@
 > catálogo y canjes. Los apartados históricos que los describen se conservan
 > para trazabilidad y no definen la capacidad exportada vigente. Ver
 > [contrato v2](docs/contracts/benefits-api.v2.yaml).
+>
+> **Cuponera interna, 11/11/2026 (D-94):** dentro de la aplicación del gimnasio
+> vuelven a regir HU-09, HU-20 y RN-23/24/25 (catálogo sin stock, canje y anulación)
+> con un agregado: cada canje entrega un cupón con código que recepción marca como
+> USADO (CA-20.5 y CA-20.6). Débitos, HU-31 y todo canje por la API de partners
+> siguen fuera de alcance.
 
 > Especificación funcional del Trabajo Práctico Integrador de Arquitectura de Software (microservicios).
 > Este documento es la **referencia funcional** durante todo el desarrollo. No define tecnologías, lenguajes, frameworks ni modelos de base de datos.
@@ -454,6 +460,8 @@ Reglas: RN-22, RN-24.
 - **CA-20.2** Dado un saldo de 20 y un beneficio de 30, cuando intenta canjear, entonces se rechaza por saldo insuficiente y el saldo no cambia.
 - **CA-20.3** Dado un beneficio vencido o inactivo, cuando intenta canjear, entonces se rechaza.
 - **CA-20.4** Dado un doble clic en "canjear" (misma clave de idempotencia), cuando se procesan, entonces se genera un solo canje y un solo débito.
+- **CA-20.5** *(D-94)* Dado un canje CONFIRMADO, cuando el alumno lo consulta, entonces ve un código de cupón único para presentar en recepción.
+- **CA-20.6** *(D-94)* Dado un cupón CONFIRMADO, cuando el administrador entrega el beneficio y lo marca USADO, entonces el cupón ya no puede usarse otra vez ni anularse; un cupón ANULADO tampoco puede usarse.
 
 #### HU-33 — Enviar una consulta a mi nutricionista
 *Como alumno, quiero enviarle dudas a mi nutricionista, para resolverlas sin esperar al próximo control.*
@@ -886,7 +894,7 @@ stateDiagram-v2
 
 | Entidad | Estados |
 |---|---|
-| Canje | CONFIRMADO → ANULADO (admin; revierte el débito) |
+| Canje | CONFIRMADO → ANULADO (admin; revierte el débito) · CONFIRMADO → USADO (admin al entregar el beneficio; D-94) |
 | ConsultaNutricional | PENDIENTE → RESPONDIDA (nutricionista). RESPONDIDA → cualquiera: ❌ |
 | Plan de entrenamiento / alimenticio | VIGENTE → FINALIZADO (por nuevo plan, fin de vigencia o acción del profesional) |
 | NotificaciónEmail | PENDIENTE → ENVIADA · PENDIENTE → PENDIENTE (reintento) · PENDIENTE → FALLIDA (agotados los reintentos) |

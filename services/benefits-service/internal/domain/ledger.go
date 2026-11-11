@@ -52,10 +52,12 @@ type MovimientoPuntos struct{ datos DatosMovimiento }
 func NuevoMovimiento(datos DatosMovimiento) (MovimientoPuntos, error) {
 	validoImporte := datos.PartnerID != "" && datos.Tipo == "" && datos.OrigenID == "" && datos.RevierteID == "" && datos.Puntos >= 1 && datos.Puntos <= 1000000
 	if datos.PartnerID == "" && datos.OrigenID != "" && datos.RevierteID == "" {
-		validoImporte = (datos.Tipo == Asistencia && datos.Puntos == 500) || (datos.Tipo == PenalizacionInasistencia && datos.Puntos >= -100 && datos.Puntos <= 0)
+		validoImporte = (datos.Tipo == Asistencia && datos.Puntos == 500) || (datos.Tipo == PenalizacionInasistencia && datos.Puntos >= -100 && datos.Puntos <= 0) ||
+			(datos.Tipo == Canje && datos.Puntos >= -CostoMaximoBeneficio && datos.Puntos <= -1)
 	}
+	// La reversión devuelve hasta el costo máximo de un canje anulado (D-94).
 	if datos.Tipo == Reversion {
-		validoImporte = datos.PartnerID == "" && datos.OrigenID == "" && datos.RevierteID != "" && datos.RevierteID != datos.ID && datos.Puntos >= -1000000 && datos.Puntos <= 100
+		validoImporte = datos.PartnerID == "" && datos.OrigenID == "" && datos.RevierteID != "" && datos.RevierteID != datos.ID && datos.Puntos >= -1000000 && datos.Puntos <= CostoMaximoBeneficio
 	}
 	if datos.ID == "" || datos.CuentaID == "" || datos.Secuencia < 1 || !validoImporte || datos.OcurridoEn.IsZero() || datos.AplicadoEn.IsZero() || !TextoValido(datos.Motivo, 3, 200) || !TextoValido(datos.Referencia, 1, 100) {
 		return MovimientoPuntos{}, ErrOperacionInvalida

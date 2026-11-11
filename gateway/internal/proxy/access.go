@@ -36,6 +36,20 @@ func bookingAllowed(method, path, role string) bool {
 	return false
 }
 
+// benefitsAllowed es la autorización gruesa de la cuponera interna (D-94): el
+// alumno ve el catálogo, canjea y consulta sus cupones. La gestión del catálogo
+// y de los cupones queda para el administrador; benefits-service vuelve a
+// autorizar por rol y cuenta propia.
+func benefitsAllowed(method, path, role string) bool {
+	switch {
+	case method == http.MethodGet && (path == "/api/v1/benefits/catalog" || path == "/api/v1/benefits/me/redemptions"):
+		return role == access.Student
+	case method == http.MethodPost && path == "/api/v1/benefits/redemptions":
+		return role == access.Student
+	}
+	return false
+}
+
 // trainingAllowed es la autorización gruesa de training.v1 (etapa 10): cada rol
 // solo llega a sus rutas. training-service vuelve a verificar la asignación
 // vigente con members en cada operación (RN-30, D-33). El administrador no
@@ -78,7 +92,7 @@ func (p *Proxy) authenticate(w http.ResponseWriter, r *http.Request, path string
 	// Profesor y nutricionista ven sus alumnos asignados (users.v1, RN-30);
 	// members vuelve a verificar la asignación sobre el recurso.
 	professional := r.Method == http.MethodGet && path == "/api/v1/users/me/students" && (claims.Role == access.Teacher || claims.Role == access.Nutritionist)
-	if !self && !professional && !bookingAllowed(r.Method, path, claims.Role) && !trainingAllowed(r.Method, path, claims.Role) && claims.Role != access.Admin {
+	if !self && !professional && !bookingAllowed(r.Method, path, claims.Role) && !trainingAllowed(r.Method, path, claims.Role) && !benefitsAllowed(r.Method, path, claims.Role) && claims.Role != access.Admin {
 		problem.WriteHTTP(w, r, problem.New(403, "SIN_PERMISO", "Sin permiso", "Tu rol no permite esta operación."))
 		return false
 	}

@@ -18,6 +18,15 @@ fuera por D-76. Convenciones comunes en [README.md](README.md).
 | POST /benefits/partners/{id}/rotate-key | ADMINISTRADOR | Nueva API key; la anterior deja de funcionar | Implementado localmente, etapa 7 |
 | PUT /benefits/partners/{id} | ADMINISTRADOR | `activo`, permisos y límites (ADR-016) | Implementado localmente, etapa 7 |
 | POST /benefits/partners/{id}/links | ADMINISTRADOR | Vincula la cuenta de una persona con un `external_user_id` (CA-10.3/10.4) | Implementado localmente, etapa 7 |
+| GET /benefits/catalog | ALUMNO, ADMINISTRADOR | Beneficios canjeables hoy: activos y vigentes (RN-24) | Implementado localmente, D-94 |
+| POST /benefits/redemptions | ALUMNO | Canjea `beneficio_id` con `Idempotency-Key` obligatoria (HU-20) | Implementado localmente, D-94 |
+| GET /benefits/me/redemptions | ALUMNO | Cupones propios paginados | Implementado localmente, D-94 |
+| GET /benefits/rewards | ADMINISTRADOR | Catálogo completo, con inactivos y cantidad de canjes (HU-09) | Implementado localmente, D-94 |
+| POST /benefits/rewards | ADMINISTRADOR | Alta de beneficio | Implementado localmente, D-94 |
+| PUT /benefits/rewards/{id} | ADMINISTRADOR | Reemplaza nombre, descripción, costo, vigencia y `activo` | Implementado localmente, D-94 |
+| GET /benefits/redemptions | ADMINISTRADOR | Busca cupones por `codigo` y `estado`, paginado | Implementado localmente, D-94 |
+| POST /benefits/redemptions/{id}/use | ADMINISTRADOR | Marca el cupón como USADO al entregar el beneficio | Implementado localmente, D-94 |
+| POST /benefits/redemptions/{id}/cancel | ADMINISTRADOR | Anula un cupón CONFIRMADO con `motivo` y devuelve los puntos (RN-25) | Implementado localmente, D-94 |
 
 `scripts/provision-club-partner.ps1` ([VERCEL_CLUB.md](../deploy/VERCEL_CLUB.md))
 sigue sirviendo para operar directo sobre la base, por ejemplo para la primera
@@ -73,7 +82,7 @@ ya la usa el frontend.
 {"id":"…","fecha":"2026-11-10T13:05:00Z","motivo":"Asistencia a Funcional","puntos":500,"estado":"CONFIRMADO","origen":"ASISTENCIA","secuencia":12}
 ```
 
-`origen`: `ASISTENCIA`, `INASISTENCIA`, `PARTNER` o `REVERSION`. Las penalizaciones se
+`origen`: `ASISTENCIA`, `INASISTENCIA`, `PARTNER`, `REVERSION` o `CANJE` (D-94). Las penalizaciones se
 muestran con signo negativo, incluida la de 0 puntos con saldo 0 (CA-22.11). El saldo
 mostrado es la suma de todos los movimientos (CA-19.2).
 
@@ -98,7 +107,8 @@ si no se puede consultar la persistencia. Respuestas `Cache-Control: no-store`.
 | HTTP | `code` | Cuándo |
 |---|---|---|
 | 404 | `CUENTA_NO_ENCONTRADA` | La cuenta todavía no existe (alta reciente, S-10) |
-| 422 | `SALDO_INSUFICIENTE` | Revertir dejaría saldo negativo (CA-11.3) |
-| 409 | `TRANSICION_INVALIDA` | Revertir un movimiento ya revertido o una reversión (CA-11.2) |
+| 422 | `SALDO_INSUFICIENTE` | Revertir dejaría saldo negativo (CA-11.3) o el saldo no alcanza para canjear (CA-20.2) |
+| 422 | `BENEFICIO_NO_DISPONIBLE` | Canjear un beneficio inactivo o fuera de vigencia (CA-20.3) |
+| 409 | `TRANSICION_INVALIDA` | Revertir un movimiento ya revertido, una reversión (CA-11.2) o un débito de canje; usar o anular un cupón que no está CONFIRMADO |
 | 409 | `CONFLICTO_IDENTIDAD` | Vínculo externo incompatible con el existente (CA-10.4) |
 | 409 | `CONFLICTO_IDEMPOTENCIA` | Idempotency-Key reutilizada con otros datos |
