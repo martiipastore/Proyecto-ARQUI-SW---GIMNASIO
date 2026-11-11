@@ -55,11 +55,22 @@ type Servicio struct {
 	reservas ports.Reservas
 	members  ports.Members
 	reloj    ports.Reloj
+	// indice y marcas se configuran con ConBusqueda (etapa 8); sin ellos la
+	// búsqueda sigue en PostgreSQL como en la etapa 4.
+	indice ports.IndiceClases
+	marcas ports.ReservasDelAlumno
 }
 
 // New cablea los casos de uso con sus puertos de salida.
 func New(catalogo ports.Catalogo, reservas ports.Reservas, members ports.Members, reloj ports.Reloj) *Servicio {
 	return &Servicio{catalogo: catalogo, reservas: reservas, members: members, reloj: reloj}
+}
+
+// ConBusqueda pasa GET /classes al índice de OpenSearch (ADR-014). Si el índice
+// no responde, la búsqueda falla con 503: no hay respaldo silencioso (D-45).
+func (s *Servicio) ConBusqueda(indice ports.IndiceClases, marcas ports.ReservasDelAlumno) *Servicio {
+	s.indice, s.marcas = indice, marcas
+	return s
 }
 
 func huella(partes ...string) string {
@@ -252,11 +263,35 @@ func (s *Servicio) BuscarClases(ctx context.Context, a Actor, f domain.FiltroCla
 	if f.Hasta.Before(f.Desde) || f.Hasta.Sub(f.Desde) > domain.MaxDiasGeneracion*24*time.Hour || f.Pagina < 1 || f.Tamano < 1 || f.Tamano > 100 {
 		return domain.PaginaClases{}, domain.ErrValidacion
 	}
+	if err := f.ValidarProfundidad(); err != nil {
+		return domain.PaginaClases{}, err
+	}
 	alumno := ""
 	if a.Rol == RolAlumno {
 		alumno = a.ID
 	}
-	return s.catalogo.BuscarClases(ctx, f, alumno)
+	if s.indice == nil {
+		return s.catalogo.BuscarClases(ctx, f, alumno)
+	}
+	page, err := s.indice.Buscar(ctx, f, s.reloj.Ahora())
+	if err != nil {
+		return domain.PaginaClases{}, dependencia(err)
+	}
+	if alumno != "" && len(page.Items) > 0 {
+		ids := make([]string, len(page.Items))
+		for i, c := range page.Items {
+			ids[i] = c.ID
+		}
+		// CA-13.4: "ya reservada" es dato del alumno; se lee de la fuente vigente.
+		marcadas, err := s.marcas.ReservadasPor(ctx, alumno, ids)
+		if err != nil {
+			return domain.PaginaClases{}, dependencia(err)
+		}
+		for i := range page.Items {
+			page.Items[i].ReservadaPorMi = marcadas[page.Items[i].ID]
+		}
+	}
+	return page, nil
 }
 
 // DetalleClase devuelve la clase y, para el administrador o el profesor

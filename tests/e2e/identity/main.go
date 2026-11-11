@@ -44,6 +44,8 @@ type report struct {
 	Passed   bool    `json:"passed"`
 	Checks   []check `json:"checks"`
 	Scope    string  `json:"scope"`
+	// Metrics guarda mediciones (etapa 8: retraso escritura → búsqueda).
+	Metrics map[string]float64 `json:"metrics,omitempty"`
 }
 
 var result = report{Stage: "CB-03", Started: time.Now().UTC().Format(time.RFC3339), Scope: "Local real HTTP services, partner API v2, isolated PostgreSQL 16, Mailpit v1.20 SMTP and injected lost callback response; no production or browser automation"}
@@ -53,6 +55,7 @@ var withMemberships = flag.Bool("memberships", false, "agregar escenarios CB-04 
 var withBooking = flag.Bool("booking", false, "verificar el recorrido de reservas de la etapa 4 con servicios reales")
 var withMessaging = flag.Bool("messaging", false, "agregar RabbitMQ, MongoDB y notificaciones de la etapa 5")
 var withAttendance = flag.Bool("attendance", false, "agregar consumo Booking → Benefits, historial y recuperación de etapa 6")
+var withSearch = flag.Bool("search", false, "agregar búsqueda de clases en OpenSearch de etapa 8: indexer, reindexado, retraso, caída y revalidación")
 var withClub = flag.Bool("club", false, "agregar administración del Club de etapa 7: integraciones, vinculación y reversiones")
 
 func must(err error) {
@@ -255,7 +258,7 @@ func run() {
 	must(err)
 	prefix := "gym-cb03-" + randomHex()[:12]
 	postgresName, mailName := prefix+"-postgres", prefix+"-mailpit"
-	for _, name := range []string{postgresName, mailName, prefix + "-rabbitmq", prefix + "-mongo"} {
+	for _, name := range []string{postgresName, mailName, prefix + "-rabbitmq", prefix + "-mongo", prefix + "-opensearch"} {
 		// Only these exact, uniquely generated container names may be removed.
 		defer func(name string) {
 			cleanup, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -399,6 +402,7 @@ func run() {
 	for k, v := range map[string]string{"GATEWAY_HTTP_ADDR": gatewayAddress, "GATEWAY_JWT_PUBLIC_KEY": public, "GATEWAY_MEMBERS_URL": membersURL, "GATEWAY_BENEFITS_URL": benefitsURL} {
 		gatewayEnv[k] = v
 	}
+	var search searchFixture
 	if *withBooking {
 		address := port()
 		bookingEnv := map[string]string{}
@@ -413,9 +417,20 @@ func run() {
 			bookingEnv["BOOKING_AMQP_URL"] = membersEnv["MEMBERS_AMQP_URL"]
 		}
 		stopBooking := startBinary(directory, "booking", "./services/booking-service/cmd/api", bookingEnv)
-		defer stopBooking()
+		defer func() { stopBooking() }()
 		ready("http://" + address)
 		gatewayEnv["GATEWAY_BOOKING_URL"] = "http://" + address
+		search = searchFixture{bookingURL: "http://" + address, prefix: prefix, directory: directory, amqpURL: bookingEnv["BOOKING_AMQP_URL"], bookingDSN: bookingEnv["BOOKING_DB_DSN"]}
+		// Etapa 8: la búsqueda se activa recién en searchFlow, después de que las
+		// etapas 4 a 7 se verificaron con la búsqueda en PostgreSQL.
+		search.restartBooking = func(extra map[string]string) {
+			stopBooking()
+			for k, v := range extra {
+				bookingEnv[k] = v
+			}
+			stopBooking = startBinary(directory, "booking", "./services/booking-service/cmd/api", bookingEnv)
+			ready("http://" + address)
+		}
 	}
 	stopGateway := startBinary(directory, "gateway", "./gateway/cmd/gateway", gatewayEnv)
 	defer stopGateway()
@@ -583,7 +598,7 @@ func run() {
 			ensure(sql("benefits_db", ledgerSQL) == originalLedger, "Membresía alteró movimientos")
 		}
 		oldMembership := uuid()
-		sql("members_db", fmt.Sprintf("INSERT INTO membresias(id,usuario_id,tipo_codigo,tipo_snapshot,fecha_inicio,fecha_vencimiento,estado,motivo,modificada_por,actualizada_en) SELECT '%s','%s',codigo,to_jsonb(t)-ARRAY['modificada_por','motivo','actualizada_en'],CURRENT_DATE-40,CURRENT_DATE-1,'ACTIVA','Fixture histórica','%s',now() FROM tipos_membresia t WHERE codigo='MENSUAL';", oldMembership, studentID, adminID))
+		sql("members_db", fmt.Sprintf("INSERT INTO membresias(id,usuario_id,tipo_codigo,tipo_snapshot,fecha_inicio,fecha_vencimiento,estado,motivo,modificada_por,actualizada_en) SELECT '%s','%s',codigo,to_jsonb(t)-ARRAY['modificada_por','motivo','actualizada_en'],(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date-40,(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date-1,'ACTIVA','Fixture histórica','%s',now() FROM tipos_membresia t WHERE codigo='MENSUAL';", oldMembership, studentID, adminID))
 		eventually("vencimiento materializado", func() bool {
 			return sql("members_db", fmt.Sprintf("SELECT estado FROM membresias WHERE id='%s';", oldMembership)) == "VENCIDA"
 		})
@@ -634,6 +649,9 @@ func run() {
 		}
 		if *withClub {
 			clubFlow(gatewayURL, benefitsURL, passwordUser, sql, adminHeaders, login)
+		}
+		if *withSearch {
+			searchFlow(gatewayURL, passwordUser, search, sql, adminHeaders, login)
 		}
 	}
 	result.Passed = true
@@ -897,7 +915,7 @@ func attendanceFlow(base, benefitsURL, mailURL, amqpURL, password, today string,
 	ensure(status == 200 && page["total"] == float64(2) && len(page["items"].([]any)) == 1, "Paginación o frontera de identidad falló")
 	mark("puntos_historial_autenticado_identidad_no_manipulable_y_paginacion")
 	before := metrics()
-	sql("booking_db", "UPDATE outbox SET publicado_en=NULL;")
+	sql("booking_db", "UPDATE outbox SET publicado_en=NULL WHERE event_type<>'clase.actualizada';")
 	eventually("reentregas confirmadas por consumidor", func() bool { return metrics() >= before+2 })
 	ensure(countMoves(student) == "2" && receipts(student) == "2", "Replay agregó puntos o secuencias")
 	bus, err := messaging.Dial(ctx, amqpURL)
@@ -937,7 +955,7 @@ func attendanceFlow(base, benefitsURL, mailURL, amqpURL, password, today string,
 	professor := sql("booking_db", "SELECT profesor_id FROM clases WHERE id='"+classID+"';")
 	sql("booking_db", fmt.Sprintf("WITH c AS (INSERT INTO clases(actividad_id,inicio,fin,profesor_id,profesor_nombre,capacidad,ocupacion) VALUES('%s',now()-interval '4 hours',now()-interval '3 hours','%s','Fixture',2,1) RETURNING id,inicio,fin) INSERT INTO reservas(clase_id,alumno_id,estado,inicio,fin,creada_en,actualizada_en) SELECT id,'%s','CONFIRMADA',inicio,fin,now(),now() FROM c;", activity, professor, user))
 	eventually("outbox publicado sin consumidor", func() bool {
-		return sql("booking_db", "SELECT count(*) FROM outbox WHERE publicado_en IS NOT NULL;") == "4"
+		return sql("booking_db", "SELECT count(*) FROM outbox WHERE publicado_en IS NOT NULL AND event_type<>'clase.actualizada';") == "4"
 	})
 	ensure(countMoves(user) == "0", "Consumidor detenido produjo puntos")
 	mark("puntos_caida_Benefits_no_bloquea_reserva_ingreso_ni_cierre")
@@ -945,7 +963,7 @@ func attendanceFlow(base, benefitsURL, mailURL, amqpURL, password, today string,
 	eventually("Benefits recupera mensajes durables", func() bool { return receipts(user) == "2" })
 	assertAccount(user, secondJWT)
 	before = metrics()
-	sql("booking_db", "UPDATE outbox SET publicado_en=NULL;")
+	sql("booking_db", "UPDATE outbox SET publicado_en=NULL WHERE event_type<>'clase.actualizada';")
 	eventually("replay tras reiniciar Benefits", func() bool { return metrics() >= before+4 })
 	ensure(countMoves(user) == "2" && countMoves(student) == "2", "Reinicio perdió la deduplicación")
 	mark("puntos_recuperacion_y_replay_tras_reinicio_sin_perdida_ni_duplicados")
@@ -1070,6 +1088,239 @@ func clubFlow(base, benefitsURL, password string, sql func(string, string) strin
 	mark("club_reversion_asistencia_CA35_3_o_saldo_insuficiente_CA11_3")
 }
 
+// searchFixture conecta searchFlow con los procesos que arrancó run().
+type searchFixture struct {
+	bookingURL, prefix, directory, amqpURL, bookingDSN string
+	restartBooking                                     func(map[string]string)
+}
+
+// searchFlow cubre la etapa 8 (ADR-014, D-45, HU-13, RN-14): indexer por
+// eventos, reindexado con alias, filtros/orden/paginación iguales a PostgreSQL,
+// retraso < 2 s, versión vieja descartada, índice desactualizado que no decide
+// la reserva y caída de OpenSearch con 503 explícito y recuperación.
+func searchFlow(base, password string, fx searchFixture, sql func(string, string) string, admin func(string) map[string]string, login func(string, string, int) string) {
+	if result.Metrics == nil {
+		result.Metrics = map[string]float64{}
+	}
+	name := fx.prefix + "-opensearch"
+	osAddress := port()
+	docker("", "run", "-d", "--name", name, "-p", osAddress+":9200", "-e", "discovery.type=single-node", "-e", "DISABLE_SECURITY_PLUGIN=true", "-e", "DISABLE_INSTALL_DEMO_CONFIG=true", "-e", "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m", "-e", "action.auto_create_index=false", "opensearchproject/opensearch:2.17.1")
+	osURL := "http://" + osAddress
+	osUp := func() bool {
+		res, err := client.Get(osURL + "/_cluster/health")
+		if err != nil {
+			return false
+		}
+		defer res.Body.Close()
+		return res.StatusCode == 200
+	}
+	eventuallyWithin("OpenSearch", 3*time.Minute, osUp)
+
+	// Más clases futuras de dos actividades para que el índice tenga contenido.
+	professor := sql("members_db", "SELECT id FROM usuarios WHERE email='booking-prof@example.test';")
+	zone, err := time.LoadLocation("America/Argentina/Buenos_Aires")
+	must(err)
+	tomorrow := time.Now().In(zone).AddDate(0, 0, 1)
+	weekday := int(tomorrow.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	from, to := tomorrow.Format(time.DateOnly), tomorrow.AddDate(0, 0, 27).Format(time.DateOnly)
+	funcional := sql("booking_db", "SELECT id FROM actividades WHERE nombre='Funcional';")
+	status, _ := request(base, "POST", "/api/v1/activities/"+funcional+"/schedules", admin(""), map[string]any{"dia_semana": weekday, "inicio": "18:00", "duracion_minutos": 60, "profesor_id": professor, "capacidad": 20})
+	ensure(status == 201, "No crea horario de Funcional")
+	status, generated := request(base, "POST", "/api/v1/classes/generate", admin(""), map[string]string{"desde": from, "hasta": to})
+	ensure(status == 200 && generated["creadas"].(float64) >= 7, "No genera clases para la búsqueda")
+
+	ext := ""
+	if runtime.GOOS == "windows" {
+		ext = ".exe"
+	}
+	indexerAddress := port()
+	indexerURL := "http://" + indexerAddress
+	indexerEnv := map[string]string{"BOOKING_INDEXER_HTTP_ADDR": indexerAddress, "BOOKING_DB_DSN": fx.bookingDSN, "BOOKING_INDEXER_ENABLED": "true", "BOOKING_AMQP_URL": fx.amqpURL, "BOOKING_OPENSEARCH_URL": osURL, "LOG_LEVEL": "error", "OTEL_SDK_DISABLED": "true"}
+	stopIndexer := startBinary(fx.directory, "indexer", "./services/booking-service/cmd/indexer", indexerEnv)
+	defer func() { stopIndexer() }()
+	ready(indexerURL)
+	aliasIndex := func() string {
+		status, out := request(osURL, "GET", "/_alias/clases-read", nil, nil)
+		ensure(status == 200 && len(out) == 1, "El alias debe apuntar a un solo índice")
+		for k := range out {
+			return k
+		}
+		return ""
+	}
+	eventually("alias inicial", func() bool {
+		status, _ := request(osURL, "GET", "/_alias/clases-read", nil, nil)
+		return status == 200
+	})
+	initial := aliasIndex()
+	// Reindexado completo con el indexer consumiendo al mismo tiempo (ADR-014).
+	reindex := exec.CommandContext(ctx, filepath.Join(fx.directory, "indexer"+ext), "-reindex")
+	reindex.Env = envWith(indexerEnv)
+	if output, err := reindex.CombinedOutput(); err != nil {
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		panic("Reindexado falló: " + lines[len(lines)-1])
+	}
+	summary := func(index string) string {
+		request(osURL, "POST", "/"+index+"/_refresh", nil, nil)
+		_, out := request(osURL, "POST", "/"+index+"/_search", nil, map[string]any{"size": 0, "track_total_hits": true, "aggs": map[string]any{"s": map[string]any{"sum": map[string]any{"field": "version"}}}})
+		total := out["hits"].(map[string]any)["total"].(map[string]any)["value"].(float64)
+		sum := out["aggregations"].(map[string]any)["s"].(map[string]any)["value"].(float64)
+		return fmt.Sprintf("%d:%d", int64(total), int64(sum))
+	}
+	eventually("índice converge con booking_db", func() bool {
+		return summary("clases-read") == sql("booking_db", "SELECT count(*)||':'||COALESCE(sum(version),0) FROM clases;")
+	})
+	current := aliasIndex()
+	ensure(current != initial, "El reindexado no movió el alias")
+	status, _ = request(osURL, "GET", "/"+initial, nil, nil)
+	ensure(status == 404, "El índice anterior no se eliminó")
+	mark("busqueda_indexer_y_reindexado_con_alias_convergen_con_postgres")
+
+	fx.restartBooking(map[string]string{"BOOKING_SEARCH_ENABLED": "true", "BOOKING_OPENSEARCH_URL": osURL})
+	studentJWT := login("booking-student@example.test", password, 200)
+	student := func(key string) map[string]string {
+		return map[string]string{"Authorization": "Bearer " + studentJWT, "Idempotency-Key": key}
+	}
+	apiIDs := func(headers map[string]string, query string) (string, []any) {
+		status, page := request(base, "GET", "/api/v1/classes?fecha_desde="+from+"&fecha_hasta="+to+query, headers, nil)
+		ensure(status == 200, fmt.Sprintf("Búsqueda HTTP %d", status))
+		items := page["items"].([]any)
+		ids := make([]string, 0, len(items))
+		for _, item := range items {
+			ids = append(ids, item.(map[string]any)["id"].(string))
+		}
+		return strings.Join(ids, ","), items
+	}
+	pgIDs := func(where string, limit, offset int) string {
+		return sql("booking_db", fmt.Sprintf("SELECT COALESCE(string_agg(id::text, ',' ORDER BY inicio, id),'') FROM (SELECT id, inicio FROM clases WHERE inicio >= ('%s'::date)::timestamp AT TIME ZONE 'America/Argentina/Buenos_Aires' AND inicio < ('%s'::date + 1)::timestamp AT TIME ZONE 'America/Argentina/Buenos_Aires' %s ORDER BY inicio, id LIMIT %d OFFSET %d) x;", from, to, where, limit, offset))
+	}
+	all, items := apiIDs(admin(""), "&tamano=100")
+	ensure(all == pgIDs("", 100, 0) && len(items) >= 8, "Orden o contenido distinto de PostgreSQL")
+	page, _ := apiIDs(admin(""), "&tamano=3&pagina=2")
+	ensure(page == pgIDs("", 3, 3), "Paginación distinta de PostgreSQL")
+	byActivity, _ := apiIDs(admin(""), "&tamano=100&actividad_id="+funcional)
+	ensure(byActivity == pgIDs("AND actividad_id='"+funcional+"'", 100, 0), "Filtro por actividad distinto")
+	bySlot, _ := apiIDs(admin(""), "&tamano=100&franja=18:00")
+	ensure(bySlot == pgIDs("AND to_char(inicio AT TIME ZONE 'America/Argentina/Buenos_Aires','HH24:MI')='18:00'", 100, 0), "Filtro por franja distinto")
+	available, _ := apiIDs(admin(""), "&tamano=100&solo_disponibles=true")
+	ensure(available == pgIDs("AND estado='PROGRAMADA' AND inicio>now() AND ocupacion<capacidad", 100, 0), "Filtro de disponibilidad distinto")
+	status, _ = request(base, "GET", "/api/v1/classes?pagina=101&tamano=100", admin(""), nil)
+	ensure(status == 400, "Profundidad mayor a 10.000 aceptada")
+	classIDs := strings.Split(byActivity, ",")
+	status, _ = request(base, "POST", "/api/v1/bookings", student("search-reserve-001"), map[string]string{"clase_id": classIDs[2]})
+	ensure(status == 201, "No reserva clase encontrada en el índice")
+	eventually("reserva visible como propia", func() bool {
+		_, mine := apiIDs(student(""), "&tamano=100&actividad_id="+funcional)
+		for _, item := range mine {
+			m := item.(map[string]any)
+			if m["id"] == classIDs[2] {
+				return m["reservada_por_mi"] == true && m["ocupacion"] == float64(1)
+			}
+		}
+		return false
+	})
+	mark("busqueda_filtros_orden_paginacion_iguales_a_postgres_profundidad_y_reservada_por_mi")
+
+	visible := func(id, field string, value any) func() bool {
+		return func() bool {
+			status, out := request(base, "GET", "/api/v1/classes?fecha_desde="+from+"&fecha_hasta="+to+"&tamano=100&actividad_id="+funcional, admin(""), nil)
+			if status != 200 {
+				return false
+			}
+			for _, item := range out["items"].([]any) {
+				m := item.(map[string]any)
+				if m["id"] == id {
+					return m[field] == value
+				}
+			}
+			return false
+		}
+	}
+	target := classIDs[0]
+	var maxLag, sumLag float64
+	for i := 0; i < 5; i++ {
+		capacity := 21 + i
+		start := time.Now()
+		status, _ := request(base, "PUT", "/api/v1/classes/"+target+"/capacity", admin(""), map[string]int{"capacidad": capacity})
+		ensure(status == 200, "No cambia la capacidad")
+		// Sondeo cada 50 ms: la granularidad de la medición queda muy por debajo de 2 s.
+		check := visible(target, "capacidad", float64(capacity))
+		for !check() {
+			ensure(time.Since(start) < 10*time.Second, "Tiempo agotado: cambio visible en la búsqueda")
+			time.Sleep(50 * time.Millisecond)
+		}
+		lag := time.Since(start).Seconds()
+		sumLag += lag
+		maxLag = max(maxLag, lag)
+	}
+	result.Metrics["busqueda_retraso_max_s"] = maxLag
+	result.Metrics["busqueda_retraso_promedio_s"] = sumLag / 5
+	metric := func(name string) float64 {
+		res, err := client.Get(indexerURL + "/metrics")
+		must(err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		must(err)
+		for _, line := range strings.Split(string(body), "\n") {
+			var value float64
+			if strings.HasPrefix(line, name+" ") {
+				_, err := fmt.Sscanf(strings.TrimPrefix(line, name+" "), "%g", &value)
+				must(err)
+				return value
+			}
+		}
+		panic("Métrica ausente: " + name)
+	}
+	// El máximo del indexer incluye el backlog encolado antes de que existiera
+	// (etapas 4 a 7); el último valor es el retraso en régimen normal.
+	result.Metrics["indexer_retraso_commit_a_indice_ultimo_s"] = metric("clase_index_lag_seconds_last")
+	result.Metrics["indexer_retraso_max_con_backlog_inicial_s"] = metric("clase_index_lag_seconds_max")
+	ensure(maxLag < 2, fmt.Sprintf("Retraso escritura → búsqueda %.3f s supera 2 s", maxLag))
+	mark("busqueda_retraso_escritura_a_busqueda_menor_a_2s_medido")
+
+	bus, err := messaging.Dial(ctx, fx.amqpURL)
+	must(err)
+	defer bus.Close()
+	old := sql("booking_db", fmt.Sprintf("SELECT jsonb_build_object('event_id',gen_random_uuid(),'event_type','clase.actualizada','event_version',1,'occurred_at',occurred_at,'producer','booking-service','data',data)::text FROM outbox WHERE event_type='clase.actualizada' AND agregado_id='%s' ORDER BY (data->>'version')::bigint LIMIT 1;", target))
+	stale := metric("clase_index_stale_total")
+	must(bus.Publish(ctx, "gym.events", "clase.actualizada", amqp.Publishing{ContentType: "application/json", Body: []byte(old)}))
+	eventually("evento viejo descartado", func() bool { return metric("clase_index_stale_total") > stale })
+	ensure(visible(target, "capacidad", float64(25))(), "Una versión vieja pisó la nueva")
+	mark("busqueda_evento_viejo_no_pisa_version_nueva")
+
+	stopIndexer()
+	cancelled := classIDs[3]
+	status, _ = request(base, "POST", "/api/v1/classes/"+cancelled+"/cancel", admin(""), map[string]string{"motivo": "Prueba de revalidación"})
+	ensure(status == 200, "No cancela la clase")
+	ensure(visible(cancelled, "estado", "PROGRAMADA")(), "Sin indexer la búsqueda debería seguir atrasada")
+	status, rejected := request(base, "POST", "/api/v1/bookings", student("search-reserve-002"), map[string]string{"clase_id": cancelled})
+	ensure(status == 422 && rejected["code"] == "CLASE_CANCELADA", fmt.Sprintf("La reserva no se revalidó en PostgreSQL: HTTP %d %v", status, rejected["code"]))
+	stopIndexer = startBinary(fx.directory, "indexer", "./services/booking-service/cmd/indexer", indexerEnv)
+	ready(indexerURL)
+	eventually("el índice alcanza la cancelación", visible(cancelled, "estado", "CANCELADA"))
+	mark("busqueda_atrasada_no_decide_la_reserva_revalidada_en_postgres")
+
+	docker("", "stop", name)
+	status, down := request(base, "GET", "/api/v1/classes", admin(""), nil)
+	ensure(status == 503 && down["code"] == "DEPENDENCIA_NO_DISPONIBLE", "Sin OpenSearch la búsqueda no responde 503")
+	status, health := request(fx.bookingURL, "GET", "/health/ready", nil, nil)
+	ensure(status == 200 && health["status"] == "degraded", "Readiness de Booking no informa degradación parcial")
+	status, _ = request(base, "PUT", "/api/v1/classes/"+target+"/capacity", admin(""), map[string]int{"capacidad": 26})
+	ensure(status == 200, "Sin OpenSearch no se puede escribir en Booking")
+	status, _ = request(base, "GET", "/api/v1/classes/"+target, admin(""), nil)
+	ensure(status == 200, "El detalle de la clase depende de OpenSearch")
+	docker("", "start", name)
+	eventuallyWithin("OpenSearch reiniciado", 3*time.Minute, osUp)
+	eventuallyWithin("búsqueda recuperada con el cambio hecho durante la caída", 3*time.Minute, visible(target, "capacidad", float64(26)))
+	eventually("readiness recuperada", func() bool {
+		status, health := request(fx.bookingURL, "GET", "/health/ready", nil, nil)
+		return status == 200 && health["status"] == "ready"
+	})
+	mark("busqueda_caida_OpenSearch_503_explicito_escrituras_siguen_y_recupera")
+}
+
 func mustInt(s string) int {
 	var n int
 	_, err := fmt.Sscanf(s, "%d", &n)
@@ -1079,6 +1330,9 @@ func mustInt(s string) int {
 
 func main() {
 	flag.Parse()
+	if *withSearch {
+		*withClub = true
+	}
 	if *withClub {
 		*withAttendance = true
 	}
@@ -1111,6 +1365,10 @@ func main() {
 		result.Stage = "Entrega final - etapa 7"
 		result.Scope += "; Club administration through the gateway: integrations, one-time API keys, rotation, deactivation, account links, admin account view and idempotent reversals"
 	}
+	if *withSearch {
+		result.Stage = "Entrega final - etapa 8"
+		result.Scope += "; isolated OpenSearch 2.17, booking-indexer consuming clase.actualizada, alias reindex with concurrent consumer, filters compared with PostgreSQL, measured write-to-search lag, stale event, revalidation and OpenSearch outage"
+	}
 	failed := false
 	func() {
 		defer func() {
@@ -1141,6 +1399,9 @@ func main() {
 	}
 	if *withClub {
 		path = filepath.Join("docs", "evidence", "entrega-final", "etapa7", "club-e2e.json")
+	}
+	if *withSearch {
+		path = filepath.Join("docs", "evidence", "entrega-final", "etapa8", "search-e2e.json")
 	}
 	must(os.MkdirAll(filepath.Dir(path), 0755))
 	data, err := json.MarshalIndent(result, "", "  ")

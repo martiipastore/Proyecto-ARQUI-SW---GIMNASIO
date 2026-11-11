@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Aceptado como diseño inicial el 16/10/2026; implementación y mediciones pendientes |
+| **Estado** | Aceptado como diseño inicial el 16/10/2026. Implementado y medido localmente en la etapa 8 de la entrega final (10/11/2026); pendientes resueltos por D-87 |
 | **Fecha** | 2026-10-16 |
 | **Decisión del TP** | D6 |
 | **Autores** | Equipo del TPI |
@@ -31,6 +31,14 @@ Búsqueda con filtros por actividad, fecha/rango, franja y disponibilidad; pagin
 Retraso objetivo < 2 s desde commit en PostgreSQL hasta visibilidad en búsqueda durante operación normal. Una caída puede excederlo: debe reportarse, reintentarse y reconciliarse; no se promete ese límite durante indisponibilidad. Cupo, permisos y reserva se deciden siempre contra la fuente vigente.
 
 Reindexado desde booking_db por su propio indexer hacia un índice nuevo y cambio de alias al completar y verificar convergencia con eventos concurrentes. La estrategia detallada de captura de cambios durante reindexado se resolverá antes de implementarlo. OpenSearch caído produce degradación parcial de Booking; no se inventa una búsqueda alternativa silenciosa.
+
+### Resolución de pendientes (D-87, 10/11/2026)
+
+- **Captura de cambios durante el reindexado:** índice nuevo cargado desde booking_db, cambio atómico del alias y repaso completo con versionado externo (`version_type=external`). Una versión vieja nunca pisa una nueva, así que no hace falta pausar el consumidor ni escribir dos veces. Al final se verifica la convergencia (cantidad y suma de versiones) y se borra el índice anterior.
+- **Profundidad:** página × tamaño ≤ 10.000 resultados.
+- **Caída de OpenSearch:** `503 DEPENDENCIA_NO_DISPONIBLE` en la búsqueda y readiness `degraded` en Booking.
+- **Implementación:** la migración `002_busqueda_clases.sql` versiona cada escritura de `clases` y escribe `clase.actualizada` en el outbox por trigger, en la misma transacción. Alias de lectura y escritura: `clases-read`.
+- **Medición:** ~1 s de retraso entre la escritura y su visibilidad en la búsqueda (local, dominado por el refresco de 1 s del motor). Detalle en docs/entrega-final/ETAPA_8_BUSQUEDA.md.
 
 ## Consecuencias
 
