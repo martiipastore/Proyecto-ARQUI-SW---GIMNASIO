@@ -1,6 +1,22 @@
+import { useEffect, useState } from 'react';
+
 export function HeroBarbell() {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => setIsPlaying(true));
+    });
+
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, []);
+
   return (
-    <div className="barbell-scene barbell-scene--play" aria-hidden="true">
+    <div className={`barbell-scene${isPlaying ? ' barbell-scene--play' : ''}`} aria-hidden="true">
       <div className="barbell-orbit barbell-orbit-outer" />
       <div className="barbell-orbit barbell-orbit-inner" />
       <div className="barbell-impact" />
